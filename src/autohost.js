@@ -89,6 +89,13 @@ module.exports = function( config ) {
 					reply: function( envelope ) {
 						var code = envelope.statusCode || 200;
 						res.send( code, envelope.data );
+					},
+					replyWithFile: function(envelope, contentType, sendFileName, sendStream) {
+						res.set({
+							"Content-Disposition": 'attachment; filename="'+sendFileName+'"',
+							"Content-Type": contentType
+						});
+						sendStream.pipe(res);
 					}
 				};
 				for( var key in req.params ) {
