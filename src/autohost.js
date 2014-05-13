@@ -90,7 +90,7 @@ module.exports = function( config ) {
 						var code = envelope.statusCode || 200;
 						res.send( code, envelope.data );
 					},
-					replyWithDownload: function(envelope, contentType, sendFileName, sendStream) {
+					replyWithFile: function(envelope, contentType, sendFileName, sendStream) {
 						res.set({
 							"Content-Disposition": 'attachment; filename="'+sendFileName+'"',
 							"Content-Type": contentType
