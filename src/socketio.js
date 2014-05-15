@@ -68,7 +68,7 @@ module.exports = function( Host ) {
 				}
 
 				socket.publish = function( topic, message ) {
-					socket.emit( topic, message );
+					socket.json.send( { topic: topic, body: message } );
 				};
 
 				socket.on( 'client.identity', function( data ) {
