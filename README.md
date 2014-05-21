@@ -139,6 +139,7 @@ __Documentation on this API coming soon, see autohost-riak-auth library for an e
 
  * 'socket.client.connected', { socket: socketConnection } - raised when a client connects
  * 'socket.client.identified', { socket: socketConnection, id: id } - raised when client reports unique id
+ * 'socket.client.closed', { socket: socketConnection, id: id } - raised when client disconnects the websocket connection
 
 ## TO DO
  * Add support for clustering (multiple listening processes)
