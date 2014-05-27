@@ -1,5 +1,6 @@
 var _ = require( 'lodash' ),
 	path = require( 'path' ),
+	when = require('when'),
 	fs = require( 'fs' );
 
 
@@ -34,12 +35,16 @@ module.exports = function( Host ) {
 	};
 
 	Host.prototype.loadResources = function( filePath ) {
-		var self = this;
-		var resourcePath = path.resolve( __dirname, filePath );
-		this.watch( resourcePath );
-		var resources = this.getResources( resourcePath, function( list ) {
-			_.each( list, self.loadModule );
-		} );
+		return when.promise(function(resolve, reject, notify) {
+			var self = this;
+			var resourcePath = path.resolve( __dirname, filePath );
+			this.watch( resourcePath );
+			var resources = this.getResources( resourcePath, function( list ) {
+				_.each( list, self.loadModule );
+				resolve();
+			} );
+							
+		}.bind(this));
 	};
 
 	Host.prototype.processResource = function( prefix, resource, basePath ) {
