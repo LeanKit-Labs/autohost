@@ -204,17 +204,18 @@ module.exports = function( config ) {
 
 		this.app.use( this.app.router );
 		this.registerPath( '/', public );
-		this.loadResources( resources );
-		this.processResource( 'api', require( './_autohost/resource.js' )( this ), path.resolve( __dirname, './_autohost' ) );
-		if( this.authorizer ) {
-			var list = [];
-			_.each( this.actions, function( actions, resource ) {
-				_.each( actions, function( action ) {
-					list.push( { name: action, resource: resource } );
+		this.loadResources( resources ).done(function () {
+			this.processResource( 'api', require( './_autohost/resource.js' )( this ), path.resolve( __dirname, './_autohost' ) );
+			if( this.authorizer ) {
+				var list = [];
+				_.each( this.actions, function( actions, resource ) {
+					_.each( actions, function( action ) {
+						list.push( { name: action, resource: resource } );
+					} );
 				} );
-			} );
-			this.authorizer.actionList( list, function() {} );
-		}
+				this.authorizer.actionList( list, function() {} );
+			}
+		}.bind(this));
 
 		this.server = http.createServer( this.app ).listen( this.config.port || 8800 );
 		this.configureWebsockets();
