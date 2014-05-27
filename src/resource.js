@@ -27,7 +27,7 @@ module.exports = function( Host ) {
 	Host.prototype.loadModule = function( resourcePath ) {
 		try {
 			delete require.cache[ resourcePath ];
-			var mod = require( resourcePath )(this.config);
+			var mod = require( resourcePath )( this );
 			this.processResource( 'api', mod, path.dirname( resourcePath ) );
 		} catch (err) {
 			console.log( 'Error loading resource module:', err, err.stack );
