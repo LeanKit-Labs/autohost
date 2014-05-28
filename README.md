@@ -22,11 +22,13 @@ host.init();
 ```
 
 ## Configuration
-Configuration can be provided optionally to the init call or during instantiation after the require. The object literal follows the format:
+While the configuration can be provided optionally to the init call, *it's recommended to pass this during instantiation after the require*. 
+
+The object literal follows the format:
 
 ```js
 {
-	processes: 1, // # of processes to spawn - not currently in use
+	appName: '' // application name - used specifically by autohost auth libraries
 	static: './public', // where to host static resources from, default value shown
 	resources: './resource', // where to load resource modules from, default value shown
 	port: 8800, // what port to host at, default shown
@@ -34,6 +36,14 @@ Configuration can be provided optionally to the init call or during instantiatio
 	websockets: true, // enables websockets
 	socketIO: true // enables socket.io
 }
+```
+
+*Recommended*
+```js
+var autohost = require( 'autohost' )( {
+	appName: 'demo',
+	port: 8881
+} );
 ```
 
 ## Resources

@@ -28,6 +28,7 @@ module.exports = function( config ) {
 		this.resources = {};
 		this.actions = {};
 		this.metrics = metrics;
+		this.appName = this.config.appName || 'autohost';
 		_.bindAll( this );
 	};
 
@@ -163,7 +164,7 @@ module.exports = function( config ) {
 		}.bind( this ) );
 	};
 
-	Host.prototype.init = function(config) {
+	Host.prototype.init = function( config ) {
 		if( config ) {
 			this.config = _.merge( this.config, config );
 		}
