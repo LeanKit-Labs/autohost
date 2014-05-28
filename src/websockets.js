@@ -54,12 +54,12 @@ module.exports = function( Host ) {
 
 		this.emit( 'socket.client.connected', { socket: socket } );
 		socket.publish( 'server.connected', { user: socket.user } );
-		socket.on( 'close', function() { this.removeClient(socket); }.bind( this ) );
+		socket.on( 'close', function() { this.removeClient( socket ); }.bind( this ) );
 	};
 
 	Host.prototype.configureWebsockets = function() {
 		if( this.config.websockets ) {
-			this.socketServer = new WS( { httpServer: this.server, autoAcceptConnections: false } );
+			this.socketServer = new WS( { httpServer: this.server, url: '/websocket', autoAcceptConnections: false } );
 			this.socketServer.on( 'request', this.handleWebSocketRequest.bind( this ) );
 		}
 	};

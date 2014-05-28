@@ -5,9 +5,10 @@ var config = require( 'configya' )();
 require( 'autohost-riak-auth' )( host, config )
 	.then( function() {
 		host.init( { 
-			port: 4040, 
+			port: 4041,
 			resources: './demo/resource',
 			socketIO: true,
+			websockets: true,
 			origin: 'console'
 		} );
 
