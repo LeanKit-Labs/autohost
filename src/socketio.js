@@ -49,6 +49,7 @@ module.exports = function( Host ) {
 				io = socketio.listen( this.server );
 			}
 			io.set( 'log level', 1 );
+			io.set( 'destroy upgrade', false );
 			
 			io.on( 'connection', function( socket ) {
 				var handshake = socket.handshake;

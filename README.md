@@ -7,7 +7,7 @@ __This library is experimental and rapidly changing.__
 
  * Resource-based: define protocol-agnostic resources that interact via HTTP or WebSockets
  * Auto-reloads resources on file change
- * Supports server-side websockets or socket.io
+ * Supports server-side websockets and socket.io
  * UI dashboard to review resources' routes, topics and hosted paths
 
 ## UI Dashboard
@@ -130,6 +130,9 @@ In order to use this feature, you must provide an authorization strategy with se
 __Documentation on this API coming soon, see autohost-riak-auth library for an example__
 		
 ## Web Socket Stuff
+
+### WebSocket-Node library
+When establishing a connection to autohost using the WebSocket-Node client, you'll need to append '/websocket' to the end of the URL. This enables autohost to support both socket.io and WebSocket-Node simultaneously.
 
 ### Methods
  * sendToClient( id, topic, message ) - sends message to specific client via websocket (returns true if successful)
