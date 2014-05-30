@@ -164,7 +164,7 @@ module.exports = function( config ) {
 		}.bind( this ) );
 	};
 
-	Host.prototype.init = function( config ) {
+	Host.prototype.init = function( config, done ) {
 		if( config ) {
 			this.config = _.merge( this.config, config );
 		}
@@ -203,6 +203,14 @@ module.exports = function( config ) {
 			self.app.use( path, op );
 		} );
 
+		var startServer = function() {
+			this.server = http.createServer( this.app ).listen( this.config.port || 8800 );
+			this.configureWebsockets();
+			this.configureSocketIO();
+			console.log( 'autohost listening on port ', ( this.config.port || 8800 ) );
+			if (done) done();
+		}.bind(this);
+
 		this.app.use( this.app.router );
 		this.registerPath( '/', public );
 		this.loadResources( resources ).done(function () {
@@ -214,14 +222,14 @@ module.exports = function( config ) {
 						list.push( { name: action, resource: resource } );
 					} );
 				} );
-				this.authorizer.actionList( list, function() {} );
+				this.authorizer.actionList( list, function() {
+					startServer();
+				} );
+			} else {
+				startServer();
 			}
 		}.bind(this));
 
-		this.server = http.createServer( this.app ).listen( this.config.port || 8800 );
-		this.configureWebsockets();
-		this.configureSocketIO();
-		console.log( 'autohost listening on port ', ( this.config.port || 8800 ) );
 	};
 
 	Host.prototype.registerRoute = function( url, verb, callback ) {
