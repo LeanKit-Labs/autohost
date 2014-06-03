@@ -41,7 +41,7 @@ define([ 'jquery', 'postal' ],
 					}
 				} );
 			},
-			getActions: function() {
+			getActions: function(getAll) {
 				$.ajax( {
 					url: '/api/_autohost/action',
 					dataType: 'json',

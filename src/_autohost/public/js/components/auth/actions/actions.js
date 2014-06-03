@@ -6,41 +6,53 @@ define( [
 		'api',
 		'util',
 		'components/eventedComponent',
-		'jsx!auth/actions/action'
+		'jsx!auth/actions/action',
+		'jsx!auth/actionCategorySelect'
 	], 
-	function( $, _, React, Api, Util, Evented, Action ) {
+	function( $, _, React, Api, Util, Evented, Action, CategorySelect ) {
 		return React.createClass({
 			mixins: [Evented],
 			getInitialState: function() {
 				return { 
-					actions: {},
+					actions: [],
 					newRoleName: '',
 					selected: ''
 				};
 			},
 			componentWillMount: function() {
-				this.updateOn( 'api', 'action.list', 'actions' );
-				Api.getActions();
+				this.updateOn( 'api', 'action.categoryList', 'actions' );
+			},
+			componentWillUpdate: function() {
+				console.log(this.state.actions);
 			},
 			render: function() {
 				var self = this;
-				var actions = _.map( this.state.actions, function( actions, resource ) {
-					var items = _.map( _.sortBy( actions, 'name' ), function( action ) {
-						return 	<Action name={ action.name } roles={ action.roles } />
-					}.bind( this ) );
-					return (<table id='action-list' className='table table-condensed table-striped table-hover'> 
-								<thead>
-									<th>{resource}</th>
-								</thead>
-								<tbody>
-									{items}
-								</tbody>
-							</table>
-					);
+				var items = _.map( _.sortBy( this.state.actions, 'name' ), function( action ) {
+					return 	<Action name={ action.name } roles={ action.roles } />
 				}.bind( this ) );
+				// return (<table id='action-list' className='table table-condensed table-striped table-hover'> 
+				// 			<thead>
+				// 				<th>{resource}</th>
+				// 			</thead>
+				// 			<tbody>
+				// 				{items}
+				// 			</tbody>
+				// 		</table>
+				// );
 				return (
 					<div>
-						{actions}
+						<div className="row">
+							<div>
+								<CategorySelect/>
+							</div>
+						</div>
+						<div>
+						<table id='action-list' className='table table-condensed table-striped table-hover'> 
+						<tbody>
+							{items}
+						</tbody>
+						</table>
+						</div>
 					</div>
 				);
 			}
