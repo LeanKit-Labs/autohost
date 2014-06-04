@@ -34,7 +34,11 @@ module.exports = function( host ) {
 				path: 'action',
 				handle: function( envelope ) {
 					if( host.authorizer && host.authorizer.getActionList ) {
-						host.authorizer.getActionList(512)
+						var pageSize = 20;
+						if (envelope.params.getAll) {
+							pageSize = 16384;
+						}
+						host.authorizer.getActionList(pageSize)
 							.then( null, function( err ) {
 								console.log( err );
 							} )
