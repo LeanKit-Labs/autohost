@@ -18,7 +18,6 @@ define( [
 			},
 			actionFilterChanged: function(e) {
 				var category = e.currentTarget.value;
-				console.log('sending ' + this.state.actions[category]);
 				this.publish('api', 'action.categoryList', {value: this.state.actions[category]});
 			},
 			componentWillMount: function() {
@@ -30,6 +29,7 @@ define( [
 				var categoryOptions = _.map(categories, function(category) {
 					return <option>{category}</option>;
 				});
+				categoryOptions.unshift(<option>(none)</option>);
 				return (
 					<div className="row">
 						<div className="smalll-3 columns">Resources:</div>

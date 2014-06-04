@@ -23,22 +23,13 @@ define( [
 				this.updateOn( 'api', 'action.categoryList', 'actions' );
 			},
 			componentWillUpdate: function() {
-				console.log(this.state.actions);
+				//console.log(this.state.actions);
 			},
 			render: function() {
 				var self = this;
 				var items = _.map( _.sortBy( this.state.actions, 'name' ), function( action ) {
 					return 	<Action name={ action.name } roles={ action.roles } />
 				}.bind( this ) );
-				// return (<table id='action-list' className='table table-condensed table-striped table-hover'> 
-				// 			<thead>
-				// 				<th>{resource}</th>
-				// 			</thead>
-				// 			<tbody>
-				// 				{items}
-				// 			</tbody>
-				// 		</table>
-				// );
 				return (
 					<div>
 						<div className="row">

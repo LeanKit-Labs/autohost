@@ -41,6 +41,11 @@ define( [
 					Util.disable( '#user-role-list input[type="checkbox"]' );
 					Util.uncheck( '#user-role-list input[type="checkbox"]' );
 				}, this );
+
+				this.subscribeTo( 'api', 'action.categoryList', function(data){
+					this.state.selectedActionRoles = [];
+					this.setState( this.state );
+				} );
 			},
 			changed: function( e ) {
 				var role = e.target.id,

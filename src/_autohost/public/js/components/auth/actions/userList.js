@@ -48,6 +48,10 @@ define( [
 					this.state.selectedActionRoles = _.without( this.state.selectedActionRoles, data.role );
 					this.setState( this.state );
 				} );
+				this.subscribeTo( 'api', 'action.categoryList', function(data){
+					this.state.selectedActionRoles = [];
+					this.setState( this.state );
+				} );
 			},
 			render: function() {
 				var self = this;
