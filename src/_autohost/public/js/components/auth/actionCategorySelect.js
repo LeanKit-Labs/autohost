@@ -35,7 +35,7 @@ define( [
 
 				this.subscribeTo( 'actions', 'actions.filter', function( data ) {
 					var actionRoleList = {};
-					var categories = _.keys(this.state.filteredActions);
+					var categories = _.keys(this.state.actions);
 					_.forEach(categories, function(actionCat) {
 						_.forEach(this.state.actions[actionCat], function(action) {
 							var roleExists = _.any(action.roles, function(role) {

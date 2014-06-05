@@ -18,7 +18,7 @@ define( [
 				};
 			},
 			componentWillMount: function() {
-				this.updateOn( 'api', 'action.categoryList.users', 'actions' );
+				this.updateOn( 'api', 'action.categoryList.roles', 'actions' );
 
 				this.subscribeTo( 'roles', 'role.selected', function( data ) {
 					this.state.selectedRole = data.role;
@@ -34,16 +34,6 @@ define( [
 					Util.uncheck( '#role-action-list input[type="checkbox"]' );
 					this.publish( 'actions', 'actions.unfilter', {} );
 				}, this );
-			},
-			changed: function( e ) {
-				var action = this.getActionByName( e.target.id );
-				if( e.target.checked ) {
-					action.roles.push( this.state.selectedRole );
-				} else {
-					action.roles = _.without( action.roles, this.state.selectedRole );
-				}
-				Api.setActionRoles( e.target.id, action.roles );
-				this.setState( this.state );
 			},
 			getActionByName: function( actionName ) {
 				return _.find( _.flatten( _.map( this.state.actions, function( x ) { return x; } ) ), function( x ) { return x.id == actionName; } );
