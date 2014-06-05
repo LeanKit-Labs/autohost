@@ -42,7 +42,6 @@ define( [
 				return _.find( _.flatten( _.map( this.state.actions, function( x ) { return x; } ) ), function( x ) { return x.id == actionName; } );
 			},
 			render: function() {
-				var self = this;
 				return (
 					<div>
 						<div className="row">

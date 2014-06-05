@@ -55,7 +55,6 @@ define( [
 					this.setState( this.state );
 				});
 				this.subscribeTo( 'actions', 'actions.unfilter', function( data ) {
-					console.log('got actions.unfilter');
 					this.state.selectedCategory = null;
 					this.state.selectedRoles = null;				
 					this.state.filteredActions = this.state.actions;
@@ -68,7 +67,6 @@ define( [
 				var categoryOptions = _.map(categories, function(category) {
 					var catItemCount = this.state.filteredActions[category].length;
 					if (!selCat) {
-						console.log('setting selCat to ' + category);
 						selCat = category;
 					}
 					if (selCat == category) {

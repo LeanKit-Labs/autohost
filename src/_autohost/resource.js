@@ -36,6 +36,8 @@ module.exports = function( host ) {
 					if( host.authorizer && host.authorizer.getActionList ) {
 						var pageSize = 20;
 						if (envelope.params.getAll) {
+							//this should really get all pages until done
+							//instead of hardcoding a ridicously large page size
 							pageSize = 16384;
 						}
 						host.authorizer.getActionList(pageSize)

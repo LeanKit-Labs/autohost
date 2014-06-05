@@ -17,7 +17,6 @@ define( [
 					return { data: { } };
 				},
 				switchTabs: function(e) {
-					console.log('publishing actions.unfilter');
 					this.publish('actions', 'actions.unfilter', {});
 				},
 				render: function() {
