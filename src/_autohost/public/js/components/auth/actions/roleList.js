@@ -42,7 +42,7 @@ define( [
 					Util.uncheck( '#user-role-list input[type="checkbox"]' );
 				}, this );
 
-				this.subscribeTo( 'api', 'action.categoryList', function(data){
+				this.subscribeTo( 'api', 'action.categoryList.actions', function(data){
 					this.state.selectedActionRoles = [];
 					this.setState( this.state );
 				} );

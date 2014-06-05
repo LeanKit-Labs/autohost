@@ -20,29 +20,23 @@ define( [
 				};
 			},
 			componentWillMount: function() {
-				this.updateOn( 'api', 'action.categoryList', 'actions' );
+				this.subscribeTo( 'api', 'action.categoryList.actions', function( data ) {
+					this.state.actions = data.value;
+					this.setState( this.state );
+				});
+				//this.updateOn( 'api', 'action.categoryList.actions', 'actions' );
 			},
 			componentWillUpdate: function() {
 				//console.log(this.state.actions);
 			},
 			render: function() {
 				var self = this;
-				var items = _.map( _.sortBy( this.state.actions, 'name' ), function( action ) {
-					return 	<Action name={ action.name } roles={ action.roles } />
-				}.bind( this ) );
 				return (
 					<div>
 						<div className="row">
 							<div>
-								<CategorySelect/>
+								<CategorySelect tabName="actions"/>
 							</div>
-						</div>
-						<div>
-						<table id='action-list' className='table table-condensed table-striped table-hover'> 
-						<tbody>
-							{items}
-						</tbody>
-						</table>
 						</div>
 					</div>
 				);

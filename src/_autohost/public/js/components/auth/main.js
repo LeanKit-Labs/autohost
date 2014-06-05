@@ -3,17 +3,22 @@ define( [
 		'jquery', 
 		'lodash',
 		'react',
+		'postal',
 		'components/eventedComponent',
 		'jsx!auth/users/user-main',
 		'jsx!auth/roles/roles-main',
 		'jsx!auth/actions/actions-main'
 	], 
-	function( $, _, React, Evented, Users, Roles, Actions ) {
+	function( $, _, React, Postal, Evented, Users, Roles, Actions ) {
 		return function() {
 			var App = React.createClass({
 				mixins: [Evented],
 				getInitialState: function() {
 					return { data: { } };
+				},
+				switchTabs: function(e) {
+					console.log('publishing actions.unfilter');
+					this.publish('actions', 'actions.unfilter', {});
 				},
 				render: function() {
 					return (
@@ -27,13 +32,13 @@ define( [
 							<div className='topnav navbar navbar-default'>
 								<ul className='nav nav-pills'>
 									<li>
-										<a href='#panel-roles' data-toggle='pill'>Roles</a>
+										<a href='#panel-roles' data-toggle='pill' onClick={this.switchTabs}>Roles</a>
 									</li>
 									<li>
-										<a href='#panel-users' data-toggle='pill'>Users</a>
+										<a href='#panel-users' data-toggle='pill' onClick={this.switchTabs}>Users</a>
 									</li>
 									<li className='active'>
-										<a href='#panel-actions' data-toggle='pill'>Actions</a>
+										<a href='#panel-actions' data-toggle='pill' onClick={this.switchTabs}>Actions</a>
 									</li>
 								</ul>
 							</div>
