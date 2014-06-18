@@ -13,6 +13,7 @@ var http = require( 'http' ),
 	mkdirp = require( 'mkdirp' ),
 	Monologue = require( 'monologue.js' )( _ ),
 	watchTree = require( 'fs-watch-tree' ).watchTree,
+	SocketStream = require( './socketStream' ),
 	metrics = require( 'cluster-metrics' );
 
 module.exports = function( config ) {
@@ -22,7 +23,7 @@ module.exports = function( config ) {
 		this.clients = [];
 		this.clients.lookup = {};
 		this.compilers = {};
-		this.middleware = {};
+		this.middleware = [];
 		this.config = config || {};
 		this.topics = {};
 		this.resources = {};
@@ -40,7 +41,7 @@ module.exports = function( config ) {
 	};
 
 	Host.prototype.addMiddleware = function( filter, middleware ) {
-		this.middleware[ filter ] = middleware;
+		this.middleware.push( { filter: filter, handler: middleware } );
 		if( this.app ) {
 			this.app.use( filter, middleware );
 		}
@@ -87,6 +88,7 @@ module.exports = function( config ) {
 					params: {},
 					files: req.files,
 					user: req.user,
+					responseStream: res,
 					reply: function( envelope ) {
 						var code = envelope.statusCode || 200;
 						res.send( code, envelope.data );
@@ -125,7 +127,6 @@ module.exports = function( config ) {
 					} else {
 						respond();
 					}
-				
 				} );
 			} else {
 				respond();
@@ -144,7 +145,8 @@ module.exports = function( config ) {
 					path: message.topic,
 					reply: function( envelope ) {
 						socket.publish( message.replyTo, envelope );
-					}
+					},
+					responseStream: new SocketStream( message.replyTo, socket )
 				};
 				handle.apply( resource, [ envelope ] );
 			};
@@ -177,6 +179,14 @@ module.exports = function( config ) {
 		mkdirp( tmp );
 
 		this.app = express();
+		this.app.use( '/', function( req, res, next ) {
+			var timerKey = [ req.method.toUpperCase(), req.url, 'timer' ].join( ' ' );
+			metrics.timer( timerKey ).start();
+			res.on( 'finish', function() { 
+				metrics.timer( timerKey ).record();
+			} );
+			next();
+		} );
 		this.app.use( '/api', function( req, res, next ) {
 			if( req.method == 'OPTIONS' || req.method == 'options' ) {
 				res.send( 200, this.resources );
@@ -199,8 +209,8 @@ module.exports = function( config ) {
 		
 		this.addAuthentication();
 		
-		_.each( this.middleware, function( op, path ) {
-			self.app.use( path, op );
+		_.each( this.middleware, function( mw ) {
+			self.app.use( mw.filter, mw.handler );
 		} );
 
 		var startServer = function() {
@@ -234,8 +244,8 @@ module.exports = function( config ) {
 
 	Host.prototype.registerRoute = function( url, verb, callback ) {
 		verb = verb.toLowerCase();
+		verb = verb == 'all' || verb == 'any' ? 'use' : verb;
 		var routes = this.app.routes[ verb ],
-			timer = [ PREFIX, url, verb, 'timer' ].join( '.' ),
 			errors = [ PREFIX, url, verb, 'errors' ].join( '.' );
 		if( routes ) {
 			var index = routes.indexOf( url );
@@ -248,9 +258,7 @@ module.exports = function( config ) {
 		if( this.app ) {
 			this.app[ verb ]( url, function( req, res ) {
 				try {
-					metrics.timer( timer ).start();
 					callback( req, res );
-					metrics.timer( timer ).record();
 				} catch ( err ) {
 					metrics.meter( errors ).record();
 					console.log( 'error on route, "' + url + '" verb "' + verb + '"', err );
