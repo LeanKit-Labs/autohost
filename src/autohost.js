@@ -82,6 +82,7 @@ module.exports = function( config ) {
 		this.registerRoute( url, verb, function( req, res ) {
 			var respond = function() {
 				var envelope = {
+					context: req.context,
 					data: req.body,
 					path: req.url,
 					headers: req.headers,
