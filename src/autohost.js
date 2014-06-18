@@ -11,6 +11,7 @@ var http = require( 'http' ),
 	net = require ( 'net' ),
 	_ = require( 'lodash' ),
 	mkdirp = require( 'mkdirp' ),
+	request = require( 'request' ),
 	Monologue = require( 'monologue.js' )( _ ),
 	watchTree = require( 'fs-watch-tree' ).watchTree,
 	SocketStream = require( './socketStream' ),
@@ -90,6 +91,9 @@ module.exports = function( config ) {
 					files: req.files,
 					user: req.user,
 					responseStream: res,
+					forwardTo: function( options ) {
+						return req.pipe( request( options ) );
+					},
 					reply: function( envelope ) {
 						var code = envelope.statusCode || 200;
 						res.send( code, envelope.data );
