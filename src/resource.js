@@ -64,7 +64,7 @@ module.exports = function( Host ) {
 		_.each( resource.actions, function( action ) {
 			var handle = action.handle,
 				topic = name + ( ( ( action.topic || '' ) == '' ) ? '' : '.' + action.topic ),
-				url = self.buildUrl( prefix, name, ( action.path || '' ) ),
+				url = action.url || self.buildUrl( prefix, name, ( action.path || '' ) ),
 				verb = action.verb,
 				actionName = [ name, action.alias ].join( '.' );
 

@@ -224,7 +224,7 @@ module.exports = function( config ) {
 		this.app.use( this.app.router );
 		this.registerPath( '/', public );
 		this.loadResources( resources ).done(function () {
-			this.processResource( 'api', require( './_autohost/resource.js' )( this ), path.resolve( __dirname, './_autohost' ) );
+			this.processResource( ( config.apiPrefix || 'api' ), require( './_autohost/resource.js' )( this ), path.resolve( __dirname, './_autohost' ) );
 			if( this.authorizer ) {
 				var list = [];
 				_.each( this.actions, function( actions, resource ) {
