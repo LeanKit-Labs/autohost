@@ -244,7 +244,7 @@ module.exports = function( config ) {
 
 	Host.prototype.registerRoute = function( url, verb, callback ) {
 		verb = verb.toLowerCase();
-		verb = verb == 'all' || verb == 'any' ? 'use' : verb;
+		verb = verb == 'all' || verb == 'any' ? 'all' : verb;
 		var routes = this.app.routes[ verb ],
 			errors = [ PREFIX, url, verb, 'errors' ].join( '.' );
 		if( routes ) {
