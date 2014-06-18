@@ -314,6 +314,7 @@ module.exports = function( config ) {
 	require( './resource.js' )( Host );
 	require( './websockets.js' )( Host );
 	require( './socketio.js' )( Host );
+	require( './resolver.js' )( Host );
 
 	Monologue.mixin( Host );
 	_.bindAll( Host );
