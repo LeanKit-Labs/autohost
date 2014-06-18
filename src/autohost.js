@@ -185,6 +185,7 @@ module.exports = function( config ) {
 
 		this.app = express();
 		this.app.use( '/', function( req, res, next ) {
+			req.context = {};
 			var timerKey = [ req.method.toUpperCase(), req.url, 'timer' ].join( ' ' );
 			metrics.timer( timerKey ).start();
 			res.on( 'finish', function() { 
