@@ -31,8 +31,8 @@ module.exports = function( config ) {
 		this.actions = {};
 		this.metrics = metrics;
 		this.appName = this.config.appName || 'autohost';
-		this.request = request.defaults( { jar: true } );
 		_.bindAll( this );
+		this.request = request.defaults( { jar: true } );
 	};
 
 	Host.prototype.addCompiler = function( extension, callback ) {
@@ -94,7 +94,7 @@ module.exports = function( config ) {
 					responseStream: res,
 					forwardTo: function( options ) {
 						return req.pipe( this.request( options ) );
-					},
+					}.bind( this ),
 					reply: function( envelope ) {
 						var code = envelope.statusCode || 200;
 						res.send( code, envelope.data );
