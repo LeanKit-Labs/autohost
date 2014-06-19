@@ -31,6 +31,7 @@ module.exports = function( config ) {
 		this.actions = {};
 		this.metrics = metrics;
 		this.appName = this.config.appName || 'autohost';
+		this.request = request.defaults( { jar: true } );
 		_.bindAll( this );
 	};
 
@@ -92,7 +93,7 @@ module.exports = function( config ) {
 					user: req.user,
 					responseStream: res,
 					forwardTo: function( options ) {
-						return req.pipe( request( options ) );
+						return req.pipe( this.request( options ) );
 					},
 					reply: function( envelope ) {
 						var code = envelope.statusCode || 200;
@@ -121,7 +122,7 @@ module.exports = function( config ) {
 					envelope.params[ key ] = val;
 				}
 				handle.apply( resource, [ envelope ] );
-			};
+			}.bind( this );
 
 			if( this.authorizer ) {
 				this.authorizer.getRolesFor( action, function( err, roles ) {
