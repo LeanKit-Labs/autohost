@@ -28,7 +28,7 @@ module.exports = function( Host ) {
 		try {
 			delete require.cache[ resourcePath ];
 			var mod = require( resourcePath )( this );
-			this.processResource( 'api', mod, path.dirname( resourcePath ) );
+			this.processResource( this.config.apiPrefix, mod, path.dirname( resourcePath ) );
 		} catch (err) {
 			console.log( 'Error loading resource module:', err, err.stack );
 		}
@@ -55,6 +55,8 @@ module.exports = function( Host ) {
 				topics: {}
 			},
 			actions = this.actions[ name ] = [];
+
+		console.log( 'resource with prefix', prefix );
 
 		if( resource.resources && resource.resources != '' ) {
 			var directory = this.buildPath( [ basePath, resource.resources ] );

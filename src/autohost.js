@@ -25,7 +25,7 @@ module.exports = function( config ) {
 		this.clients.lookup = {};
 		this.compilers = {};
 		this.middleware = [];
-		this.config = config || {};
+		this.config = _.defaults( config, { apiPrefix: '/api' } );
 		this.topics = {};
 		this.resources = {};
 		this.actions = {};
@@ -196,6 +196,7 @@ module.exports = function( config ) {
 		} );
 		this.app.use( '/api', function( req, res, next ) {
 			if( req.method == 'OPTIONS' || req.method == 'options' ) {
+				this.resources.prefix = this.config.apiPrefix;
 				res.send( 200, this.resources );
 			} else {
 				next();
@@ -242,7 +243,7 @@ module.exports = function( config ) {
 		this.app.use( this.app.router );
 		this.registerPath( '/', public );
 		this.loadResources( resources ).done(function () {
-			this.processResource( ( config.apiPrefix || 'api' ), require( './_autohost/resource.js' )( this ), path.resolve( __dirname, './_autohost' ) );
+			this.processResource( this.config.apiPrefix, require( './_autohost/resource.js' )( this ), path.resolve( __dirname, './_autohost' ) );
 			if( this.authorizer ) {
 				var list = [];
 				_.each( this.actions, function( actions, resource ) {
@@ -257,7 +258,6 @@ module.exports = function( config ) {
 				startServer();
 			}
 		}.bind(this));
-
 	};
 
 	Host.prototype.registerRoute = function( url, verb, callback ) {

@@ -1,10 +1,20 @@
 define([ 'jquery', 'postal' ],
 	function( $, postal ) {
-		var channel = postal.channel( 'api' );
+		var channel = postal.channel( 'api' ),
+			prefix = '/api';
+
+		$.ajax( {
+			url: '/api',
+			method: 'OPTIONS',
+			success: function( data ) {
+				prefix = data.prefix;
+			}
+		} );
+
 		return {
 			getResources: function() {
 				$.ajax( {
-					url: '/api/_autohost/resource',
+					url: prefix +'/_autohost/resource',
 					dataType: 'json',
 					method: 'GET',
 					success: function( data ) {
@@ -17,7 +27,7 @@ define([ 'jquery', 'postal' ],
 			},
 			getUsers: function() {
 				$.ajax( {
-					url: '/api/_autohost/user',
+					url: prefix +'/_autohost/user',
 					dataType: 'json',
 					method: 'GET',
 					success: function( data ) {
@@ -30,7 +40,7 @@ define([ 'jquery', 'postal' ],
 			},
 			getRoles: function() {
 				$.ajax( {
-					url: '/api/_autohost/role',
+					url: prefix +'/_autohost/role',
 					dataType: 'json',
 					method: 'GET',
 					success: function( data ) {
@@ -43,7 +53,7 @@ define([ 'jquery', 'postal' ],
 			},
 			getActions: function() {
 				$.ajax( {
-					url: '/api/_autohost/action',
+					url: prefix +'/_autohost/action',
 					dataType: 'json',
 					method: 'GET',
 					success: function( data ) {
@@ -56,7 +66,7 @@ define([ 'jquery', 'postal' ],
 			},
 			addRole: function( role ) {
 				$.ajax( {
-					url: '/api/_autohost/role/' + role,
+					url: prefix +'/_autohost/role/' + role,
 					dataType: 'text',
 					method: 'POST',
 					success: function( data ) {
@@ -70,7 +80,7 @@ define([ 'jquery', 'postal' ],
 			},
 			removeRole: function( role ) {
 				$.ajax( {
-					url: '/api/_autohost/role/' + role,
+					url: prefix +'/_autohost/role/' + role,
 					dataType: 'text',
 					method: 'DELETE',
 					success: function( data ) {
@@ -84,7 +94,7 @@ define([ 'jquery', 'postal' ],
 			},
 			createUser: function( user, password ) {
 				$.ajax( {
-					url: '/api/_autohost/user/' + user,
+					url: prefix +'/_autohost/user/' + user,
 					dataType: 'json',
 					method: 'POST',
 					data: { password: password },
@@ -99,7 +109,7 @@ define([ 'jquery', 'postal' ],
 			},
 			enableUser: function( user ) {
 				$.ajax( {
-					url: '/api/_autohost/user/' + user,
+					url: prefix +'/_autohost/user/' + user,
 					dataType: 'text',
 					method: 'PUT',
 					success: function( data ) {
@@ -113,7 +123,7 @@ define([ 'jquery', 'postal' ],
 			},
 			disableUser: function( user ) {
 				$.ajax( {
-					url: '/api/_autohost/user/' + user,
+					url: prefix +'/_autohost/user/' + user,
 					dataType: 'text',
 					method: 'DELETE',
 					success: function( data ) {
@@ -127,7 +137,7 @@ define([ 'jquery', 'postal' ],
 			},
 			setActionRoles: function( action, roles ) {
 				$.ajax( {
-					url: '/api/_autohost/action/' + action + '/role',
+					url: prefix +'/_autohost/action/' + action + '/role',
 					dataType: 'json',
 					data: { roles: roles },
 					method: 'PUT',
@@ -147,7 +157,7 @@ define([ 'jquery', 'postal' ],
 			},
 			addActionRoles: function( action, roles ) {
 				$.ajax( {
-					url: '/api/_autohost/action/' + action + '/role',
+					url: prefix +'/_autohost/action/' + action + '/role',
 					dataType: 'json',
 					data: { roles: roles },
 					method: 'PATCH',
@@ -167,7 +177,7 @@ define([ 'jquery', 'postal' ],
 			},
 			removeActionRoles: function( action, roles ) {
 				$.ajax( {
-					url: '/api/_autohost/action/' + action + '/role',
+					url: prefix +'/_autohost/action/' + action + '/role',
 					dataType: 'json',
 					data: { roles: roles },
 					method: 'DELETE',
@@ -187,7 +197,7 @@ define([ 'jquery', 'postal' ],
 			},
 			addUserRoles: function( user, roles ) {
 				$.ajax( {
-					url: '/api/_autohost/user/' + user + '/role',
+					url: prefix +'/_autohost/user/' + user + '/role',
 					dataType: 'json',
 					data: { roles: roles },
 					method: 'PATCH',
@@ -207,7 +217,7 @@ define([ 'jquery', 'postal' ],
 			},
 			removeUserRoles: function( user, roles ) {
 				$.ajax( {
-					url: '/api/_autohost/user/' + user + '/role',
+					url: prefix +'/_autohost/user/' + user + '/role',
 					dataType: 'json',
 					data: { roles: roles },
 					method: 'DELETE',

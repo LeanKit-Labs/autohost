@@ -27,10 +27,12 @@ define( [
 					tabIndex = 0;
 
 				var resourceList = _.map( this.state.resources, function( resource, name ) {
-					var panelName = '#panel-' + name;
-					var className = tabIndex ? '' : 'active';
-					tabIndex ++;
-					return <li className={className}><a href={panelName} data-toggle='pill'>{name}</a></li>;
+					if( _.isObject( resource ) ) {
+						var panelName = '#panel-' + name;
+						var className = tabIndex ? '' : 'active';
+						tabIndex ++;
+						return <li className={className}><a href={panelName} data-toggle='pill'>{name}</a></li>;
+					}
 				} );
 				tabIndex = 0;
 				var list = _.map( this.state.resources, function( resource, name ) {
