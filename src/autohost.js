@@ -200,18 +200,29 @@ module.exports = function( config ) {
 				next();
 			}
 		}.bind( this ) );
-		this.app.use( express.cookieParser() );
-		this.app.use( express.bodyParser( {
-			uploadDir: tmp,
-			keepExtensions: true
-		} ) );
-		this.app.use( express.session( { secret: 'authostthing' } ) );
 
-		this.app.use( function( req, res, next ) {
-			res.header( 'Access-Control-Allow-Origin', '*' );
-			res.header( 'Access-Control-Allow-Headers', 'X-Requested-With' );
-			next();
-		} );
+		if( !config.noCookies ) {
+			this.app.use( express.cookieParser() );
+		}
+
+		if( !config.noBody ) {
+			this.app.use( express.bodyParser( {
+				uploadDir: tmp,
+				keepExtensions: true
+			} ) );
+		}
+
+		if( !config.noSession ) {
+			this.app.use( express.session( { secret: config.sessionSecret || 'authostthing' } ) );
+		}
+
+		if( !config.noCrossOrigin ) {
+			this.app.use( function( req, res, next ) {
+				res.header( 'Access-Control-Allow-Origin', '*' );
+				res.header( 'Access-Control-Allow-Headers', 'X-Requested-With' );
+				next();
+			} );
+		}
 		
 		this.addAuthentication();
 		

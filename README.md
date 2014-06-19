@@ -34,7 +34,11 @@ The object literal follows the format:
 	port: 8800, // what port to host at, default shown
 	allowedOrigin: 'leankit.com', // used to filter incoming web socket connections based on origin
 	websockets: true, // enables websockets
-	socketIO: true // enables socket.io
+	socketIO: true, // enables socket.io,
+	noSession: false, // disables sessions
+	noCookie: false, // disables cookies
+	noBody: false, // disables body parsing
+	noCrossOrigin: false // disables cross origin
 }
 ```
 
