@@ -84,7 +84,7 @@ module.exports = function( config ) {
 			var respond = function() {
 				var envelope = {
 					context: req.context,
-					data: req.body,
+					data: req.body || {},
 					path: req.url,
 					headers: req.headers,
 					params: {},
@@ -278,7 +278,7 @@ module.exports = function( config ) {
 					callback( req, res );
 				} catch ( err ) {
 					metrics.meter( errors ).record();
-					console.log( 'error on route, "' + url + '" verb "' + verb + '"', err );
+					console.log( 'error on route, "' + url + '" verb "' + verb + '"', err.stack );
 				}
 			} );
 		}
