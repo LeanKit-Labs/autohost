@@ -28,9 +28,13 @@ module.exports = function( Host ) {
 		try {
 			delete require.cache[ resourcePath ];
 			var mod = require( resourcePath )( this );
-			this.processResource( this.config.apiPrefix, mod, path.dirname( resourcePath ) );
+			if( mod.name ) {
+				this.processResource( this.config.apiPrefix, mod, path.dirname( resourcePath ) );
+			} else {
+				console.log( 'Skipping resource at', resourcePath, 'no valid metadata provided' );
+			}
 		} catch (err) {
-			console.log( 'Error loading resource module:', err, err.stack );
+			console.log( 'Error loading resource module at', resourcePath, 'with', err.stack );
 		}
 	};
 
