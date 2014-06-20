@@ -28,7 +28,7 @@ module.exports = function( Host ) {
 		try {
 			delete require.cache[ resourcePath ];
 			var mod = require( resourcePath )( this );
-			if( mod.name ) {
+			if( mod && mod.name ) {
 				this.processResource( this.config.apiPrefix, mod, path.dirname( resourcePath ) );
 			} else {
 				console.log( 'Skipping resource at', resourcePath, 'no valid metadata provided' );
