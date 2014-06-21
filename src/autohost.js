@@ -13,7 +13,7 @@ var http = require( 'http' ),
 	mkdirp = require( 'mkdirp' ),
 	request = require( 'request' ),
 	Monologue = require( 'monologue.js' )( _ ),
-	watchTree = require( 'fs-watch-tree' ).watchTree,
+	gaze = require( 'gaze' ),
 	SocketStream = require( './socketStream' ),
 	metrics = require( 'cluster-metrics' );
 
@@ -314,13 +314,12 @@ module.exports = function( config ) {
 		var self = this;
 		if( !fs.existsSync( filePath ) )
 			return;
-		return watchTree( filePath,
-			_.debounce( function( event ) {
-				if( !event.isDirectory() ) {
-					self.loadModule( event.name );
-				}
-			}, 500, true )
-		);
+		return gaze( path.join( filePath, '**/resource.js' ), function( err, watcher ) {
+			this.on( 'changed', function( changed ) {
+				console.log( 'Reloading changed resource', path.basename( path.dirname( changed ) ) );
+				self.loadModule( changed );
+			} );
+		} );
 	};
 
 	require( './passport.js' )( Host );

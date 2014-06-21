@@ -60,8 +60,6 @@ module.exports = function( Host ) {
 			},
 			actions = this.actions[ name ] = [];
 
-		console.log( 'resource with prefix', prefix );
-
 		if( resource.resources && resource.resources != '' ) {
 			var directory = this.buildPath( [ basePath, resource.resources ] );
 			this.registerPath( '/' + name, directory );
