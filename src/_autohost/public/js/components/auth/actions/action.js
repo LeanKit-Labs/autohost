@@ -26,10 +26,15 @@ define( [
 				}
 			},
 			render: function() {
+				var actionElement = <em>{this.props.name}</em>;
+				var rolesIntersection = _.intersection(this.props.roles, this.props.selRoles);
+				if (rolesIntersection && rolesIntersection.length > 0) {
+					actionElement = <em><b>{this.props.name}</b></em>;
+				}
 				return (
 					<tr className='action' key='{this.props.name}' onClick={this.clicked}>
 						<td className='right-align'>
-							<em>{this.props.name}</em>
+							{actionElement}
 						</td>
 					</tr>
 				);

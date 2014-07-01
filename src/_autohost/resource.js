@@ -34,7 +34,13 @@ module.exports = function( host ) {
 				path: 'action',
 				handle: function( envelope ) {
 					if( host.authorizer && host.authorizer.getActionList ) {
-						host.authorizer.getActionList()
+						var pageSize = 20;
+						if (envelope.params.getAll) {
+							//this should really get all pages until done
+							//instead of hardcoding a ridicously large page size
+							pageSize = 16384;
+						}
+						host.authorizer.getActionList(pageSize)
 							.then( null, function( err ) {
 								console.log( err );
 							} )
@@ -63,7 +69,7 @@ module.exports = function( host ) {
 				path: 'user',
 				handle: function( envelope ) {
 					if( host.authorizer && host.authorizer.getUserList ) {
-						host.authorizer.getUserList( function( err, users ) {
+						host.authorizer.getUserList(512, function( err, users ) {
 							if( err ) {
 								envelope.reply( { data: err, statusCode: 500 } );
 							} else {
@@ -85,7 +91,7 @@ module.exports = function( host ) {
 				path: 'role',
 				handle: function( envelope ) {
 					if( host.authorizer && host.authorizer.getRoleList ) {
-						host.authorizer.getRoleList( function( err, roles ) {
+						host.authorizer.getRoleList(512, function( err, roles ) {
 							if( err ) {
 								envelope.reply( { data: err, statusCode: 500 } );
 							} else {
