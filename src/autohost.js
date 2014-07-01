@@ -87,6 +87,7 @@ module.exports = function( config ) {
 					context: req.context,
 					data: req.body || {},
 					path: req.url,
+					cookies: req.cookies,
 					headers: req.headers,
 					params: {},
 					files: req.files,
@@ -147,6 +148,7 @@ module.exports = function( config ) {
 					data: message.data || message,
 					headers: message.headers || [],
 					socket: socket,
+					cookies: socket.cookies,
 					user: socket.user,
 					path: message.topic,
 					reply: function( envelope ) {

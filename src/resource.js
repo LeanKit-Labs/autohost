@@ -26,7 +26,8 @@ module.exports = function( Host ) {
 
 	Host.prototype.loadModule = function( resourcePath ) {
 		try {
-			delete require.cache[ resourcePath ];
+			var key = path.resolve( resourcePath );
+			delete require.cache[ key ];
 			var mod = require( resourcePath )( this );
 			if( mod && mod.name ) {
 				this.processResource( this.config.apiPrefix, mod, path.dirname( resourcePath ) );
