@@ -57,7 +57,7 @@ module.exports = function( Host ) {
 					id: handshake.id || handshake.user || 'anonymous',
 					name: handshake.user || 'anonymous' 
 				};
-
+				socket.cookies = handshake.request.cookies;
 				if( this.authorizer ) {
 					this.authorizer.getUserRoles( socket.user, function( err, roles ) {
 						if ( err ) {

@@ -16,6 +16,8 @@ module.exports = function( Host ) {
 			name: user || 'anonymous' 
 		};
 
+		socket.cookies = request.cookies;
+
 		if( this.authorizer ) {
 			this.authorizer.getUserRoles( socket.user, function( err, roles ) {
 				if ( err ) {

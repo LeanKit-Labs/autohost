@@ -43,7 +43,7 @@ require( [
 		'jsx!resource/main',
 		'socketio'
 	], 
-	function($, React, Bootstrap, Home, io) {		
+	function($, React, Bootstrap, Home, io) {
 		var app = window.app = {};
 		window.React = React;
 		var socket = window.socket = io.connect( '/' );

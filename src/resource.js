@@ -26,11 +26,16 @@ module.exports = function( Host ) {
 
 	Host.prototype.loadModule = function( resourcePath ) {
 		try {
-			delete require.cache[ resourcePath ];
+			var key = path.resolve( resourcePath );
+			delete require.cache[ key ];
 			var mod = require( resourcePath )( this );
-			this.processResource( 'api', mod, path.dirname( resourcePath ) );
+			if( mod && mod.name ) {
+				this.processResource( this.config.apiPrefix, mod, path.dirname( resourcePath ) );
+			} else {
+				console.log( 'Skipping resource at', resourcePath, 'no valid metadata provided' );
+			}
 		} catch (err) {
-			console.log( 'Error loading resource module:', err, err.stack );
+			console.log( 'Error loading resource module at', resourcePath, 'with', err.stack );
 		}
 	};
 
@@ -64,7 +69,7 @@ module.exports = function( Host ) {
 		_.each( resource.actions, function( action ) {
 			var handle = action.handle,
 				topic = name + ( ( ( action.topic || '' ) == '' ) ? '' : '.' + action.topic ),
-				url = self.buildUrl( prefix, name, ( action.path || '' ) ),
+				url = action.url || self.buildUrl( prefix, name, ( action.path || '' ) ),
 				verb = action.verb,
 				actionName = [ name, action.alias ].join( '.' );
 

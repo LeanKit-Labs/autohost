@@ -34,7 +34,12 @@ The object literal follows the format:
 	port: 8800, // what port to host at, default shown
 	allowedOrigin: 'leankit.com', // used to filter incoming web socket connections based on origin
 	websockets: true, // enables websockets
-	socketIO: true // enables socket.io
+	apiPrefix: '/api', // if you MUST, you can change the prefix of resource routes
+	socketIO: true, // enables socket.io,
+	noSession: false, // disables sessions
+	noCookie: false, // disables cookies
+	noBody: false, // disables body parsing
+	noCrossOrigin: false // disables cross origin
 }
 ```
 
@@ -69,6 +74,46 @@ Resources are expected to be simple modules that return a parameterless function
 			}
 		]
 	}
+```
+
+## Envelope
+
+```javascript
+// common properties
+{
+	data: // the request/message body
+	path: // url of the request (minus protocol/domain/port) OR message topic
+	headers: // request/message headers
+	user: // the request/socket user
+	responseStream: // a write stream for streaming a response
+}
+
+// the following properties are only available on HTTP envelopes
+{
+	context: // metadata added by middleware
+	params: // query parameters
+	files: // files supplied in body
+}
+
+// the following properties are only available on Socket envelopes
+{
+	socket: // the socket the message arrived on
+}
+```
+
+### reply( envelope )
+Sends a reply back to the requestor via HTTP or web socket. Response envelope is expected to always have a data property containing the body/reply. HTTP responses can included a statusCode property (otherwise a 200 is assumed).
+
+### replyWithFile( contentType, fileName, fileStream )
+Sends a file as a response.
+
+### forwardTo( opts )
+Forwards the request using the request library and returns the resulting stream. Works for simple proxying.
+
+```javascript
+	envelope.forwardTo( {
+		uri: 'http://myProxy/url'
+	} ).pipe( envelope.responseStream );
 ```
 
 ## Authentication

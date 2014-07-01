@@ -11,8 +11,10 @@ var http = require( 'http' ),
 	net = require ( 'net' ),
 	_ = require( 'lodash' ),
 	mkdirp = require( 'mkdirp' ),
+	request = require( 'request' ),
 	Monologue = require( 'monologue.js' )( _ ),
-	watchTree = require( 'fs-watch-tree' ).watchTree,
+	gaze = require( 'gaze' ),
+	SocketStream = require( './socketStream' ),
 	metrics = require( 'cluster-metrics' );
 
 module.exports = function( config ) {
@@ -22,14 +24,15 @@ module.exports = function( config ) {
 		this.clients = [];
 		this.clients.lookup = {};
 		this.compilers = {};
-		this.middleware = {};
-		this.config = config || {};
+		this.middleware = [];
+		this.config = _.defaults( config, { apiPrefix: '/api' } );
 		this.topics = {};
 		this.resources = {};
 		this.actions = {};
 		this.metrics = metrics;
 		this.appName = this.config.appName || 'autohost';
 		_.bindAll( this );
+		this.request = request.defaults( { jar: true } );
 	};
 
 	Host.prototype.addCompiler = function( extension, callback ) {
@@ -40,7 +43,7 @@ module.exports = function( config ) {
 	};
 
 	Host.prototype.addMiddleware = function( filter, middleware ) {
-		this.middleware[ filter ] = middleware;
+		this.middleware.push( { filter: filter, handler: middleware } );
 		if( this.app ) {
 			this.app.use( filter, middleware );
 		}
@@ -81,22 +84,28 @@ module.exports = function( config ) {
 		this.registerRoute( url, verb, function( req, res ) {
 			var respond = function() {
 				var envelope = {
-					data: req.body,
+					context: req.context,
+					data: req.body || {},
 					path: req.url,
+					cookies: req.cookies,
 					headers: req.headers,
 					params: {},
 					files: req.files,
 					user: req.user,
+					responseStream: res,
+					forwardTo: function( options ) {
+						return req.pipe( this.request( options ) );
+					}.bind( this ),
 					reply: function( envelope ) {
 						var code = envelope.statusCode || 200;
 						res.send( code, envelope.data );
 					},
-					replyWithFile: function(envelope, contentType, sendFileName, sendStream) {
-						res.set({
-							"Content-Disposition": 'attachment; filename="'+sendFileName+'"',
-							"Content-Type": contentType
-						});
-						sendStream.pipe(res);
+					replyWithFile: function( contentType, fileName, fileStream ) {
+						res.set( {
+								'Content-Disposition': 'attachment; filename="' + fileName + '"',
+								'Content-Type': contentType
+							} );
+						fileStream.pipe(res);
 					}
 				};
 				for( var key in req.params ) {
@@ -114,7 +123,7 @@ module.exports = function( config ) {
 					envelope.params[ key ] = val;
 				}
 				handle.apply( resource, [ envelope ] );
-			};
+			}.bind( this );
 
 			if( this.authorizer ) {
 				this.authorizer.getRolesFor( action, function( err, roles ) {
@@ -125,7 +134,6 @@ module.exports = function( config ) {
 					} else {
 						respond();
 					}
-				
 				} );
 			} else {
 				respond();
@@ -140,11 +148,13 @@ module.exports = function( config ) {
 					data: message.data || message,
 					headers: message.headers || [],
 					socket: socket,
+					cookies: socket.cookies,
 					user: socket.user,
 					path: message.topic,
 					reply: function( envelope ) {
 						socket.publish( message.replyTo, envelope );
-					}
+					},
+					responseStream: new SocketStream( message.replyTo, socket )
 				};
 				handle.apply( resource, [ envelope ] );
 			};
@@ -177,30 +187,51 @@ module.exports = function( config ) {
 		mkdirp( tmp );
 
 		this.app = express();
+		this.app.use( '/', function( req, res, next ) {
+			req.context = {};
+			var timerKey = [ req.method.toUpperCase(), req.url, 'timer' ].join( ' ' );
+			metrics.timer( timerKey ).start();
+			res.on( 'finish', function() { 
+				metrics.timer( timerKey ).record();
+			} );
+			next();
+		} );
 		this.app.use( '/api', function( req, res, next ) {
 			if( req.method == 'OPTIONS' || req.method == 'options' ) {
+				this.resources.prefix = this.config.apiPrefix;
 				res.send( 200, this.resources );
 			} else {
 				next();
 			}
 		}.bind( this ) );
-		this.app.use( express.cookieParser() );
-		this.app.use( express.bodyParser( {
-			uploadDir: tmp,
-			keepExtensions: true
-		} ) );
-		this.app.use( express.session( { secret: 'authostthing' } ) );
 
-		this.app.use( function( req, res, next ) {
-			res.header( 'Access-Control-Allow-Origin', '*' );
-			res.header( 'Access-Control-Allow-Headers', 'X-Requested-With' );
-			next();
-		} );
+		if( !config.noCookies ) {
+			this.app.use( express.cookieParser() );
+		}
+
+		if( !config.noBody ) {
+			this.app.use( express.bodyParser( {
+				uploadDir: tmp,
+				keepExtensions: true
+			} ) );
+		}
+
+		if( !config.noSession ) {
+			this.app.use( express.session( { secret: config.sessionSecret || 'authostthing' } ) );
+		}
+
+		if( !config.noCrossOrigin ) {
+			this.app.use( function( req, res, next ) {
+				res.header( 'Access-Control-Allow-Origin', '*' );
+				res.header( 'Access-Control-Allow-Headers', 'X-Requested-With' );
+				next();
+			} );
+		}
 		
 		this.addAuthentication();
 		
-		_.each( this.middleware, function( op, path ) {
-			self.app.use( path, op );
+		_.each( this.middleware, function( mw ) {
+			self.app.use( mw.filter, mw.handler );
 		} );
 
 		var startServer = function() {
@@ -214,7 +245,7 @@ module.exports = function( config ) {
 		this.app.use( this.app.router );
 		this.registerPath( '/', public );
 		this.loadResources( resources ).done(function () {
-			this.processResource( 'api', require( './_autohost/resource.js' )( this ), path.resolve( __dirname, './_autohost' ) );
+			this.processResource( this.config.apiPrefix, require( './_autohost/resource.js' )( this ), path.resolve( __dirname, './_autohost' ) );
 			if( this.authorizer ) {
 				var list = [];
 				_.each( this.actions, function( actions, resource ) {
@@ -229,13 +260,12 @@ module.exports = function( config ) {
 				startServer();
 			}
 		}.bind(this));
-
 	};
 
 	Host.prototype.registerRoute = function( url, verb, callback ) {
 		verb = verb.toLowerCase();
+		verb = verb == 'all' || verb == 'any' ? 'all' : verb;
 		var routes = this.app.routes[ verb ],
-			timer = [ PREFIX, url, verb, 'timer' ].join( '.' ),
 			errors = [ PREFIX, url, verb, 'errors' ].join( '.' );
 		if( routes ) {
 			var index = routes.indexOf( url );
@@ -248,12 +278,10 @@ module.exports = function( config ) {
 		if( this.app ) {
 			this.app[ verb ]( url, function( req, res ) {
 				try {
-					metrics.timer( timer ).start();
 					callback( req, res );
-					metrics.timer( timer ).record();
 				} catch ( err ) {
 					metrics.meter( errors ).record();
-					console.log( 'error on route, "' + url + '" verb "' + verb + '"', err );
+					console.log( 'error on route, "' + url + '" verb "' + verb + '"', err.stack );
 				}
 			} );
 		}
@@ -288,19 +316,19 @@ module.exports = function( config ) {
 		var self = this;
 		if( !fs.existsSync( filePath ) )
 			return;
-		return watchTree( filePath,
-			_.debounce( function( event ) {
-				if( !event.isDirectory() ) {
-					self.loadModule( event.name );
-				}
-			}, 500, true )
-		);
+		return gaze( path.join( filePath, '**/resource.js' ), function( err, watcher ) {
+			this.on( 'changed', function( changed ) {
+				console.log( 'Reloading changed resource', path.basename( path.dirname( changed ) ) );
+				self.loadModule( changed );
+			} );
+		} );
 	};
 
 	require( './passport.js' )( Host );
 	require( './resource.js' )( Host );
 	require( './websockets.js' )( Host );
 	require( './socketio.js' )( Host );
+	require( './resolver.js' )( Host );
 
 	Monologue.mixin( Host );
 	_.bindAll( Host );
