@@ -1,6 +1,6 @@
 {
   "name": "autohost",
-  "version": "0.1.30",
+  "version": "0.1.31",
   "description": "Resource-driven http server",
   "main": "src/autohost.js",
   "author": "Alex Robson",
@@ -18,13 +18,11 @@
   "dependencies": {
     "cluster-metrics": "~0.0.2",
     "express": "~3.4.8",
-    "laters": "~0.0.3",
     "lodash": "~2.4.1",
     "mkdirp": "~0.3.5",
     "monologue.js": "~0.1.4",
     "passport": "~0.2.0",
     "postal": "~0.9.0-rc1",
-    "semver": "~2.2.1",
     "socket.io": "~0.9.16",
     "websocket": "git://github.com/arobson/websocket-node.git",
     "when": "~3.1.0",

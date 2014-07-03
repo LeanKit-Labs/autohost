@@ -4,7 +4,6 @@ var _ = require( 'lodash' );
 var config = require( 'configya' )();
 require( 'autohost-riak-auth' )( host, config )
 	.then( function( provider ) {
-		console.log( provider );
 		host.init( {
 			port: 4041,
 			resources: './demo/resource',
