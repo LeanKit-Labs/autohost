@@ -184,7 +184,7 @@ module.exports = function( config ) {
 			public = path.resolve( cwd, ( this.config.static || './public' ) ),
 			resources = path.resolve( cwd, ( this.config.resources || './resource' ) );
 
-		mkdirp( tmp );
+		//mkdirp( tmp );
 
 		this.app = express();
 		this.app.use( '/', function( req, res, next ) {

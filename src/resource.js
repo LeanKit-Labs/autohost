@@ -1,27 +1,27 @@
 var _ = require( 'lodash' ),
 	path = require( 'path' ),
 	when = require('when'),
-	fs = require( 'fs' );
-
+	nodeWhen = require( 'when/node' ),
+	fs = require( 'fs' ),
+	readDirectory = nodeWhen.lift( fs.readdir );
 
 module.exports = function( Host ) {
 
 	Host.prototype.getResources = function( filePath, onList ) {
-		var self = this;
 		var list = [];
-		var onDirectory = function( err, contents ) {
-			if( !err && contents.length > 0 ) {
-				qualified = [];
-				_.each( contents, function( item ) {
-					var resourcePath = self.buildPath( [ filePath, item, 'resource.js' ] );
-					if( fs.existsSync( resourcePath ) ) {
-						list.push( resourcePath );
-					}
-				} );
-				onList( list );
-			}
-		};
-		fs.readdir( filePath, onDirectory );
+		if( fs.existsSync( filePath ) ) {
+			return readDirectory( filePath )
+				.then( function( contents ) {
+					return _.map( contents, function( item ) {
+						var resourcePath = this.buildPath( [ filePath, item, 'resource.js' ] );
+						if( fs.existsSync( resourcePath ) ) {
+							return resourcePath;
+						}
+					}.bind( this ) );
+				}.bind( this ) );	
+		} else {
+			return when( [] );
+		}
 	};
 
 	Host.prototype.loadModule = function( resourcePath ) {
@@ -40,21 +40,16 @@ module.exports = function( Host ) {
 	};
 
 	Host.prototype.loadResources = function( filePath ) {
-		return when.promise(function(resolve, reject, notify) {
-			var self = this;
-			var resourcePath = path.resolve( __dirname, filePath );
-			this.watch( resourcePath );
-			var resources = this.getResources( resourcePath, function( list ) {
-				_.each( list, self.loadModule );
-				resolve();
-			} );
-							
-		}.bind(this));
+		var resourcePath = path.resolve( __dirname, filePath );
+		this.watch( resourcePath );
+		return this.getResources( resourcePath )
+			.then( function( list ) {
+				_.each( list, this.loadModule );
+			}.bind( this ) );
 	};
 
 	Host.prototype.processResource = function( prefix, resource, basePath ) {
-		var self = this,
-			name = resource.name,
+		var name = resource.name,
 			meta = this.resources[ name ] = {
 				routes: {},
 				topics: {}
@@ -69,16 +64,16 @@ module.exports = function( Host ) {
 		_.each( resource.actions, function( action ) {
 			var handle = action.handle,
 				topic = name + ( ( ( action.topic || '' ) == '' ) ? '' : '.' + action.topic ),
-				url = action.url || self.buildUrl( prefix, name, ( action.path || '' ) ),
+				url = action.url || this.buildUrl( prefix, name, ( action.path || '' ) ),
 				verb = action.verb,
 				actionName = [ name, action.alias ].join( '.' );
 
-			self.handleRoute( url, verb, resource, handle, actionName );
-			self.handleTopic( topic, resource, handle, actionName );
+			this.handleRoute( url, verb, resource, handle, actionName );
+			this.handleTopic( topic, resource, handle, actionName );
 
 			meta.routes[ action.alias ] = { verb: verb, url: url };
 			meta.topics[ action.alias ] = { topic: topic };
 			actions.push( actionName );
-		} );
+		}.bind( this ) );
 	};
 };
