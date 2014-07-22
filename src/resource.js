@@ -44,7 +44,7 @@ module.exports = function( Host ) {
 		this.watch( resourcePath );
 		return this.getResources( resourcePath )
 			.then( function( list ) {
-				_.each( list, this.loadModule );
+				_.each( _.filter( list ), this.loadModule );
 			}.bind( this ) );
 	};
 

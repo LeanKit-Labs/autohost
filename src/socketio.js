@@ -57,7 +57,13 @@ module.exports = function( Host ) {
 					id: handshake.id || handshake.user || 'anonymous',
 					name: handshake.user || 'anonymous' 
 				};
-				socket.cookies = handshake.request.cookies;
+				socket.cookies = {};
+				if( handshake.headers.cookie ) {
+					_.each( handshake.headers.cookie.split( ';' ), function( cookie ) {
+						var crumbs = cookie.split( '=' );
+						socket.cookies[ crumbs[ 0 ].trim() ] = crumbs[ 1 ].trim();
+					} );
+				}
 				if( this.authorizer ) {
 					this.authorizer.getUserRoles( socket.user, function( err, roles ) {
 						if ( err ) {
