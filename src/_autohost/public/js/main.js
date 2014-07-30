@@ -47,7 +47,7 @@ require( [
 		var app = window.app = {};
 		window.React = React;
 		var socket = window.socket = io.connect( '/' );
-		$( function() { 
+		$( function() {
 			Home();
 			socket.on( 'connect', function() {
 				socket.on( 'server.connected', function( message ) {

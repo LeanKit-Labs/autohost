@@ -4,7 +4,7 @@ var fs = require( 'fs' ),
 	util = require( 'util' ),
 	os = require( 'os' );
 
-module.exports = function( host ) {
+module.exports = function( host, fount ) {
 	return {
 		name: '_autohost',
 		resources: 'public',
@@ -15,7 +15,7 @@ module.exports = function( host ) {
 				topic: 'api',
 				path: '',
 				handle: function( envelope) {
-					envelope.reply( { data: host.resources['_autohost'].routes } );
+					envelope.reply( { data: host.meta[ '_autohost' ].routes } );
 				}
 			},
 			{
@@ -24,7 +24,7 @@ module.exports = function( host ) {
 				topic: 'resource.list',
 				path: 'resource',
 				handle: function( envelope ) {
-					envelope.reply( { data: host.resources } );
+					envelope.reply( { data: host.meta } );
 				}
 			},
 			{
@@ -33,24 +33,23 @@ module.exports = function( host ) {
 				topic: 'actions.list',
 				path: 'action',
 				handle: function( envelope ) {
-					if( host.authorizer && host.authorizer.getActionList ) {
+					if( host.auth && host.auth.getActionList ) {
 						var pageSize = 20;
 						if (envelope.params.getAll) {
 							//this should really get all pages until done
 							//instead of hardcoding a ridicously large page size
 							pageSize = 16384;
 						}
-						host.authorizer.getActionList(pageSize)
+						host.auth.getActionList(pageSize)
 							.then( null, function( err ) {
 								console.log( err );
 							} )
 							.then( function ( list ) {
-								envelope.reply( { data: list } );
+								envelope.reply( { data: _.groupBy( list, function( x ) { return x.resource; } ) } );
 							} );
 					} else {
-						envelope.reply( { data: host.actions } );	
+						envelope.reply( { data: host.actions } );
 					}
-					
 				}
 			},
 			{
@@ -59,7 +58,7 @@ module.exports = function( host ) {
 				topic: 'socket.count',
 				path: 'sockets',
 				handle: function( envelope ) {
-					envelope.reply( { data: { connected: host.clients.length } } );
+					envelope.reply( { data: { connected: host.socket.clients.length } } );
 				}
 			},
 			{
@@ -68,17 +67,17 @@ module.exports = function( host ) {
 				topic: 'user.list',
 				path: 'user',
 				handle: function( envelope ) {
-					if( host.authorizer && host.authorizer.getUserList ) {
-						host.authorizer.getUserList(512, function( err, users ) {
-							if( err ) {
+					if( host.auth && host.auth.getUserList ) {
+						host.auth.getUserList( 100 )
+							.then( null, function( err ) {
 								envelope.reply( { data: err, statusCode: 500 } );
-							} else {
+							} )
+							.then( function( users ) {
 								users = _.map( users, function( user ) {
 									return _.omit( user, '_indices', 'pass', 'password' );
 								} );
 								envelope.reply( { data: users } );
-							}
-						} );
+							} );
 					} else {
 						envelope.reply( { data: "Operation not supported by authorization strategy", statusCode: 404 } );
 					}
@@ -90,14 +89,14 @@ module.exports = function( host ) {
 				topic: 'role.list',
 				path: 'role',
 				handle: function( envelope ) {
-					if( host.authorizer && host.authorizer.getRoleList ) {
-						host.authorizer.getRoleList(512, function( err, roles ) {
-							if( err ) {
+					if( host.auth && host.auth.getRoleList ) {
+						host.auth.getRoleList( 100 )
+							.then( null, function( err ) {
 								envelope.reply( { data: err, statusCode: 500 } );
-							} else {
+							} )
+							.then( function( roles ) {
 								envelope.reply( { data: roles } );
-							}
-						} );
+							} );
 					} else {
 						envelope.reply( { data: "Operation not supported by authorization strategy", statusCode: 404 } );
 					}
@@ -109,15 +108,15 @@ module.exports = function( host ) {
 				topic: 'user.role.list',
 				path: 'user/:user/role',
 				handle: function( envelope ) {
-					if( host.authorizer && host.authorizer.getUserRoles ) {
+					if( host.auth && host.auth.getUserRoles ) {
 						var user = envelope.data.user;
-						host.authorizer.getUserRoles( user, function( err, roles ) {
-							if( err ) {
+						host.auth.getUserRoles( user )
+						 	.then( null, function( err ) {
 								envelope.reply( { data: err, statusCode: 500 } );
-							} else {
+							} )
+							.then( function( roles ) {
 								envelope.reply( { data: { user: user, roles: roles } } );
-							}
-						} );
+							} );
 					} else {
 						envelope.reply( { data: "Operation not supported by authorization strategy", statusCode: 404 } );
 					}
@@ -129,15 +128,15 @@ module.exports = function( host ) {
 				topic: 'action.role.list',
 				path: 'action/:action/role',
 				handle: function( envelope ) {
-					if( host.authorizer && host.authorizer.getRolesFor ) {
+					if( host.auth && host.auth.getRolesFor ) {
 						var action = envelope.data.action;
-						host.authorizer.getRolesFor( action, function( err, roles ) {
-							if( err ) {
+						host.auth.getRolesFor( action )
+							.then( null, function( err ) {
 								envelope.reply( { data: err, statusCode: 500 } );
-							} else {
+							} )
+							.then( function( roles ) {
 								envelope.reply( { data: { action: action, roles: roles } } );
-							}
-						} );
+							} );
 					} else {
 						envelope.reply( { data: "Operation not supported by authorization strategy", statusCode: 404 } );
 					}
@@ -149,16 +148,16 @@ module.exports = function( host ) {
 				topic: 'set.action.roles',
 				path: 'action/:action/role',
 				handle: function( envelope ) {
-					if( host.authorizer && host.authorizer.setActionRoles ) {
+					if( host.auth && host.auth.setActionRoles ) {
 						var action = envelope.data.action;
 						var roles = envelope.data.roles;
-						host.authorizer.setActionRoles( action, roles, function( err ) {
-							if( err ) {
+						host.auth.setActionRoles( action, roles )
+							.then( null, function( err ) {
 								envelope.reply( { data: { error: err }, statusCode: 500 } );
-							} else {
+							} )
+							.then( function() {
 								envelope.reply( { data: "ok" } );
-							}
-						} );
+							} );
 					} else {
 						envelope.reply( { data: "Operation not supported by authorization strategy", statusCode: 404 } );
 					}
@@ -170,16 +169,16 @@ module.exports = function( host ) {
 				topic: 'add.action.roles',
 				path: 'action/:action/role',
 				handle: function( envelope ) {
-					if( host.authorizer && host.authorizer.addActionRoles ) {
+					if( host.auth && host.auth.addActionRoles ) {
 						var action = envelope.data.action;
 						var roles = envelope.data.roles;
-						host.authorizer.addActionRoles( action, roles, function( err ) {
-							if( err ) {
+						host.auth.addActionRoles( action, roles )
+							.then( null, function( err ) {
 								envelope.reply( { data: { error: err }, statusCode: 500 } );
-							} else {
+							} )
+							.then( function() {
 								envelope.reply( { data: { result: "ok" } } );
-							}
-						} );
+							} );
 					} else {
 						envelope.reply( { data: "Operation not supported by authorization strategy", statusCode: 404 } );
 					}
@@ -191,16 +190,16 @@ module.exports = function( host ) {
 				topic: 'remove.action.roles',
 				path: 'action/:action/role',
 				handle: function( envelope ) {
-					if( host.authorizer && host.authorizer.removeActionRoles ) {
+					if( host.auth && host.auth.removeActionRoles ) {
 						var action = envelope.data.action;
 						var roles = envelope.data.roles;
-						host.authorizer.removeActionRoles( action, roles, function( err ) {
-							if( err ) {
+						host.auth.removeActionRoles( action, roles )
+							.then( null, function( err ) {
 								envelope.reply( { data: { error: err }, statusCode: 500 } );
-							} else {
+							} )
+							.then( function() {
 								envelope.reply( { data: { result: "ok" } } );
-							}
-						} );
+							} );
 					} else {
 						envelope.reply( { data: "Operation not supported by authorization strategy", statusCode: 404 } );
 					}
@@ -212,16 +211,16 @@ module.exports = function( host ) {
 				topic: 'set.user.roles',
 				path: 'user/:user/role',
 				handle: function( envelope ) {
-					if( host.authorizer && host.authorizer.setUserRoles ) {
+					if( host.auth && host.auth.setUserRoles ) {
 						var user = envelope.data.user;
 						var roles = envelope.data.roles;
-						host.authorizer.setUserRoles( user, roles, function( err ) {
-							if( err ) {
+						host.auth.setUserRoles( user, roles )
+							.then( null, function( err ) {
 								envelope.reply( { data: { error: err }, statusCode: 500 } );
-							} else {
+							} )
+							.then( function() {
 								envelope.reply( { data: { result: "ok" } } );
-							}
-						} );
+							} );
 					} else {
 						envelope.reply( { data: "Operation not supported by authorization strategy", statusCode: 404 } );
 					}
@@ -233,16 +232,16 @@ module.exports = function( host ) {
 				topic: 'add.user.roles',
 				path: 'user/:user/role',
 				handle: function( envelope ) {
-					if( host.authorizer && host.authorizer.addUserRoles ) {
+					if( host.auth && host.auth.addUserRoles ) {
 						var user = envelope.data.user;
 						var roles = envelope.data.roles;
-						host.authorizer.addUserRoles( user, roles, function( err ) {
-							if( err ) {
+						host.auth.addUserRoles( user, roles )
+							.then( null, function( err ) {
 								envelope.reply( { data: { error: err }, statusCode: 500 } );
-							} else {
+							} )
+							.then( function() {
 								envelope.reply( { data: { result: "ok" } } );
-							}
-						} );
+							} );
 					} else {
 						envelope.reply( { data: "Operation not supported by authorization strategy", statusCode: 404 } );
 					}
@@ -254,16 +253,16 @@ module.exports = function( host ) {
 				topic: 'remove.user.roles',
 				path: 'user/:user/role',
 				handle: function( envelope ) {
-					if( host.authorizer && host.authorizer.removeUserRoles ) {
+					if( host.auth && host.auth.removeUserRoles ) {
 						var user = envelope.data.user;
 						var roles = envelope.data.roles;
-						host.authorizer.removeUserRoles( user, roles, function( err ) {
-							if( err ) {
+						host.auth.removeUserRoles( user, roles )
+							.then( null, function( err ) {
 								envelope.reply( { data: { error: err }, statusCode: 500 } );
-							} else {
+							} )
+							.then( function() {
 								envelope.reply( { data: "ok" } );
-							}
-						} );
+							} );
 					} else {
 						envelope.reply( { data: "Operation not supported by authorization strategy", statusCode: 404 } );
 					}
@@ -275,15 +274,15 @@ module.exports = function( host ) {
 				topic: 'add.role',
 				path: 'role/:role',
 				handle: function( envelope ) {
-					if( host.authorizer && host.authorizer.addRole ) {
+					if( host.auth && host.auth.addRole ) {
 						var role = envelope.data.role;
-						host.authorizer.addRole( role, function( err ) {
-							if( err ) {
+						host.auth.addRole( role )
+							.then( null, function( err ) {
 								envelope.reply( { data: { error: err }, statusCode: 500 } );
-							} else {
+							} )
+							.then( function() {
 								envelope.reply( { data: "ok" } );
-							}
-						} );
+							} );
 					} else {
 						envelope.reply( { data: "Operation not supported by authorization strategy", statusCode: 404 } );
 					}
@@ -295,15 +294,15 @@ module.exports = function( host ) {
 				topic: 'remove.role',
 				path: 'role/:role',
 				handle: function( envelope ) {
-					if( host.authorizer && host.authorizer.removeRole ) {
+					if( host.auth && host.auth.removeRole ) {
 						var role = envelope.data.role;
-						host.authorizer.removeRole( role, function( err ) {
-							if( err ) {
+						host.auth.removeRole( role )
+							.then( null, function( err ) {
 								envelope.reply( { data: { error: err }, statusCode: 500 } );
-							} else {
+							} )
+							.then( function() {
 								envelope.reply( { data: "ok" } );
-							}
-						} );
+							} );
 					} else {
 						envelope.reply( { data: "Operation not supported by authorization strategy", statusCode: 404 } );
 					}
@@ -315,10 +314,10 @@ module.exports = function( host ) {
 				'topic': 'create.user',
 				'path': 'user/:userName',
 				handle: function( envelope ) {
-					if( host.authenticator && host.authenticator.create ) {
+					if( host.auth && host.auth.createUser ) {
 						var user = envelope.data.userName,
 							pass = envelope.data.password;
-						host.authenticator.create( user, pass )
+						host.auth.createUser( user, pass )
 							.then( null, function( err ) {
 								envelope.reply( { data: { result: 'Could not create user "' + user + '"', error: err }, statusCode: 500 } );
 							} )
@@ -336,9 +335,9 @@ module.exports = function( host ) {
 				'topic': 'enable.user',
 				'path': 'user/:userName',
 				handle: function( envelope ) {
-					if( host.authenticator && host.authenticator.enable ) {
+					if( host.auth && host.auth.enableUser ) {
 						var user = envelope.data.userName;
-						host.authenticator.enable( user )
+						host.auth.enableUser( user )
 							.then( null, function( err ) {
 								envelope.reply( { data: 'Could not enable user "' + user + '"', statusCode: 500 } );
 							} )
@@ -356,9 +355,9 @@ module.exports = function( host ) {
 				'topic': 'disable.user',
 				'path': 'user/:userName',
 				handle: function( envelope ) {
-					if( host.authenticator && host.authenticator.disable ) {
+					if( host.auth && host.auth.disableUser ) {
 						var user = envelope.data.userName;
-						host.authenticator.disable( user )
+						host.auth.disableUser( user )
 							.then( null, function( err ) {
 								envelope.reply( { data: 'Could not disable user "' + user + '"', statusCode: 500 } );
 							} )
