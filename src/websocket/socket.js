@@ -65,13 +65,13 @@ function sendToClient( id, message, data ) {
 	return false;
 }
 
-function start( authStrategy ) {
+function start() {
 	if( config.socketio || config.socketIO || config.socketIo ) {
-		socketIO = require( './socketio.js' )( config, wrapper, authStrategy );
+		socketIO = require( './socketio.js' )( config, wrapper, http.passport );
 		socketIO.config( http );
 	}
 	if( config.websocket ) {
-		websocket = require( './websocket' )( config, wrapper, authStrategy );
+		websocket = require( './websocket' )( config, wrapper, http.passport );
 		websocket.config( http );
 	}
 }

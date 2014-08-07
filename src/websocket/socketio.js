@@ -47,9 +47,10 @@ function acceptSocket( socket ) {
 	};
 
 	// if client identifies itself, register id
-	socket.on( 'client.identity', function( data, socket ) {
+	socket.on( 'client.identity', function( data ) {
+		debug( 'Client sent identity %s', JSON.stringify( data ) );
 		socket.id = data.id;
-		registry.identified( id, socket );
+		registry.identified( data.id, socket );
 	} );
 
 	// add anonymous socket

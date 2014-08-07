@@ -116,7 +116,7 @@ function start( resourcePath, auth ) {
 		.then( function ( list ) {
 			host.actions = wrapper.actionList;
 			if( auth ) {
-				auth.authorizer.actionList( wrapper.actionList )
+				auth.updateActions( wrapper.actionList )
 					.then( function() {
 						startAdapters();
 					} );

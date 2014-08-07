@@ -23,6 +23,7 @@ var path = require( 'path' ),
 
 function initialize( cfg, authProvider ) {
 	wrapper.config = cfg;
+	middleware = require( '../src/http/middleware.js' )( cfg, metrics );
 	if( when.isPromiseLike( authProvider ) ) {
 		authProvider
 			.then( function( result ) {
@@ -43,7 +44,7 @@ function setup( authProvider ) {
 		passport = passportFn( config, authProvider, metrics );
 	}
 
-	wrapper.http = httpFn( config, request, passport, metrics );
+	wrapper.http = httpFn( config, request, passport, middleware, metrics );
 	httpAdapter = httpAdapterFn( config, authProvider, wrapper.http, request, metrics );
 	api.addAdapter( httpAdapter );
 
@@ -55,9 +56,9 @@ function setup( authProvider ) {
 			next();
 		}
 	} );
-	
-	wrapper.socket = socketFn( config, wrapper.http );
-	socketAdapter = socketAdapterFn( config, passport, metrics );
+
+	wrapper.socket = socketFn( config, wrapper.http, middleware );
+	socketAdapter = socketAdapterFn( config, authProvider, wrapper.socket, metrics );
 	api.addAdapter( socketAdapter );
 
 	api.start( config.resources || path.join( process.cwd(), './resources' ), authProvider )

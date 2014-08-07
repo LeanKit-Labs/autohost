@@ -58,7 +58,7 @@ function expressInit( req, res, next ) {
     next();
 }
 
-function initialize( authStrategy ) {
+function initialize() {
 	var cwd = process.cwd(),
 		public = path.resolve( cwd, ( config.static || './public' ) );
 	config.tmp = path.resolve( cwd, ( config.temp || './tmp' ) );
@@ -118,8 +118,8 @@ function registerStaticPath( url, filePath ) {
 	} );
 }
 
-function start( authStrategy ) {
-	initialize( authStrategy );
+function start() {
+	initialize();
 	wrapper.server = http.createServer( wrapper.app );
 	wrapper.server.listen( config.port || 8800 );
 	console.log( 'autohost listening on port ', ( config.port || 8800 ) );

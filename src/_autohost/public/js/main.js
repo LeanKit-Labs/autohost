@@ -51,7 +51,7 @@ require( [
 			Home();
 			socket.on( 'connect', function() {
 				socket.on( 'server.connected', function( message ) {
-					socket.emit( 'client.identity', { id: message.user } );	
+					socket.emit( 'client.identity', message.user );
 				} );
 			} );
 		});
