@@ -4,7 +4,7 @@ Convention-based, opinionated HTTP server library based on express. Lovingly rip
 ## Rationale
 As more services are introduced to a system, the tedium of fitting together all the same libraries over and over:
  
- * is a soul-draining
+ * is soul-draining
  * encourages copy/pasta
  * adds inertia across multiple projects
  * increases the surface area for defects and maintenance
@@ -16,7 +16,7 @@ I created autohost so we could have a consistent, reliable and extendible way to
  * Resource-based: define transport-agnostic resources that interact via HTTP or WebSockets
  * Supports server-side websockets and socket.io
  * Supports multiple Passport strategies via a pluggable auth provider approach
- * UI dashboard to review resources' routes, topics and hosted paths
+ * UI dashboard to review resources' routes, topics and static paths
  * HTTP Auth API and dashboard for managing permissions
  * Detailed metrics around routes, topics, authentication and authorization
 
@@ -44,8 +44,6 @@ Before diving into how to add resources, take a look at the init call and its ar
 Let's take a look at each argument you can pass to autohost's init call to understand what each one does.
 
 ### Configuration
-While the configuration can be provided optionally to the init call, *it's recommended to pass this during instantiation after the require*. 
-
 The object literal follows the format:
 
 ```js
@@ -78,7 +76,7 @@ Planned support for:
  * MS SQL server
 
 ### fount
-[fount](https://github.com/LeanKit-Labs/fount) is a dependency injection library for Node. If your application is using fount, you can provide the instance here so that your resources will have access to the same fount instance from the `host.fount` property within the resource callback. Confused? Read on!
+[fount](https://github.com/LeanKit-Labs/fount) is a dependency injection library for Node. If your application is using fount, you can provide the instance at the end of the init call so that your resources will have access to the same fount instance from the `host.fount` property within the resource callback.
 
 ## Resources
 Resources are expected to be simple modules containing a factory method that return a resource definition:
