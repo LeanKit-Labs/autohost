@@ -43,6 +43,9 @@ function createMiddlewareStack() {
 
 function createAuthMiddlewareStack() {
 	var router = new Router().use( expressInit );
+	_.each( middleware, function( m ) {
+		m( router );
+	} );
 	_.each( wrapper.passport.getMiddleware( '/' ), function( m ) {
 		router.use( m.path, m.fn );
 	} );

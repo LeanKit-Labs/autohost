@@ -1,6 +1,5 @@
 var _ = require( 'lodash' ),
 	socketio = require( 'socket.io' ),
-	passportIo = require( 'passport.socketio' ),
 	debug = require( 'debug' )( 'autohost:socketio' ),
 	authStrategy,
 	registry,
@@ -33,6 +32,9 @@ function acceptSocket( socket ) {
 				socket.user.roles = roles;
 			} );
 	}
+
+	// attach context on request to socket
+	socket.context = handshake.context;
 
 	// normalize socket publishing interface
 	socket.publish = function( topic, message ) {

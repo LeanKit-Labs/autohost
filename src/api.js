@@ -3,7 +3,6 @@ var _ = require( 'lodash' ),
 	when = require('when'),
 	nodeWhen = require( 'when/node' ),
 	fs = require( 'fs' ),
-	gaze = require( 'gaze' ),
 	debug = require( 'debug' )( 'autohost:api' ),
 	readDirectory = nodeWhen.lift( fs.readdir ),
 	wrapper = {
@@ -68,7 +67,6 @@ function loadModule( resourcePath ) {
 
 function loadResources( filePath ) {
 	var resourcePath = path.resolve( process.cwd(), filePath );
-	watch( resourcePath );
 	return getResources( resourcePath )
 		.then( function( list ) {
 			return when.all( _.map( _.filter( list ), loadModule ) )
@@ -131,17 +129,6 @@ function start( resourcePath, auth ) {
 function startAdapters() {
 	_.each( adapters, function( adapter ) {
 		adapter.start();
-	} );
-}
-
-function watch( filePath ) {
-	if( !fs.existsSync( filePath ) )
-		return;
-	return gaze( path.join( filePath, '**/resource.js' ), function( err, watcher ) {
-		this.on( 'changed', function( changed ) {
-			debug( 'Reloading changed resource from %s', path.basename( path.dirname( changed ) ) );
-			loadModule( changed );
-		} );
 	} );
 }
 

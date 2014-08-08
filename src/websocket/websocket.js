@@ -33,6 +33,9 @@ function acceptSocketRequest( request ) {
 			} );
 	}
 
+	// attach context on request to socket
+	socket.context = request.httpRequest.context;
+
 	// reprocess generic message with topic sent
 	socket.on( 'message', function( message ) {
 		if( message.type === 'utf8' ) {

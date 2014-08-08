@@ -15,8 +15,7 @@ require.config( {
 		resource: 'components/resource',
 		api: 'api',
 		util: 'util',
-		bootstrap: 'lib/bootstrap.min',
-		socketio: '../../socket.io/socket.io'
+		bootstrap: 'lib/bootstrap.min'
 	},
 	shim: {
 		bootstrap: {
@@ -29,9 +28,6 @@ require.config( {
 		react: {
 			deps: [ 'jsx', 'JSXTransformer' ],
 			exports: [ 'React' ]
-		},
-		'socketio': {
-			exports: 'socketio'
 		}
 	}
 } );
@@ -40,20 +36,13 @@ require( [
 		'jquery',
 		'react',
 		'bootstrap',
-		'jsx!resource/main',
-		'socketio'
+		'jsx!resource/main'
 	], 
 	function($, React, Bootstrap, Home, io) {
 		var app = window.app = {};
 		window.React = React;
-		var socket = window.socket = io.connect( '/' );
 		$( function() {
 			Home();
-			socket.on( 'connect', function() {
-				socket.on( 'server.connected', function( message ) {
-					socket.emit( 'client.identity', message.user );
-				} );
-			} );
 		});
 	}
 );

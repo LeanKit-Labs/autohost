@@ -11,6 +11,7 @@ var path = require( 'path' ),
 	 	actions: undefined,
 	 	auth: undefined,
 		config: undefined,
+		fount: undefined,
 		init: initialize,
 		metrics: metrics,
 		request: request,
@@ -21,8 +22,9 @@ var path = require( 'path' ),
 	api = require( './api.js' )( wrapper ),
 	passport, httpAdapter, socketAdapter, middleware;
 
-function initialize( cfg, authProvider ) {
+function initialize( cfg, authProvider, fount ) {
 	wrapper.config = cfg;
+	wrapper.fount = fount || require( 'fount' );
 	middleware = require( '../src/http/middleware.js' )( cfg, metrics );
 	if( when.isPromiseLike( authProvider ) ) {
 		authProvider

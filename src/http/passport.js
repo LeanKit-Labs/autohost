@@ -75,7 +75,7 @@ function getRoles( req, res, next ) {
 }
 
 function getSocketRoles( userName ) {
-	if( typeof userName == 'object' ) {
+	if( typeof userName === 'object' ) {
 		console.trace( userName );
 	}
 	metrics.timer( authorizationTimer ).start();
@@ -104,13 +104,15 @@ function skipAuthentication( req, res, next ) {
 		id: 'anonymous',
 		name: 'anonymous',
 		roles: []
-	}
+	};
 	debug( 'Skipping authentication and assigning user anonymous to request %s %s', req.method, req.url );
 	next();
 }
 
 function authConditionally( req, res, next ) {
-	if( req.skipAuth ) {
+	// if previous middleware has said to skip auth OR
+	// a user was attached from a session, skip authenticating
+	if( req.skipAuth || ( req.user && req.user.name ) ) {
 		next();
 	} else {
 		metrics.timer( authenticationTimer ).start();

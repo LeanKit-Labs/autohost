@@ -1,7 +1,9 @@
 var should = require( 'should' ),
 	path = require( 'path' ),
 	_ = require( 'lodash' ),
-	requestor = require( 'request' ).defaults( { jar: false } ),
+	when = require( 'when' ),
+	seq = require( 'when/sequence' ),
+	requestor = require( 'request' ).defaults( { jar: true } ),
 	metrics = require( 'cluster-metrics' ),
 	port = 88988,
 	config = {
@@ -45,7 +47,7 @@ describe( 'with http module', function() {
 			request = req;
 			res.status( statusCode ).send( response );
 		} );
-		http.start( authProvider );
+		http.start();
 	} );
 
 	describe( 'when getting a static file', function() {
@@ -122,6 +124,48 @@ describe( 'with http module', function() {
 		} );
 
 		after( cleanup );
+	} );
+
+	describe( 'when authenticating with session support', function() {
+		var originalAuthenticate = authProvider.authenticate,
+			counter = 0,
+			codes,
+			get = function() { 
+				return when.promise( function( resolve ) {
+					requestor.get( {
+						url: 'http://localhost:88988/thing/a/b?c=3',
+						headers: { 'Authorization': 'Basic dGVzdDp0ZXN0' }
+					}, function( err, resp ) {
+						resolve( err || resp );
+					} ); 
+				} );
+			};
+
+		before( function( done ) {
+			authProvider.authenticate = function( req, res, next ) {
+				counter = counter + 1;				
+				originalAuthenticate( req, res, next );
+			};
+			authProvider.users = { test: { name: 'test', password: 'test' } };
+			seq( [ get, get, get ] )
+				.then( function( responses ) {
+					codes =_.map( responses, 'statusCode' );
+					done();
+				} );
+		} );
+
+		it( 'should have completed all requests successfully', function() {
+			codes.should.eql( [ 200, 200, 200 ] );
+		} );
+
+		it( 'should only authenticate credentials once', function() {
+			counter.should.be.lessThan( 2 );
+		} );
+
+		after( function() {
+			authProvider.authenticate = originalAuthenticate;
+			authProvider.users = {};
+		} );
 	} );
 
 	after( http.stop );
