@@ -76,10 +76,6 @@ function loadResources( filePath ) {
 		} );
 }
 
-function loadSelf() {
-	loadModule( path.resolve( __dirname, './_autohost/resource.js' ) );
-}
-
 function processResource( resource, basePath ) {
 	getActions( resource );
 	return when.all( _.map( adapters, function( adapter ) {

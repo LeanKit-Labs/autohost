@@ -16,20 +16,15 @@ function HttpEnvelope( req, res ) {
 		res: res
 	};
 
-	for( var key in req.params ) {
-		var val = req.params[ key ];
-		if( !this.data[ key ] ) {
-			this.data[ key ] = val;
-		}
-		this.params[ key ] = val;
-	}
-	for( var key in req.query ) {
-		var val = req.query[ key ];
-		if( !this.data[ key ] ) {
-			this.data[ key ] = val;
-		}
-		this.params[ key ] = val;
-	}
+	[req.params, req.query].forEach(function(source){
+		Object.keys(source).forEach(function(key){
+			var val = source[ key ];
+			if( !this.data[ key ] ) {
+				this.data[ key ] = val;
+			}
+			this.params[ key ] = val;
+		}.bind(this));
+	}.bind(this));
 }
 
 HttpEnvelope.prototype.forwardTo = function( options ) {
