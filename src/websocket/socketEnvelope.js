@@ -15,7 +15,7 @@ function SocketEnvelope( topic, message, socket ) {
 	};
 }
 
-SocketEnvelope.prototype.forwardTo = function( options ) {
+SocketEnvelope.prototype.forwardTo = function( /* options */ ) {
 	throw new Error( 'Sockets do not presently support proxying via forwardTo' );
 };
 

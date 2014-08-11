@@ -1,17 +1,17 @@
 // this mock is intended to support tests as well as provide a memory-based implementation
 // example for the full authProvider spec for autohost
 
-var _ = require( 'lodash' ),
-	when = require( 'when' ),
-	passport = require( 'passport' ),
-	Basic = require( 'passport-http' ).BasicStrategy,
-	Bearer = require( 'passport-http-bearer' ).Strategy,
-	Query = require( './queryStrategy.js' ),
-	debug = require( 'debug' )( 'autohost:auth.mock' ),
-	bearerAuth,
-	basicAuth,
-	queryAuth,
-	wrapper = {
+var _ = require( 'lodash' );
+var when = require( 'when' );
+var passport = require( 'passport' );
+var Basic = require( 'passport-http' ).BasicStrategy;
+var Bearer = require( 'passport-http-bearer' ).Strategy;
+var Query = require( './queryStrategy.js' );
+var debug = require( 'debug' )( 'autohost:auth.mock' );
+var bearerAuth;
+var basicAuth;
+var queryAuth;
+var wrapper = {
 		authenticate: authenticate,
 		checkPermission: checkPermission,
 		getUserRoles: getUserRoles,

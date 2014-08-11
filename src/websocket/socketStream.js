@@ -1,5 +1,6 @@
-var Writable = require( 'stream' ).Writable,
-	util = require( 'util' );
+var Writable = require( 'stream' ).Writable;
+var util = require( 'util' );
+
 util.inherits( SocketStream, Writable );
 
 function SocketStream( replyTo, socket ) {

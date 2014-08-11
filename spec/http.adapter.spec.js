@@ -1,7 +1,4 @@
-var should = require( 'should' );
-var path = require( 'path' );
-var _ = require( 'lodash' );
-var when = require( 'when' );
+var should = require( 'should' );  //jshint ignore:line
 var requestor = require( 'request' ).defaults( { jar: true } );
 var metrics = require( 'cluster-metrics' );
 var port = 88988;

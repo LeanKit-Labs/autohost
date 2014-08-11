@@ -1,12 +1,11 @@
-var path = require( 'path' ),
-	_ = require( 'lodash' ),
-	debug = require( 'debug' )( 'autohost:websocket-adapter' ),
-	config,
+var config,
 	authStrategy,
 	socket,
 	metrics,
 	SocketEnvelope;
 
+var _ = require( 'lodash' );
+var debug = require( 'debug' )( 'autohost:websocket-adapter' );
 var wrapper = {
 	action: wireupAction,
 	resource: wireupResource,

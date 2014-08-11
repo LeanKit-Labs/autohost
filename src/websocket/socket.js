@@ -1,8 +1,8 @@
-var _ = require( 'lodash' ),
-	debug = require( 'debug' )( 'autohost:ws-transport' ),
-	clients = [],
-	config, socketIO, websocket, http,
-	wrapper = {
+var config, socketIO, websocket, http;
+var _ = require( 'lodash' );
+var debug = require( 'debug' )( 'autohost:ws-transport' );
+var clients = [];
+var wrapper = {
 		add: addClient,
 		clients: clients,
 		identified: socketIdentified,
