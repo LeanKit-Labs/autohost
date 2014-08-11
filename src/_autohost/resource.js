@@ -339,7 +339,7 @@ module.exports = function( host ) {
 						var user = envelope.user.name;
 						host.auth.getTokens( user )
 							.then( null, fivehundred( envelope ) )
-							.then( function() {
+							.then( function(tokens) {
 								envelope.reply( { data: tokens } );
 							} );
 					} else {

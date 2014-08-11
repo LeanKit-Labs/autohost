@@ -28,7 +28,7 @@ SocketEnvelope.prototype.reply = function( envelope ) {
 };
 
 SocketEnvelope.prototype.replyWithFile = function( contentType, fileName, fileStream ) {
-	this._original.socket.publish( { index: -1, fileName: filename, contentType: contentType } );
+	this._original.socket.publish( { index: -1, fileName: fileName, contentType: contentType } );
 	fileStream.pipe( this.responseStream );
 };
 

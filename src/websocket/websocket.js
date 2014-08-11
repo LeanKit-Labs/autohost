@@ -60,7 +60,7 @@ function acceptSocketRequest( request ) {
 	// if client identifies itself, register id
 	socket.on( 'client.identity', function( data, socket ) {
 		socket.id = data.id;
-		registry.identified( id, socket );
+		registry.identified( socket.id, socket );
 	} );
 
 	// add anonymous socket

@@ -6,9 +6,9 @@ function( $, _ ) {
 	return {
 		conditionallyEnable: function( selector, predicate ) {
 			if( predicate() ) {
-				enable( selector );
+				this.enable( selector );
 			} else {
-				disable( selector );
+				this.disable( selector );
 			}
 		},
 		disable: function( filter ) {

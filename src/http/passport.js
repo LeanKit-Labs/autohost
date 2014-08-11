@@ -51,10 +51,6 @@ function getAuthMiddleware( uri ) {
 	return list;
 }
 
-function checkPermission( user, action ) {
-	return authenticator.checkPermission( user, action );
-}
-
 function getRoles( req, res, next ) {
 	metrics.timer( authorizationTimer ).start();
 	var userName = _.isObject( req.user.name ) ? req.user.name.name : req.user.name;
@@ -134,8 +130,6 @@ function whenNoUsers( req, res, next ) {
 }
 
 function withAuthLib( authProvider ) {
-	serializeUser = authProvider.serializeUser || serializeUser;
-	deserializeUser = authProvider.deserializeUser || deserializeUser;
 	userCountCheck = authProvider.hasUsers || userCountCheck;
 	_.each( authProvider.strategies, function( strategy ) {
 		passport.use( strategy );
