@@ -55,7 +55,7 @@ function acceptSocketRequest( request ) {
 		socket.removeAllListeners();
 		originalClose();
 		registry.remove( socket ); 
-	}
+	};
 
 	// if client identifies itself, register id
 	socket.on( 'client.identity', function( data, socket ) {
