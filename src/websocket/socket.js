@@ -55,7 +55,7 @@ function sendToClient( id, message, data ) {
 	var socket = wrapper.clients.lookup[ id ];
 	if( !socket ) {
 		socket = wrapper.clients.find( clients, function( client ) {
-			return client.user.id == id || client.user.name == id;
+			return client.user.id === id || client.user.name === id;
 		} );
 	}
 	if( socket ) {

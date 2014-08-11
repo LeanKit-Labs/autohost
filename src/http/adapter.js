@@ -70,7 +70,7 @@ function start() {
 
 function wireupResource( resource, basePath ) {
 	var meta = { routes: {} };
-	if( resource.resources && resource.resources != '' ) {
+	if( resource.resources && resource.resources !== '' ) {
 		var directory = buildPath( [ basePath, resource.resources ] );
 		http.static( '/' + resource.name, directory );
 		meta.path = { url: '/' + resource.name, directory: directory };
