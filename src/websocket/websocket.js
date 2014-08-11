@@ -1,20 +1,20 @@
-var _ = require( 'lodash' ),
-	WS = require ( 'websocket' ).server,
-	ServerResponse = require( 'http' ).ServerResponse,
-	debug = require( 'debug' )( 'autohost:websocket' ),
-	authStrategy,
+var authStrategy,
 	registry,
 	socketServer,
 	middleware,
 	config;
+var _ = require( 'lodash' );
+var WS = require ( 'websocket' ).server;
+var ServerResponse = require( 'http' ).ServerResponse;
+var debug = require( 'debug' )( 'autohost:websocket' );
 
 function allowOrigin( origin ) {
 	return ( config.origin && origin === config.origin ) || !config.origin;
 }
 
 function acceptSocketRequest( request ) {
-	var protocol = request.requestedProtocols[ 0 ],
-		socket = request.accept( protocol, request.origin );
+	var protocol = request.requestedProtocols[ 0 ];
+	var socket = request.accept( protocol, request.origin );
 	
 	// grab user from request
 	socket.user = {
@@ -55,12 +55,12 @@ function acceptSocketRequest( request ) {
 		socket.removeAllListeners();
 		originalClose();
 		registry.remove( socket ); 
-	}
+	};
 
 	// if client identifies itself, register id
 	socket.on( 'client.identity', function( data, socket ) {
 		socket.id = data.id;
-		registry.identified( id, socket );
+		registry.identified( socket.id, socket );
 	} );
 
 	// add anonymous socket
@@ -102,8 +102,7 @@ function handleWebSocketRequest( request ) {
 		return;
 	}
 
-	var allowed,
-		response = new ServerResponse( request.httpRequest );
+	var response = new ServerResponse( request.httpRequest );
 	response.assignSocket( request.socket );
 	middleware
 		.handle( request.httpRequest, response, function( err ) {

@@ -1,6 +1,6 @@
-var should = require( 'should' ),
-	fount = require( 'fount' ),
-	_ = require( 'lodash' );
+var should = require( 'should' ); //jshint ignore:line
+var fount = require( 'fount' );
+var _ = require( 'lodash' );
 
 var getAdapter = function() {
 	var fauxdapter = {
@@ -32,7 +32,7 @@ describe( 'when loading from a bad path', function() {
 		api = require( '../src/api.js' )( host, fount );
 		api.addAdapter( adapter );
 		api.start( './spec/durp' )
-			.then( null, function( err ) {
+			.then( null, function( /* err */ ) {
 				return [];
 			} )
 			.then( function( list ) {
@@ -110,7 +110,7 @@ describe( 'when loading from a good path', function() {
 		api = require( '../src/api.js' )( host, fount );
 		api.addAdapter( adapter );
 		api.start( './spec/resources' )
-			.then( null, function( err ) {
+			.then( null, function( /* err */ ) {
 				return [];
 			} )
 			.then( function( list ) {
@@ -186,7 +186,7 @@ describe( 'when loading from a good path', function() {
 	} );
 
 	it( 'should start adapter', function() {
-		adapter.started.should.be.true;
+		adapter.started.should.be.true; //jshint ignore:line
 	} );
 
 	after( function() {

@@ -1,21 +1,18 @@
-var should = require( 'should' ),
-	path = require( 'path' ),
-	_ = require( 'lodash' ),
-	requestor = require( 'request' ).defaults( { jar: false } ),
-	WebSocketClient = require('websocket').client,
-	metrics = require( 'cluster-metrics' ),
-	when = require( 'when' ),
-	port = 88988,
-	config = {
+var should = require( 'should' ); //jshint ignore:line
+var requestor = require( 'request' ).defaults( { jar: false } );
+var WebSocketClient = require('websocket').client;
+var metrics = require( 'cluster-metrics' );
+var port = 88988;
+var config = {
 		port: port,
 		socketio: true,
 		websocket: true
-	},
-	authProvider = require( '../auth/mock.js' )( config ),
-	passport = require( '../../src/http/passport.js' )( config, authProvider, metrics ),
-	middleware = require( '../../src/http/middleware.js' )( config, metrics ),
-	http = require( '../../src/http/http.js' )( config, requestor, passport, middleware, metrics ),
-	socket = require( '../../src/websocket/socket.js' )( config, http, middleware );
+	};
+var authProvider = require( '../auth/mock.js' )( config );
+var passport = require( '../../src/http/passport.js' )( config, authProvider, metrics );
+var middleware = require( '../../src/http/middleware.js' )( config, metrics );
+var http = require( '../../src/http/http.js' )( config, requestor, passport, middleware, metrics );
+var socket = require( '../../src/websocket/socket.js' )( config, http, middleware );
 
 authProvider.users[ 'test' ] = { user: 'torpald' };
 
@@ -40,7 +37,7 @@ describe( 'with websocket and bad credentials', function() {
 	} );
 
 	it( 'should get a connection error', function() {
-		/non-101 status: 401/.test( socketErr.toString() ).should.be.true;
+		/non-101 status: 401/.test( socketErr.toString() ).should.be.true; //jshint ignore:line
 	} );
 
 	after( function() {

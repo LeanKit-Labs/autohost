@@ -35,7 +35,7 @@ function unsupported( envelope ) {
 function fivehundred( envelope ) {
 	return function( err ) {
 		envelope.reply( { data: err, statusCode: 500 } );
-	}
+	};
 }
 
 module.exports = function( host ) {
@@ -120,7 +120,7 @@ module.exports = function( host ) {
 								envelope.reply( { data: roles } );
 							} );
 					} else {
-						unsupported( envelope )
+						unsupported( envelope );
 					}
 				}
 			},
@@ -339,7 +339,7 @@ module.exports = function( host ) {
 						var user = envelope.user.name;
 						host.auth.getTokens( user )
 							.then( null, fivehundred( envelope ) )
-							.then( function() {
+							.then( function(tokens) {
 								envelope.reply( { data: tokens } );
 							} );
 					} else {

@@ -15,7 +15,7 @@ function SocketEnvelope( topic, message, socket ) {
 	};
 }
 
-SocketEnvelope.prototype.forwardTo = function( options ) {
+SocketEnvelope.prototype.forwardTo = function( /* options */ ) {
 	throw new Error( 'Sockets do not presently support proxying via forwardTo' );
 };
 
@@ -25,10 +25,10 @@ SocketEnvelope.prototype.reply = function( envelope ) {
 	} else {
 		this._original.socket.publish( this.replyTo, envelope.data );
 	}
-}
+};
 
 SocketEnvelope.prototype.replyWithFile = function( contentType, fileName, fileStream ) {
-	this._original.socket.publish( { index: -1, fileName: filename, contentType: contentType } );
+	this._original.socket.publish( { index: -1, fileName: fileName, contentType: contentType } );
 	fileStream.pipe( this.responseStream );
 };
 

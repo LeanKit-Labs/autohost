@@ -98,7 +98,7 @@ function registerMiddleware( filter, callback ) {
 
 function registerRoute( url, verb, callback ) {
 	verb = verb.toLowerCase();
-	verb = verb == 'all' || verb == 'any' ? 'all' : verb;
+	verb = verb === 'all' || verb === 'any' ? 'all' : verb;
 	var errors = [ url, verb, 'errors' ].join( '.' );
 	routes.push( function() {
 		debug( 'ROUTE: %s %s -> %s', verb, url, ( callback.name || 'anonymous' ) );

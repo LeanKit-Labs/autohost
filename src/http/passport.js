@@ -3,19 +3,13 @@ var _ = require( 'lodash' ),
 	passport = require( 'passport' ),
 	debug = require( 'debug' )( 'autohost:passport' ),
 	noOp = function() { return when( true ); },
-	serializer = function( user, done ) { done( null, user ); },
-	deserializer = function( user, done ) { done( null, user ); },
 	userCountCheck = noOp,
-	unauthCount = 'autohost.unauthorized.count',
-	unauthRate = 'autohost.unauthorized.rate',
 	authorizationErrorCount = 'autohost.authorization.errors',
 	authorizationErrorRate = 'autohost.authorization.error.rate',
 	authenticationTimer = 'autohost.authentication.timer',
 	authorizationTimer = 'autohost.authorization.timer',
 	passportInitialize = passport.initialize(),
 	passportSession = passport.session(),
-	authenticationStrategy,
-	authenticationStrategyProperties,
 	authProvider,
 	anonPaths,
 	metrics;
@@ -49,10 +43,6 @@ function getAuthMiddleware( uri ) {
 			   { path: uri, fn: authConditionally },
 			   { path: uri, fn: getRoles } ] );
 	return list;
-}
-
-function checkPermission( user, action ) {
-	return authenticator.checkPermission( user, action );
 }
 
 function getRoles( req, res, next ) {
@@ -134,8 +124,6 @@ function whenNoUsers( req, res, next ) {
 }
 
 function withAuthLib( authProvider ) {
-	serializeUser = authProvider.serializeUser || serializeUser;
-	deserializeUser = authProvider.deserializeUser || deserializeUser;
 	userCountCheck = authProvider.hasUsers || userCountCheck;
 	_.each( authProvider.strategies, function( strategy ) {
 		passport.use( strategy );

@@ -1,21 +1,19 @@
-var should = require( 'should' ),
-	path = require( 'path' ),
-	_ = require( 'lodash' ),
-	requestor = require( 'request' ).defaults( { jar: false } ),
-	debug = require( 'debug' )( 'autohost-spec:invalid-auth' ),
-	metrics = require( 'cluster-metrics' ),
-	when = require( 'when' ),
-	port = 88988,
-	config = {
+var should = require( 'should' ); //jshint ignore: line
+var _ = require( 'lodash' );
+var requestor = require( 'request' ).defaults( { jar: false } );
+var debug = require( 'debug' )( 'autohost-spec:invalid-auth' );
+var metrics = require( 'cluster-metrics' );
+var port = 88988;
+var config = {
 		port: port,
 		socketio: true,
 		websocket: true
-	},
-	authProvider = require( '../auth/mock.js' )( config ),
-	passport = require( '../../src/http/passport.js' )( config, authProvider, metrics ),
-	middleware = require( '../../src/http/middleware.js' )( config, metrics ),
-	http = require( '../../src/http/http.js' )( config, requestor, passport, middleware, metrics ),
-	socket = require( '../../src/websocket/socket.js' )( config, http, middleware );
+	};
+var authProvider = require( '../auth/mock.js' )( config );
+var passport = require( '../../src/http/passport.js' )( config, authProvider, metrics );
+var middleware = require( '../../src/http/middleware.js' )( config, metrics );
+var http = require( '../../src/http/http.js' )( config, requestor, passport, middleware, metrics );
+var socket = require( '../../src/websocket/socket.js' )( config, http, middleware );
 
 authProvider.users[ 'test' ] = { user: 'torpald' };
 
@@ -54,7 +52,7 @@ describe( 'with failed socket.io credentials', function() {
 	} );
 
 	it( 'should disconnect the socket', function() {
-		client.connected.should.be.false;
+		client.connected.should.be.false; //jshint ignore:line
 	} );
 
 	after( function() {

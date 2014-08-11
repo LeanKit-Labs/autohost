@@ -1,22 +1,19 @@
-var should = require( 'should' ),
-	path = require( 'path' ),
-	_ = require( 'lodash' ),
-	when = require( 'when' ),
-	requestor = require( 'request' ).defaults( { jar: true } ),
-	metrics = require( 'cluster-metrics' ),
-	port = 88988,
-	config = {
+var should = require( 'should' );  //jshint ignore:line
+var requestor = require( 'request' ).defaults( { jar: true } );
+var metrics = require( 'cluster-metrics' );
+var port = 88988;
+var config = {
 		port: port
-	},
-	authProvider = require( './auth/mock.js' )( config ),
-	passport = require( '../src/http/passport.js' )( config, authProvider, metrics ),
-	middleware = require( '../src/http/middleware.js' )( config, metrics ),
-	http = require( '../src/http/http.js' )( config, requestor, passport, middleware, metrics );
-	httpAdapter = require( '../src/http/adapter.js' )( config, authProvider, http, requestor, metrics ),
-	actionRoles = function( action, roles ) {
+	};
+var authProvider = require( './auth/mock.js' )( config );
+var passport = require( '../src/http/passport.js' )( config, authProvider, metrics );
+var middleware = require( '../src/http/middleware.js' )( config, metrics );
+var http = require( '../src/http/http.js' )( config, requestor, passport, middleware, metrics );
+var httpAdapter = require( '../src/http/adapter.js' )( config, authProvider, http, requestor, metrics );
+var actionRoles = function( action, roles ) {
 		authProvider.actions[ action ] = { roles: roles };
-	},
-	userRoles = function( user, roles ) {
+	};
+var userRoles = function( user, roles ) {
 		authProvider.users[ user ].roles = roles;
 	};
 
@@ -34,7 +31,6 @@ describe( 'with http adapter', function() {
 			verb: 'get',
 			path: '/call/:one/:two',
 			handle: function( env ) {
-				envelope = env;
 				env.reply( { data: 'ta-da!' } );
 			}
 		}, { routes: {} } );

@@ -1,12 +1,11 @@
-var path = require( 'path' ),
-	_ = require( 'lodash' ),
-	debug = require( 'debug' )( 'autohost:websocket-adapter' ),
-	config,
+var config,
 	authStrategy,
 	socket,
 	metrics,
 	SocketEnvelope;
 
+var _ = require( 'lodash' );
+var debug = require( 'debug' )( 'autohost:websocket-adapter' );
 var wrapper = {
 	action: wireupAction,
 	resource: wireupResource,
@@ -24,7 +23,7 @@ function buildActionTopic( resourceName, action ) {
 function checkPermissionFor( user, action ) {
 	debug( 'Checking %s\'s permissions for %s', ( user ? user.name : 'nouser' ), action );
 	return authStrategy.checkPermission( user.name, action )
-		.then( null, function() {
+		.then( null, function(err) {
 			debug( 'Error during check permissions: %s', err.stack );
 			return false;
 		} )

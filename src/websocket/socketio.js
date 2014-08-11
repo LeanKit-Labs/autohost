@@ -116,5 +116,5 @@ module.exports = function( cfg, reg, auth ) {
 		config: configureSocketIO,
 		on: handle,
 		stop: stop
-	}
+	};
 };

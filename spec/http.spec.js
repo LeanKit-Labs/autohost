@@ -1,18 +1,18 @@
-var should = require( 'should' ),
-	path = require( 'path' ),
-	_ = require( 'lodash' ),
-	when = require( 'when' ),
-	seq = require( 'when/sequence' ),
-	requestor = require( 'request' ).defaults( { jar: true } ),
-	metrics = require( 'cluster-metrics' ),
-	port = 88988,
-	config = {
+var should = require( 'should' ); //jshint ignore:line
+var path = require( 'path' );
+var _ = require( 'lodash' );
+var when = require( 'when' );
+var seq = require( 'when/sequence' );
+var requestor = require( 'request' ).defaults( { jar: true } );
+var metrics = require( 'cluster-metrics' );
+var port = 88988;
+var config = {
 		port: port
-	},
-	authProvider = require( './auth/mock.js' )( config ),
-	passport = require( '../src/http/passport.js' )( config, authProvider, metrics ),
-	middleware = require( '../src/http/middleware.js' )( config, metrics ),
-	http = require( '../src/http/http.js' )( config, requestor, passport, middleware, metrics );
+	};
+var authProvider = require( './auth/mock.js' )( config );
+var passport = require( '../src/http/passport.js' )( config, authProvider, metrics );
+var middleware = require( '../src/http/middleware.js' )( config, metrics );
+var http = require( '../src/http/http.js' )( config, requestor, passport, middleware, metrics );
 
 describe( 'with http module', function() {
 	var middlewareHit = [],
