@@ -3,63 +3,60 @@ define( [
 		'jquery', 
 		'lodash',
 		'react',
-		'api',
-		'util',
+		'userChannel',
 		'components/eventedComponent'
 	], 
-	function( $, _, React, Api, Util, Evented ) {
-		return React.createClass({
-			mixins: [Evented],
+	function( $, _, React, users, Events ) {
+		var RoleUserList = React.createClass( {
+			mixins: [ Events ],
 			getInitialState: function() {
 				return {
 					selectedRole: undefined,
 					users: []
 				};
 			},
-			componentWillMount: function() {
-				this.updateOn( 'api', 'user.list', 'users' );
+			componentDidMount: function() {
+				users.onList( function( list ) {
+					this.setState( { users: list } );
+				}.bind( this ) );
 
-				this.subscribeTo( 'api', 'user.created', function( data ) {
-					if( !data.failed ) {
-						this.state.users.push( data.value );
-						this.replaceState( this.state );
-					}
-				}, this );
+				users.onCreated( function( data ) {
+					var list = this.state.users.slice();
+					list.push( { name: data.name, roles: [] } );
+					list = _.uniq( list, function( x ) { return x.name; } );
+					this.setState( { users: list } );
+				}.bind( this ) );
 
 				this.subscribeTo( 'roles', 'role.selected', function( data ) {
-					this.state.selectedRole = data.role;
-					this.setState( this.state );
-					Util.enable( '#role-user-list input[type="checkbox"]' );
+					this.setState( { selectedRole: data.role } );
 				}, this );
 
 				this.subscribeTo( 'roles', 'role.unselected', function( data ) {
-					this.state.selectedRole = undefined;
-					this.setState( this.state );
-					Util.disable( '#role-user-list input[type="checkbox"]' );
-					Util.uncheck( '#role-user-list input[type="checkbox"]' );
+					this.setState( { selectedRole: undefined } );
 				}, this );
 			},
 			changed: function( e ) {
-				var user = _.find( this.state.users, function( user ) {
-					return user.name == e.target.id;
-				} );
+				var list = this.state.users;
+				var user = _.find( list, { name: e.target.id } );
+				var index = _.findIndex( list, { name: e.target.id } );
 				if( e.target.checked ) {
 					user.roles.push( this.state.selectedRole );
-					Api.addUserRoles( e.target.id, user.roles );
+					users.addRole( e.target.id, this.state.selectedRole );
 				} else {
 					user.roles = _.without( user.roles, this.state.selectedRole );
-					Api.removeUserRoles( e.target.id, [ this.state.selectedRole ] );
+					users.removeRole( e.target.id, this.state.selectedRole );
 				}
-				this.setState( this.state );
+				list[ index ] = user;
+				this.setState( { users: list } );
 			},
 			render: function() {
 				var self = this;
 				var users = _.map( this.state.users, function( user ) {
 					var active = _.intersection( [ this.state.selectedRole ], user.roles ).length > 0,
 						tag = active ? <b>{user.name}</b> : <span>{user.name}</span>					
-					return 	<tr className='assignment'>
+					return 	<tr className='assignment' key={user.name}>
 								<td className='check-column'>
-									<input type='checkbox' id={user.name} onChange={this.changed} disabled={!active} checked={active}/>
+									<input type='checkbox' id={user.name} onChange={this.changed} disabled={!this.state.selectedRole} checked={active}/>
 								</td>
 								<td>
 									{tag}
@@ -86,6 +83,7 @@ define( [
 					</div>
 				);
 			}
-		});
+		} );
+		return RoleUserList;
 	}
 );

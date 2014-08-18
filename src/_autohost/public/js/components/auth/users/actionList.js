@@ -3,14 +3,12 @@ define( [
 		'jquery', 
 		'lodash',
 		'react',
-		'api',
-		'util',
 		'components/eventedComponent',
-		'jsx!auth/actionCategorySelect'
+		'actionChannel'
 	], 
-	function( $, _, React, Api, Util, Evented, CategorySelect ) {
-		return React.createClass({
-			mixins: [Evented],
+	function( $, _, React, Evented, actions ) {
+		var UserActionList = React.createClass( {
+			mixins: [ Evented ],
 			getInitialState: function() {
 				return { 
 					selectedUser: undefined,
@@ -19,39 +17,51 @@ define( [
 				};
 			},
 			componentWillMount: function() {
-				this.updateOn( 'api', 'action.categoryList.users', 'actions' );
+				actions.onList( function( list ) {
+					this.setState( { actions: list } );
+				}.bind( this ) );
 
 				this.subscribeTo( 'users', 'user.selected', function( data ) {
-					this.state.selectedUser = data.user;
-					this.state.selectedUserRoles = data.roles;
-					this.setState( this.state );
-					Util.enable( '#user-role-list input[type="checkbox"]' );
-					this.publish( 'actions', 'actions.filter', { roles: data.roles } );
+					this.setState( {
+						selectedUser: data.user,
+						selectedUserRoles: data.roles
+					} );
 				}, this );
 
 				this.subscribeTo( 'users', 'user.unselected', function( data ) {
-					this.state.selectedUser = undefined;
-					this.state.selectedUserRoles = [];
-					this.setState( this.state );
-					Util.disable( '#user-role-list input[type="checkbox"]' );
-					Util.uncheck( '#user-role-list input[type="checkbox"]' );
-					this.publish( 'actions', 'actions.unfilter', { roles: data.roles } );
+					this.setState( {
+						selectedUser: undefined,
+						selectedUserRoles: []
+					} );
 				}, this );
 			},
-			getActionByName: function( actionName ) {
-				return _.find( _.flatten( _.map( this.state.actions, function( x ) { return x; } ) ), function( x ) { return x.id == actionName; } );
-			},
 			render: function() {
+				var actions = _.map( this.state.actions, function( actions, resource ) {
+					var displayed = _.filter( actions, function( action ) {
+						return _.intersection( this.state.selectedUserRoles, action.roles ).length > 0;
+					}.bind( this ) );
+					var items = _.map( displayed, function( action ) {
+						return <tr className='assignment' key={action.name}>
+								<td><span>{action.name}</span></td>
+							</tr>
+					} );					
+					return (<table className='table table-condensed table-striped table-hover' key={resource}> 
+								<thead>
+									<th colSpan='2'>{resource}</th>
+								</thead>
+								<tbody>
+									{items}
+								</tbody>
+							</table>
+					);
+				}.bind( this ) );
 				return (
-					<div>
-						<div className="row">
-							<div>
-								<CategorySelect tabName="users"/>
-							</div>
-						</div>
+					<div id='user-action-list'>
+						{actions}
 					</div>
 				);
 			}
-		});
+		} );
+		return UserActionList;
 	}
 );

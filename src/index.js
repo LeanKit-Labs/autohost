@@ -22,7 +22,7 @@ var path = require( 'path' ),
 	api = require( './api.js' )( wrapper ),
 	passport, httpAdapter, socketAdapter, middleware;
 
-function initialize( cfg, authProvider, fount ) {
+function initialize( cfg, authProvider, fount ) { //jshint ignore:line
 	wrapper.config = cfg;
 	wrapper.fount = fount || require( 'fount' );
 	middleware = require( '../src/http/middleware.js' )( cfg, metrics );
@@ -38,7 +38,7 @@ function initialize( cfg, authProvider, fount ) {
 	}
 }
 
-function setup( authProvider ) {
+function setup( authProvider ) { //jshint ignore:line
 	var config = wrapper.config,
 		metrics = wrapper.metrics;
 
@@ -52,7 +52,7 @@ function setup( authProvider ) {
 
 	// API metadata
 	wrapper.http.middleware( '/api', function( req, res, next ) {
-		if( req.method == 'OPTIONS' || req.method == 'options' ) {
+		if( req.method === 'OPTIONS' || req.method === 'options' ) {
 			res.status( 200 ).send( wrapper.meta );
 		} else {
 			next();

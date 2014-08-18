@@ -6,8 +6,8 @@ define( [
 		'components/eventedComponent'
 	], 
 	function( $, _, React, Evented ) {
-		return React.createClass({
-			mixins: [Evented],
+		var User = React.createClass( {
+			mixins: [ Evented ],
 			getInitialState: function() {
 				return { data: {} };
 			},
@@ -18,7 +18,7 @@ define( [
 				this.publish( 'users', 'user.marked', { user: this.props.name, value: e.target.checked } );
 			},
 			clicked: function( e ) {
-				var selected = e.target.tagName == 'TD' ? 
+				var selected = e.target.tagName === 'TD' ? 
 					$( e.target.parentElement ) :
 					$( e.target.parentElement.parentElement );
 
@@ -52,6 +52,7 @@ define( [
 					</tr>
 				);
 			}
-		});
+		} );
+		return User;
 	}
 );

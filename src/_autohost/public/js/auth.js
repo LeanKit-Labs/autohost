@@ -14,7 +14,15 @@ require.config( {
 		resource: 'components/resource',
 		api: 'api',
 		bootstrap: 'lib/bootstrap.min',
-		util: 'util'
+		actions: 'store/actions',
+		actionAdapter: 'store/actionAdapter',
+		actionChannel: 'store/actionChannel',
+		roles: 'store/roles',
+		roleAdapter: 'store/roleAdapter',
+		roleChannel: 'store/roleChannel',
+		users: 'store/users',
+		userAdapter: 'store/userAdapter',
+		userChannel: 'store/userChannel',
 	},
 	shim: {
 		bootstrap: {
@@ -31,20 +39,28 @@ require.config( {
 			deps: [ 'jsx', 'JSXTransformer' ],
 			exports: [ 'React' ]
 		}
-	}
+	},
+	packages: [
+		{ name: 'when', location: 'lib/when', main: 'when' }
+	]
 } );
 
 require( [
 		'jquery',
 		'react',
 		'bootstrap',
-		'jsx!auth/main'
+		'jsx!auth/main',
+		'actionAdapter',
+		'actions',
+		'roleAdapter',
+		'roles',
+		'userAdapter',
+		'users'
 	], 
-	function($, React, Bootstrap, Auth) {		
-		var app = window.app = {};
+	function($, React, Bootstrap, auth) {		
 		window.React = React;
 		$(function() { 
-			Auth();
+			auth();
 		});
 	}
 );

@@ -1,6 +1,6 @@
 {
   "name": "autohost",
-  "version": "0.2.0-1",
+  "version": "0.2.0-3",
   "description": "Resource driven transport agnostic host",
   "main": "src/index.js",
   "dependencies": {
@@ -29,9 +29,11 @@
   "devDependencies": {
     "gulp": "^3.8.6",
     "gulp-mocha": "^0.5.2",
+    "gulp-mocha-phantomjs": "^0.4.0",
     "passport-http": "^0.2.2",
     "passport-http-bearer": "^1.0.1",
     "passport-strategy": "^1.0.0",
+    "processhost": "^0.1.13",
     "should": "^4.0.4",
     "socket.io-client": "^1.0.6"
   },

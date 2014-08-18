@@ -2,13 +2,12 @@
 define( [ 
 		'jquery', 
 		'lodash',
-		'util',
 		'react',
 		'components/eventedComponent'
 	], 
-	function( $, _, Util, React, Evented ) {
-		return React.createClass({
-			mixins: [Evented],
+	function( $, _, React, Events ) {
+		var Role = React.createClass( {
+			mixins: [ Events ],
 			getInitialState: function() {
 				return { data: {} };
 			},
@@ -19,7 +18,7 @@ define( [
 				this.publish( 'roles', 'role.marked', { role: this.props.name, value: e.target.checked } );
 			},
 			clicked: function( e ) {
-				var selected = e.target.tagName == 'TD' ? 
+				var selected = e.target.tagName === 'TD' ? 
 					$( e.target.parentElement ) :
 					$( e.target.parentElement.parentElement );
 
@@ -33,8 +32,9 @@ define( [
 				}
 			},
 			render: function() {
+				/* jshint ignore:start */
 				return (
-					<tr className='role' key='{this.props.name}' onClick={this.clicked}>
+					<tr className='role' onClick={this.clicked}>
 						<td className='right-align'>
 							<em>{this.props.name}</em>
 						</td>
@@ -43,7 +43,9 @@ define( [
 						</td>
 					</tr>
 				);
+				/* jshint ignore:end */
 			}
-		});
+		} );
+		return Role;
 	}
 );
