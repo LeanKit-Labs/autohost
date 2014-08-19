@@ -8,7 +8,8 @@ var crypt = require( 'bcrypt' ),
 	roles = require( './roles.js' ), // storage abstraction for roles
 	users = require( './users.js' ), // storage abstraction for users
 	basicAuth,
-	bearerAuth;
+	bearerAuth,
+	useSession;
 
 var wrapper = {
 	authenticate: authenticate,
@@ -33,6 +34,10 @@ var wrapper = {
 	getUsers: users.getList,
 	getUserRoles: users.getRoles,
 	hasUsers: users.hasUsers,
+	initPassport: function( passport ) {
+		basicAuth = passport.authenticate( 'basic', { session: useSession } );
+		bearerAuth = passport.authenticate( 'bearer', { session: useSession } );
+	},
 	serializeUser: serializeUser,
 	strategies: [
 		new Basic( authenticateCredentials ),
@@ -124,8 +129,6 @@ function verifyCredentials( username, password ) {
 }
 
 module.exports = function( config ) {
-	var useSession = !( config == undefined ? false : config.noSession );
-	basicAuth = passport.authenticate( 'basic', { session: useSession } );
-	bearerAuth = passport.authenticate( 'bearer', { session: useSession } );
+	useSession = !( config == undefined ? false : config.noSession );
 	return wrapper;
 };

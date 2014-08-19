@@ -133,6 +133,7 @@ function withAuthLib( authProvider ) {
 module.exports = function( config, authPlugin, meter ) {
 	metrics = meter;
 	authProvider = authPlugin;
+	authProvider.initPassport( passport );
 	if( config.anonymous ) {
 		anonPaths = _.isArray( config.anonymous ) ? config.anonymous : [ config.anonymous ];
 	} else {
