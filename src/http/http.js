@@ -134,9 +134,10 @@ function start() {
 }
 
 function stop() {
-	wrapper.server.close();
-	wrapper.server = undefined;
-	
+	if( wrapper.server ) {
+		wrapper.server.close();
+		wrapper.server = undefined;
+	}
 }
 
 module.exports = function( cfg, req, pass, mw, metric ) {

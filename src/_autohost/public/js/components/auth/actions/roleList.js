@@ -4,9 +4,10 @@ define( [
 		'lodash',
 		'react',
 		'components/eventedComponent',
-		'roleChannel'
+		'roleChannel',
+		'actionChannel'
 	], 
-	function( $, _, React, Events, roles ) {
+	function( $, _, React, Events, roles, actions ) {
 		var ActionRoleList = React.createClass( {
 			mixins: [ Events ],
 			getInitialState: function() {
@@ -51,12 +52,13 @@ define( [
 					action = this.state.selectedAction;
 				if( e.target.checked ) {
 					this.state.selectedActionRoles.push( role );
+					actions.addRole( action, role );
 					this.publish( 'actions', 'role.assigned', { role: role } );
 				} else {
 					this.state.selectedActionRoles = _.without( this.state.selectedActionRoles, role );
+					actions.removeRole( action, role );
 					this.publish( 'actions', 'role.unassigned', { role: role } );
 				}
-				Api.setActionRoles( this.state.selectedAction, this.state.selectedActionRoles );
 				this.state.selectedAction.roles = this.state.selectedActionRoles;
 				this.setState( this.state );
 			},
