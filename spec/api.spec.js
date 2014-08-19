@@ -112,7 +112,7 @@ describe( 'when loading from a good path', function() {
 	before( function( done ) {
 		api = require( '../src/api.js' )( host, fount );
 		api.addAdapter( adapter );
-		api.start( './spec/resources' )
+		api.start( './spec/resource' )
 			.then( null, function( /* err */ ) {
 				return [];
 			} )

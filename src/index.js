@@ -63,7 +63,7 @@ function setup( authProvider ) { //jshint ignore:line
 	socketAdapter = socketAdapterFn( config, authProvider, wrapper.socket, metrics );
 	api.addAdapter( socketAdapter );
 
-	api.start( config.resources || path.join( process.cwd(), './resources' ), authProvider )
+	api.start( config.resources || path.join( process.cwd(), './resource' ), authProvider )
 		.then( function( meta ) {
 			meta.prefix = config.apiPrefix || '/api';
 			wrapper.meta = meta;
