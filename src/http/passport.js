@@ -49,6 +49,7 @@ function getRoles( req, res, next ) {
 	var userName = _.isObject( req.user.name ) ? req.user.name.name : req.user.name;
 	if( userName === 'anonymous' ) {
 		req.user.roles = [ 'anonymous' ];
+		next();
 	} else {
 		metrics.timer( authorizationTimer ).start();
 		authProvider.getUserRoles( req.user.name )
