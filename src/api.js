@@ -10,7 +10,9 @@ var _ = require( 'lodash' ),
 		addAdapter: addAdapter,
 		clearAdapters: clearAdapters,
 		loadResources: loadResources,
-		start: start
+		start: start,
+		startAdapters: startAdapters,
+		stop: stop
 	},
 	adapters = [],
 	host,
@@ -119,6 +121,12 @@ function start( resourcePath, auth ) { //jshint ignore:line
 			var flattened = _.reduce( _.flatten( list ), reduce, {} );
 			return flattened;
 		} );
+}
+
+function stop() {
+	_.each( adapters, function( adapter ) {
+		adapter.stop();
+	} );
 }
 
 function startAdapters() { //jshint ignore:line

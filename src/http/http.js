@@ -134,11 +134,9 @@ function start() {
 }
 
 function stop() {
-	wrapper.app._router = undefined;
 	wrapper.server.close();
-	routes = [];
-	paths = [];
-	middleware = [];
+	wrapper.server = undefined;
+	
 }
 
 module.exports = function( cfg, req, pass, mw, metric ) {

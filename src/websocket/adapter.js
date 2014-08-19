@@ -9,7 +9,8 @@ var debug = require( 'debug' )( 'autohost:websocket-adapter' );
 var wrapper = {
 	action: wireupAction,
 	resource: wireupResource,
-	start: start
+	start: start,
+	stop: stop
 };
 
 function buildActionAlias( resourceName, action ) {
@@ -34,6 +35,10 @@ function checkPermissionFor( user, action ) {
 
 function start() {
 	socket.start( authStrategy );
+}
+
+function stop() {
+	socket.stop();
 }
 
 function wireupResource( resource ) {

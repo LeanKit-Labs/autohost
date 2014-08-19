@@ -20,21 +20,27 @@ var path = require( 'path' ),
 		socket: undefined
 	},
 	api = require( './api.js' )( wrapper ),
-	passport, httpAdapter, socketAdapter, middleware;
+	passport, httpAdapter, socketAdapter, middleware,
+	initialized;
 
 function initialize( cfg, authProvider, fount ) { //jshint ignore:line
-	wrapper.config = cfg;
-	wrapper.fount = fount || require( 'fount' );
-	middleware = require( '../src/http/middleware.js' )( cfg, metrics );
-	if( when.isPromiseLike( authProvider ) ) {
-		authProvider
-			.then( function( result ) {
-				wrapper.auth = result;
-				setup( result );
-			} );
+	if( initialized ) {
+		api.startAdapters();
 	} else {
-		wrapper.auth = authProvider;
-		setup( authProvider );
+		wrapper.config = cfg;
+		wrapper.fount = fount || require( 'fount' );
+		wrapper.stop = api.stop;
+		middleware = require( '../src/http/middleware.js' )( cfg, metrics );
+		if( when.isPromiseLike( authProvider ) ) {
+			authProvider
+				.then( function( result ) {
+					wrapper.auth = result;
+					setup( result );
+				} );
+		} else {
+			wrapper.auth = authProvider;
+			setup( authProvider );
+		}
 	}
 }
 
@@ -67,6 +73,7 @@ function setup( authProvider ) { //jshint ignore:line
 		.then( function( meta ) {
 			meta.prefix = config.apiPrefix || '/api';
 			wrapper.meta = meta;
+			initialized = true;
 		} );
 }
 

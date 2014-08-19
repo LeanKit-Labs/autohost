@@ -10,7 +10,8 @@ var path = require( 'path' ),
 var wrapper = {
 	action: wireupAction,
 	resource: wireupResource,
-	start: start
+	start: start,
+	stop: stop
 };
 
 function buildUrl() {
@@ -66,6 +67,10 @@ function checkPermissionFor( user, action ) {
 
 function start() {
 	http.start( authStrategy );
+}
+
+function stop() {
+	http.stop();
 }
 
 function wireupResource( resource, basePath ) {
