@@ -48,6 +48,8 @@ function getAuthMiddleware( uri ) {
 function getRoles( req, res, next ) {
 	var userName = _.isObject( req.user.name ) ? req.user.name.name : req.user.name;
 	if( userName === 'anonymous' ) {
+		req.user.roles = [ 'anonymous' ];
+	} else {
 		metrics.timer( authorizationTimer ).start();
 		authProvider.getUserRoles( req.user.name )
 			.then( null, function( err ) {
@@ -63,13 +65,13 @@ function getRoles( req, res, next ) {
 				metrics.timer( authorizationTimer ).record();
 				next();
 			} );
-	} else {
-		req.user.roles = [ 'anonymous' ];
 	}
 }
 
 function getSocketRoles( userName ) {
 	if( userName === 'anonymous' ) {
+		return when( [ 'anonymous' ] );
+	} else {
 		metrics.timer( authorizationTimer ).start();
 		return authProvider.getUserRoles( userName )
 			.then( null, function( err ) {
@@ -84,8 +86,6 @@ function getSocketRoles( userName ) {
 				metrics.timer( authorizationTimer ).record();
 				return roles;
 			} );
-	} else {
-		return when( [ 'anonymous' ] );
 	}
 }
 
