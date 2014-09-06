@@ -30,7 +30,7 @@ var wrapper = {
 	stop: stop
 };
 
-function createMiddlewareStack() {
+function createMiddlewareStack() { //jshint ignore:line
 	var router = new Router();
 	router
 		.use( expressInit )
@@ -41,7 +41,7 @@ function createMiddlewareStack() {
 	return router;
 }
 
-function createAuthMiddlewareStack() {
+function createAuthMiddlewareStack() { //jshint ignore:line
 	var router = new Router().use( expressInit );
 	_.each( middleware, function( m ) {
 		m( router );
@@ -54,10 +54,13 @@ function createAuthMiddlewareStack() {
 
 // adaptation of express's initializing middleware
 // the original approach breaks engine-io
-function expressInit( req, res, next ) {
+function expressInit( req, res, next ) { //jshint ignore:line
     req.next = next;
+    // patching this according to how express does it
+    /* jshint ignore:start */
     req.__proto__ = expreq;
     res.__proto__ = expres;
+    /* jshint ignore:start */
     next();
 }
 
@@ -71,7 +74,9 @@ function initialize() {
 	// prime middleware with defaults
 	middlewareLib.attach( registerMiddleware );
 
-	wrapper.passport.wireupPassport( wrapper );
+	if( wrapper.passport ) {
+		wrapper.passport.wireupPassport( wrapper );
+	}
 
 	// apply user-supplied middleware
 	_.each( middleware, function( m ) { m( wrapper.app ); } );
@@ -129,11 +134,10 @@ function start() {
 }
 
 function stop() {
-	wrapper.app._router = undefined;
-	wrapper.server.close();
-	routes = [];
-	paths = [];
-	middleware = [];
+	if( wrapper.server ) {
+		wrapper.server.close();
+		wrapper.server = undefined;
+	}
 }
 
 module.exports = function( cfg, req, pass, mw, metric ) {

@@ -4,20 +4,30 @@ define( [
 		'lodash',
 		'react',
 		'postal',
-		'components/eventedComponent',
 		'jsx!auth/users/user-main',
 		'jsx!auth/roles/roles-main',
-		'jsx!auth/actions/actions-main'
+		'jsx!auth/actions/actions-main',
+		'roleChannel',
+		'userChannel',
+		'actionChannel'
 	], 
-	function( $, _, React, Postal, Evented, Users, Roles, Actions ) {
+	function( $, _, React, Postal, Users, Roles, Actions, roles, users, actions ) {
 		return function() {
 			var App = React.createClass({
-				mixins: [Evented],
 				getInitialState: function() {
-					return { data: { } };
+					return { 
+						actions: {},
+						users: [],
+						roles: []
+					};
 				},
 				switchTabs: function(e) {
-					this.publish('actions', 'actions.unfilter', {});
+					
+				},
+				componentWillMount: function() {
+					roles.get();
+					users.get();
+					actions.get();
 				},
 				render: function() {
 					return (
@@ -48,10 +58,10 @@ define( [
 											<Roles/>
 										</div>
 										<div className='tab-pane fade in' id='panel-users'>
-											<Users />
+											<Users/>
 										</div>
 										<div className='tab-pane fade in active' id='panel-actions'>
-											<Actions />
+											<Actions/>
 										</div>
 									</div>
 								</div>

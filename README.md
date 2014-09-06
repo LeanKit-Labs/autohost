@@ -220,9 +220,9 @@ Forwards the request using the request library and returns the resulting stream.
 ## HTTP Transport
 The http transport API has three methods you can call to add middleware, API routes and static content routes. While you should rely on resources to supply routes, it's very common to add your own middleware. Authost will always add your middleware *after* its standard middleware and passport (unless you have turned off specific middleware via configuration).
 
- * `host.http.registerMiddleware( mountPath, callback )`
- * `host.http.registerRoute( url, callback )`
- * `host.http.registerStaticPath( url, filePath )`
+ * `host.http.middleware( mountPath, callback )`
+ * `host.http.route( url, callback )`
+ * `host.http.static( url, filePath )`
 
 Keep in mind - most of the features you'll want to add beyond what autohost provides can probably be accomplished via middleware.
 

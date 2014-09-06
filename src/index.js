@@ -20,25 +20,31 @@ var path = require( 'path' ),
 		socket: undefined
 	},
 	api = require( './api.js' )( wrapper ),
-	passport, httpAdapter, socketAdapter, middleware;
+	passport, httpAdapter, socketAdapter, middleware,
+	initialized;
 
-function initialize( cfg, authProvider, fount ) {
-	wrapper.config = cfg;
-	wrapper.fount = fount || require( 'fount' );
-	middleware = require( '../src/http/middleware.js' )( cfg, metrics );
-	if( when.isPromiseLike( authProvider ) ) {
-		authProvider
-			.then( function( result ) {
-				wrapper.auth = result;
-				setup( result );
-			} );
+function initialize( cfg, authProvider, fount ) { //jshint ignore:line
+	if( initialized ) {
+		api.startAdapters();
 	} else {
-		wrapper.auth = authProvider;
-		setup( authProvider );
+		wrapper.config = cfg;
+		wrapper.fount = fount || require( 'fount' );
+		wrapper.stop = api.stop;
+		middleware = require( '../src/http/middleware.js' )( cfg, metrics );
+		if( when.isPromiseLike( authProvider ) ) {
+			authProvider
+				.then( function( result ) {
+					wrapper.auth = result;
+					setup( result );
+				} );
+		} else {
+			wrapper.auth = authProvider;
+			setup( authProvider );
+		}
 	}
 }
 
-function setup( authProvider ) {
+function setup( authProvider ) { //jshint ignore:line
 	var config = wrapper.config,
 		metrics = wrapper.metrics;
 
@@ -52,7 +58,7 @@ function setup( authProvider ) {
 
 	// API metadata
 	wrapper.http.middleware( '/api', function( req, res, next ) {
-		if( req.method == 'OPTIONS' || req.method == 'options' ) {
+		if( req.method === 'OPTIONS' || req.method === 'options' ) {
 			res.status( 200 ).send( wrapper.meta );
 		} else {
 			next();
@@ -63,10 +69,11 @@ function setup( authProvider ) {
 	socketAdapter = socketAdapterFn( config, authProvider, wrapper.socket, metrics );
 	api.addAdapter( socketAdapter );
 
-	api.start( config.resources || path.join( process.cwd(), './resources' ), authProvider )
+	api.start( config.resources || path.join( process.cwd(), './resource' ), authProvider )
 		.then( function( meta ) {
 			meta.prefix = config.apiPrefix || '/api';
 			wrapper.meta = meta;
+			initialized = true;
 		} );
 }
 

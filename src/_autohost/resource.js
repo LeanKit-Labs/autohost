@@ -1,9 +1,5 @@
-var fs = require( 'fs' ),
-	path = require( 'path' ),
-	_ = require( 'lodash' ),
-	util = require( 'util' ),
-	os = require( 'os' ),
-	uuid = require( 'node-uuid' );
+var _ = require( 'lodash' );
+var uuid = require( 'node-uuid' );
 
 function getContinuation( envelope ) {
 	var continuation = envelope.continuation || { sort: {} };
@@ -29,7 +25,7 @@ function getContinuation( envelope ) {
 }
 
 function unsupported( envelope ) {
-	envelope.reply( { data: "Operation not supported by authorization strategy", statusCode: 404 } );
+	envelope.reply( { data: 'Operation not supported by authorization strategy', statusCode: 404 } );
 }
 
 function fivehundred( envelope ) {
@@ -49,7 +45,7 @@ module.exports = function( host ) {
 				topic: 'api',
 				path: '',
 				handle: function( envelope) {
-					envelope.reply( { data: host.meta[ '_autohost' ].routes } );
+					envelope.reply( { data: host.meta._autohost.routes } );
 				}
 			},
 			{
@@ -172,7 +168,7 @@ module.exports = function( host ) {
 						host.auth.changeActionRoles( action, roles, 'add' )
 							.then( null, fivehundred( envelope ) )
 							.then( function() {
-								envelope.reply( { data: { result: "ok" } } );
+								envelope.reply( { data: { result: 'ok' } } );
 							} );
 					} else {
 						unsupported( envelope );
@@ -191,7 +187,7 @@ module.exports = function( host ) {
 						host.auth.changeActionRoles( action, roles, 'remove' )
 							.then( null, fivehundred( envelope ) )
 							.then( function() {
-								envelope.reply( { data: { result: "ok" } } );
+								envelope.reply( { data: { result: 'ok' } } );
 							} );
 					} else {
 						unsupported( envelope );
@@ -210,7 +206,7 @@ module.exports = function( host ) {
 						host.auth.changeUserRoles( user, roles, 'add' )
 							.then( null, fivehundred( envelope ) )
 							.then( function() {
-								envelope.reply( { data: { result: "ok" } } );
+								envelope.reply( { data: { result: 'ok' } } );
 							} );
 					} else {
 						unsupported( envelope );
@@ -229,7 +225,7 @@ module.exports = function( host ) {
 						host.auth.changeUserRoles( user, roles, 'remove' )
 							.then( null, fivehundred( envelope ) )
 							.then( function() {
-								envelope.reply( { data: "ok" } );
+								envelope.reply( { data: 'ok' } );
 							} );
 					} else {
 						unsupported( envelope );
@@ -247,7 +243,7 @@ module.exports = function( host ) {
 						host.auth.createRole( role )
 							.then( null, fivehundred( envelope ) )
 							.then( function() {
-								envelope.reply( { data: "ok" } );
+								envelope.reply( { data: 'ok' } );
 							} );
 					} else {
 						unsupported( envelope );
@@ -265,7 +261,7 @@ module.exports = function( host ) {
 						host.auth.deleteRole( role )
 							.then( null, fivehundred( envelope ) )
 							.then( function() {
-								envelope.reply( { data: "ok" } );
+								envelope.reply( { data: 'ok' } );
 							} );
 					} else {
 						unsupported( envelope );
@@ -285,6 +281,25 @@ module.exports = function( host ) {
 							.then( null, fivehundred( envelope ) )
 							.then( function() {
 								envelope.reply( { data: { result: 'User created successfully' } } );
+							} );
+					} else {
+						unsupported( envelope );
+					}
+				}
+			},
+			{
+				'alias': 'change-password',
+				'verb': 'patch',
+				'topic': 'change.password',
+				'path': 'user/:userName',
+				handle: function( envelope ) {
+					if( host.auth && host.auth.createUser ) {
+						var user = envelope.data.userName,
+							pass = envelope.data.password;
+						host.auth.changePassword( user, pass )
+							.then( null, fivehundred( envelope ) )
+							.then( function() {
+								envelope.reply( { data: { result: 'User password changed successfully' } } );
 							} );
 					} else {
 						unsupported( envelope );

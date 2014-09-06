@@ -47,6 +47,7 @@ The follow methods are *required* by any auth provider library in order for auto
  * getActionRoles: function( actionname ) {} // return a promised array of the action's roles
  * getUserRoles: function( username ) {} // return a promised array of the user's roles
  * hasUsers: function() {} // return a promised boolean to indicate if any users exist in the system
+ * initPassport: function( passport ) {} // initialize passport here - autohost passes in its instance
  * serializeUser: function( user, done ) {} // serialize user record for session store
  * strategies: [] // a list of the Passport strategies for use in authenticating requests and sockets
  * updateActions: function( set ) {} // called on start-up by 
@@ -113,6 +114,9 @@ This takes the name of a user and returns a promise that should resolve to the l
 
 ### hasUsers() -> promise( boolean )
 Autohost will actually skip authentication middleware if no users exist in the database and assign the user record { name: 'anonymous', roles: [] } to all requests and sockets. This is to prevent weird situations where new services under development lock you out.
+
+### initPassport( passport ) -> void
+Called by autohost with its passport instance. This is where you must wire in the strategies used by your auth provider.
 
 ### serializeUser( user, done ) -> void
 Called from passport in order to get a raw representation of the user before storing. The done callback follows the typical Node ( error, result ) format.

@@ -2,18 +2,17 @@
 define( [ 
 		'jquery', 
 		'lodash',
-		'util',
 		'react',
 		'components/eventedComponent'
 	], 
-	function( $, _, Util, React, Evented ) {
-		return React.createClass({
-			mixins: [Evented],
+	function( $, _, React, Evented ) {
+		var Action = React.createClass( {
+			mixins: [ Evented ],
 			getInitialState: function() {
 				return { data: {} };
 			},
 			clicked: function( e ) {
-				var selected = e.target.tagName == 'TD' ? 
+				var selected = e.target.tagName === 'TD' ? 
 					$( e.target.parentElement ) :
 					$( e.target.parentElement.parentElement );
 				if( !selected.hasClass( 'info' ) ) {
@@ -26,6 +25,7 @@ define( [
 				}
 			},
 			render: function() {
+				/* jshint ignore:start */
 				var actionElement = <em>{this.props.name}</em>;
 				var rolesIntersection = _.intersection(this.props.roles, this.props.selRoles);
 				if (rolesIntersection && rolesIntersection.length > 0) {
@@ -38,7 +38,9 @@ define( [
 						</td>
 					</tr>
 				);
+				/* jshint ignore:end */
 			}
-		});
+		} );
+		return Action;
 	}
 );

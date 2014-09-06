@@ -3,26 +3,15 @@ define( [
 		'jquery', 
 		'lodash',
 		'react',
-		'api',
-		'util',
-		'components/eventedComponent',
 		'jsx!auth/actions/actions',
 		'jsx!auth/actions/roleList',
 		'jsx!auth/actions/userList'
 	], 
-	function( $, _, React, Api, Util, Evented, Actions, Roles, Users ) {
-		return React.createClass({
-			mixins: [Evented],
-			getInitialState: function() {
-				return { 
-					
-				};
-			},
-			componentWillMount: function() {
-				
-			},
+	function( $, _, React, Actions, Roles, Users ) { // jshint ignore:line
+		var ActionMain = React.createClass( {
 			render: function() {
 				return (
+					/* jshint ignore:start */
 					<div className='row left-pad'>
 						<div className='col-sm-3'>
 							<Actions />
@@ -34,8 +23,10 @@ define( [
 							<Users />
 						</div>
 					</div>
+					/* jshint ignore:end */
 				);
 			}
-		});
+		} );
+		return ActionMain;
 	}
 );

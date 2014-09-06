@@ -7,13 +7,13 @@ define( [
 				var channel = postal.channel(channel);
 				channel.publish( topic, data );
 			},
-			onChange: function(event) {
+			onChange: function( event ) {
 				var id = this.props.id;
 				var channel = postal.channel('control.updates');
 				channel.publish( id + '.changed', { id: id, value: event.target.value });
 			},
 			subscribeTo: function(channel, topic, handle) {
-				var channel = postal.channel(channel);
+				var channel = postal.channel( channel );
 				if(!this.state.subscriptions) {
 					this.state.subscriptions = {};
 				}

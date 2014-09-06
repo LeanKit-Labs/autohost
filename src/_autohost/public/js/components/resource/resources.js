@@ -4,23 +4,23 @@ define( [
 		'lodash',
 		'react',
 		'api',
-		'components/eventedComponent',
 		'jsx!resource/paths',
 		'jsx!resource/routes',
 		'jsx!resource/topics'
 	], 
-	function( $, _, React, Api, Evented, Paths, Routes, Topics ) {
+	function( $, _, React, Api, Paths, Routes, Topics ) {
 		return React.createClass({
-			mixins: [Evented],
 			getInitialState: function() {
 				return { 
-					connections: {},
 					resources: {} 
 				};
 			},
 			componentWillMount: function() {
-				this.updateOn( 'api', 'resources', 'resources' );
-				Api.getResources();
+				Api.getResources()
+					.then( function( resources ) {
+						this.state.resources = resources;
+						this.setState( this.state );
+					}.bind( this ) );
 			},
 			render: function() {
 				var self = this,

@@ -9,5 +9,11 @@ try {
 		socketIO: true,
 		websockets: true,
 		origin: 'console'
-	}, require( 'autohost-nedb-auth' )( {} ) );
+	// }, require( 'autohost-nedb-auth' )( {} ) );
+	}, require( 'autohost-riak-auth' )(
+		{ appName: 'ahdemo', 
+			riak: { nodes: [
+				{ host: 'ubuntu' }
+			] }
+		} ) );
 } catch( e ) { console.log( e.stack ); }

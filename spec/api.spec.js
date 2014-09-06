@@ -46,6 +46,7 @@ describe( 'when loading from a bad path', function() {
 			api: { verb: 'get', url: undefined },
 			resources: { verb: 'get', url: undefined },
 			actions: { verb: 'get', url: undefined },
+			'change-password': { verb: 'patch', url: undefined },
 			'connected-sockets': { verb: 'get', url: undefined },
 			'create-token': { verb: 'post', url: undefined },
 			'destroy-token': { verb: 'delete', url: undefined },
@@ -61,6 +62,7 @@ describe( 'when loading from a bad path', function() {
 			'add-role': { verb: 'post', url: undefined },
 			'remove-role': { verb: 'delete', url: undefined },
 			'create-user': { verb: 'post', url: undefined },
+
 			'enable-user': { verb: 'put', url: undefined },
 			'disable-user': { verb: 'delete', url: undefined },
 			metrics: { verb: 'get', url: undefined } 
@@ -85,6 +87,7 @@ describe( 'when loading from a bad path', function() {
 			'_autohost.add-role',
 			'_autohost.remove-role',
 			'_autohost.create-user',
+			'_autohost.change-password',
 			'_autohost.create-token',
 			'_autohost.destroy-token',
 			'_autohost.list-tokens',
@@ -109,7 +112,7 @@ describe( 'when loading from a good path', function() {
 	before( function( done ) {
 		api = require( '../src/api.js' )( host, fount );
 		api.addAdapter( adapter );
-		api.start( './spec/resources' )
+		api.start( './spec/resource' )
 			.then( null, function( /* err */ ) {
 				return [];
 			} )
@@ -134,6 +137,7 @@ describe( 'when loading from a good path', function() {
 			api: { verb: 'get', url: undefined },
 			resources: { verb: 'get', url: undefined },
 			actions: { verb: 'get', url: undefined },
+			'change-password': { verb: 'patch', url: undefined },
 			'connected-sockets': { verb: 'get', url: undefined },
 			'create-token': { verb: 'post', url: undefined },
 			'destroy-token': { verb: 'delete', url: undefined },
@@ -173,6 +177,7 @@ describe( 'when loading from a good path', function() {
 			'_autohost.add-role',
 			'_autohost.remove-role',
 			'_autohost.create-user',
+			'_autohost.change-password',
 			'_autohost.create-token',
 			'_autohost.destroy-token',
 			'_autohost.list-tokens',

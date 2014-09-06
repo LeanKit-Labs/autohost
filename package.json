@@ -1,6 +1,6 @@
 {
   "name": "autohost",
-  "version": "0.2.0-1",
+  "version": "0.2.0-8",
   "description": "Resource driven transport agnostic host",
   "main": "src/index.js",
   "dependencies": {
@@ -11,8 +11,6 @@
     "express": "^4.7.2",
     "express-session": "^1.7.2",
     "fount": "0.0.4",
-    "gulp": "^3.8.6",
-    "gulp-mocha": "^0.5.2",
     "lodash": "^2.4.1",
     "multer": "^0.1.3",
     "node-uuid": "^1.4.1",
@@ -27,11 +25,15 @@
     "when": "^3.4.2"
   },
   "devDependencies": {
+    "autohost-nedb-auth": "0.1.0-1",
+    "autohost-riak-auth": "0.1.0-3",
     "gulp": "^3.8.6",
     "gulp-mocha": "^0.5.2",
+    "gulp-mocha-phantomjs": "^0.4.0",
     "passport-http": "^0.2.2",
     "passport-http-bearer": "^1.0.1",
     "passport-strategy": "^1.0.0",
+    "processhost": "^0.1.13",
     "should": "^4.0.4",
     "socket.io-client": "^1.0.6"
   },

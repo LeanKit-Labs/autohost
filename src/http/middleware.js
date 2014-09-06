@@ -47,7 +47,7 @@ function requestMetrics( req, res, next ) {
 	req.context = {};
 	var timerKey = [ req.method.toUpperCase(), req.url, 'timer' ].join( ' ' );
 	metrics.timer( timerKey ).start();
-	res.on( 'finish', function() { 
+	res.once( 'finish', function() { 
 		metrics.timer( timerKey ).record();
 	} );
 	next();

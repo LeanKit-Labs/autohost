@@ -3,7 +3,6 @@
 
 var _ = require( 'lodash' );
 var when = require( 'when' );
-var passport = require( 'passport' );
 var Basic = require( 'passport-http' ).BasicStrategy;
 var Bearer = require( 'passport-http-bearer' ).Strategy;
 var Query = require( './queryStrategy.js' );
@@ -11,6 +10,7 @@ var debug = require( 'debug' )( 'autohost:auth.mock' );
 var bearerAuth;
 var basicAuth;
 var queryAuth;
+var useSession;
 var wrapper = {
 		authenticate: authenticate,
 		checkPermission: checkPermission,
@@ -23,6 +23,11 @@ var wrapper = {
 			new Bearer( authenticateToken ),
 			new Query( authenticateQuery )
 		],
+		initPassport: function( passport ) {
+			basicAuth = passport.authenticate( 'basic', { session: useSession } );
+			bearerAuth = passport.authenticate( 'bearer', { session: useSession } );
+			queryAuth = passport.authenticate( 'query', { session: useSession } );
+		},
 		users: {},
 		actions: {},
 		roles: {},
@@ -57,15 +62,15 @@ function authenticateToken( token, done ) {
 }
 
 function authenticateQuery( token, done ) {
-	var userName = wrapper.tokens[ token ],
-		user = userName ? wrapper.users[ userName ] : false;
+	var userName = wrapper.tokens[ token ];
+	var user = userName ? wrapper.users[ userName ] : false;
 	debug( 'query token %s resulted in', token, user ,'amongst', _.keys( wrapper.users ) );
 	done( null, user );
 }
 
 function checkPermission( user, action ) {
-	var userName = user.name ? user.name : user,
-		userRoles = user.roles ? user.roles : getUserRoles( userName );
+	var userName = user.name ? user.name : user;
+	var userRoles = user.roles ? user.roles : getUserRoles( userName );
 	debug( 'checking user %s for action %s', userName, action );
 	return when.try( hasPermissions, userRoles, getActionRoles( action ) );
 }
@@ -108,9 +113,6 @@ function deserializeUser( user, done ) {
 }
 
 module.exports = function( config ) {
-	var useSession = !config.noSession;
-	basicAuth = passport.authenticate( 'basic', { session: useSession } );
-	bearerAuth = passport.authenticate( 'bearer', { session: useSession } );
-	queryAuth = passport.authenticate( 'query', { session: useSession } );
+	useSession = !config.noSession;
 	return wrapper;
 };

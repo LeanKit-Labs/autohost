@@ -10,22 +10,23 @@ var _ = require( 'lodash' ),
 		addAdapter: addAdapter,
 		clearAdapters: clearAdapters,
 		loadResources: loadResources,
-		start: start
+		start: start,
+		startAdapters: startAdapters,
+		stop: stop
 	},
 	adapters = [],
 	host,
 	fount;
 
-function addAdapter( adapter ) {
+function addAdapter( adapter ) { //jshint ignore:line
 	adapters.push( adapter );
 }
 
-function clearAdapters() {
+function clearAdapters() { //jshint ignore:line
 	adapters = [];
 }
 
 function getResources( filePath ) {
-	var list = [];
 	if( fs.existsSync( filePath ) ) {
 		return readDirectory( filePath )
 			.then( function( contents ) {
@@ -65,7 +66,7 @@ function loadModule( resourcePath ) {
 	}
 }
 
-function loadResources( filePath ) {
+function loadResources( filePath ) { //jshint ignore:line
 	var resourcePath = path.resolve( process.cwd(), filePath );
 	return getResources( resourcePath )
 		.then( function( list ) {
@@ -76,7 +77,7 @@ function loadResources( filePath ) {
 		} );
 }
 
-function processResource( resource, basePath ) {
+function processResource( resource, basePath ) { //jshint ignore:line
 	getActions( resource );
 	return when.all( _.map( adapters, function( adapter ) {
 		return when.try( adapter.resource, resource, basePath );
@@ -88,7 +89,7 @@ function processResource( resource, basePath ) {
 	} );
 }
 
-function reduce( acc, resource ) {
+function reduce( acc, resource ) { //jshint ignore:line
 	_.each( resource, function( val, key ) {
 		if( acc[ key ] ) {
 			_.each( val, function( list, prop ) {
@@ -101,7 +102,7 @@ function reduce( acc, resource ) {
 	return acc;
 }
 
-function start( resourcePath, auth ) {
+function start( resourcePath, auth ) { //jshint ignore:line
 	wrapper.actionList = {};
 	return when.all( [
 			loadResources( resourcePath ),
@@ -122,7 +123,13 @@ function start( resourcePath, auth ) {
 		} );
 }
 
-function startAdapters() {
+function stop() {
+	_.each( adapters, function( adapter ) {
+		adapter.stop();
+	} );
+}
+
+function startAdapters() { //jshint ignore:line
 	_.each( adapters, function( adapter ) {
 		adapter.start();
 	} );

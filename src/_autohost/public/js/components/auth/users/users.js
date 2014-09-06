@@ -3,13 +3,12 @@ define( [
 		'jquery', 
 		'lodash',
 		'react',
-		'api',
-		'util',
 		'components/eventedComponent',
-		'jsx!auth/users/user'
+		'jsx!auth/users/user',
+		'userChannel'
 	], 
-	function( $, _, React, Api, Util, Evented, User ) {
-		return React.createClass({
+	function( $, _, React, Evented, User, users ) {
+		var Users = React.createClass({
 			mixins: [Evented],
 			getInitialState: function() {
 				return { 
@@ -21,42 +20,40 @@ define( [
 				};
 			},
 			componentWillMount: function() {
-				this.updateOn( 'api', 'user.list', 'users' );
-				this.subscribeTo( 'api', 'user.created', function( data ) {
-					if( !data.failed ) {
-						this.state.users.push( data.value );
-						this.state.newUser = '';
-						this.state.newPass = '';
-						this.replaceState( this.state );
-					}
-				}, this );
+				users.onList( function( list ) {
+					this.setState( { users: list } );
+				}.bind( this ) );
 
-				this.subscribeTo( 'api', 'user.disabled', function( data ) {
-					var user = this.getUserByName( data.value );
-					user.disabled = true;
-					this.setState( this.state );
-				}, this );
+				users.onCreated( function( data ) {
+					var list = this.state.users.slice();
+					list.push( { name: data.name, roles: [] } );
+					list = _.uniq( list, function( x ) { return x.name; } );
+					this.setState( { users: list } );
+				}.bind( this ) );
 
-				this.subscribeTo( 'api', 'user.enabled', function( data ) {
-					var user = this.getUserByName( data.value );
-					delete user.disabled;
-					this.setState( this.state );
-				}, this );
+				users.onDisabled( function( data ) {
+					var list = this.state.users;
+					var index = _.findIndex( list, { name: data.name } );
+					list[ index ].disabled = true;
+					this.setState( { users: list } );
+				}.bind( this ) );
+
+				users.onEnabled( function( data ) {
+					var list = this.state.users;
+					var index = _.findIndex( list, { name: data.name } );
+					list[ index ].disabled = false;
+					this.setState( { users: list } );
+				}.bind( this ) );
 
 				this.subscribeTo( 'users', 'user.marked', function( data ) {
+					var marked = this.state.marked;
 					if( data.value ) {
-						this.state.marked.push( data.user );
+						marked.push( data.user );
 					} else {
-						var index = this.state.marked.indexOf( data.user );
-						this.state.marked.splice( index, 1 );
+						marked = _.without( marked, data.user );
 					}
-					this.setState( this.state );
+					this.setState( { marked: marked } );
 				}, this );
-
-				Api.getUsers();
-			},
-			getUserByName: function( userName ) {
-				return _.find( this.state.users, function( x ) { return x.id == userName; } );
 			},
 			nameChanged: function( e ) {
 				this.setState( { newUser: e.target.value } );
@@ -65,17 +62,17 @@ define( [
 				this.setState( { newPass: e.target.value } );
 			},
 			addUser: function( e ) {
-				Api.createUser( this.state.newUser, this.state.newPass );			
+				users.create( this.state.newUser, this.state.newPass );
 			},
 			enableUsers: function() {
 				_.each( this.state.marked, function( user ) {
-					Api.enableUser( user );
-				}, this );
+					users.enable( user );
+				} );
 			},
 			disableUsers: function() {
 				_.each( this.state.marked, function( user ) {
-					Api.disableUser( user );
-				}, this );
+					users.disable( user );
+				} );
 			},
 			render: function() {
 				var self = this;
@@ -109,6 +106,7 @@ define( [
 					</div>
 				);
 			}
-		});
+		} );
+		return Users;
 	}
 );
