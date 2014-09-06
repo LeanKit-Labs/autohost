@@ -26,6 +26,7 @@
   },
   "devDependencies": {
     "autohost-nedb-auth": "0.1.0-1",
+    "autohost-riak-auth": "0.1.0-3",
     "gulp": "^3.8.6",
     "gulp-mocha": "^0.5.2",
     "gulp-mocha-phantomjs": "^0.4.0",
