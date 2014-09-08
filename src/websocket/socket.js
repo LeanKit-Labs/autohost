@@ -1,5 +1,7 @@
 var config, socketIO, websocket, http;
 var _ = require( 'lodash' );
+var postal = require( 'postal' );
+var eventChannel = postal.channel( 'events' );
 var debug = require( 'debug' )( 'autohost:ws-transport' );
 var clients = [];
 var wrapper = {
@@ -19,10 +21,12 @@ wrapper.clients.lookup = {};
 
 function addClient( socket ) {
 	wrapper.clients.push( socket );
+	eventChannel.publish( 'socket.client.connected', { socket: socket } );
 }
 
 function socketIdentified( id, socket ) {
 	wrapper.clients.lookup[ id ] = socket;
+	eventChannel.publish( 'socket.client.identified', { id: id, socket: socket } );
 }
 
 function notifyClients( message, data ) {
@@ -48,6 +52,7 @@ function removeClient( socket ) {
 	if( socket.id ) {
 		delete wrapper.clients.lookup[ socket.id ];
 	}
+	eventChannel.publish( 'socket.client.closed', { id: socket.id, socket: socket } );
 }
 
 function sendToClient( id, message, data ) {
@@ -70,7 +75,7 @@ function start() {
 		socketIO = require( './socketio.js' )( config, wrapper, http.passport );
 		socketIO.config( http );
 	}
-	if( config.websocket ) {
+	if( config.websocket || config.websockets ) {
 		websocket = require( './websocket' )( config, wrapper, http.passport );
 		websocket.config( http );
 	}

@@ -55,7 +55,7 @@ The object literal follows the format:
 	allowedOrigin: 'leankit.com', // used to filter incoming web socket connections based on origin
 	apiPrefix: '/api', // allows you to change the prefix for resource action URLs
 	socketIO: false, // enables socket.io,
-	websockets: false, // enables websockets
+	websocket: false, // enables websockets
 	noSession: false, // disables sessions
 	noCookie: false, // disables cookies
 	noBody: false, // disables body parsing
@@ -244,10 +244,11 @@ When establishing a connection to autohost using the WebSocket-Node client, you'
 Autohost normalizes the differences between each library with the same set of calls:
 
  * `socket.publish( topic, message )` - sends a message with the topic and message contents to the socket
- * `host.socket.sendToClient( id, topic, message )` - sends message to specific client via websocket (returns true if successful)
- * `host.socket.notifyClients( topic, message )` - sends message to all clients connected via socket
+ * `host.socket.send( id, topic, message )` - sends message to specific client via websocket (returns true if successful)
+ * `host.socket.notify( topic, message )` - sends message to all clients connected via socket
 
 ### Events
+These events can be subscribed to via `host.on`:
 
  * 'socket.client.connected', { socket: socketConnection } - raised when a client connects
  * 'socket.client.identified', { socket: socketConnection, id: id } - raised when client reports unique id

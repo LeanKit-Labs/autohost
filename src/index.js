@@ -1,13 +1,15 @@
-var path = require( 'path' ),
-	metrics = require( 'cluster-metrics' ),
-	request = require( 'request' ).defaults( { jar: true } ),
-	when = require( 'when' ),
-	passportFn = require( './http/passport.js' ),
-	httpFn = require( './http/http.js' ),
-	httpAdapterFn = require( './http/adapter.js' ),
-	socketFn = require( './websocket/socket.js' ),
-	socketAdapterFn = require( './websocket/adapter.js' ),
-	wrapper = {
+var path = require( 'path' );
+var metrics = require( 'cluster-metrics' );
+var request = require( 'request' ).defaults( { jar: true } );
+var when = require( 'when' );
+var passportFn = require( './http/passport.js' );
+var httpFn = require( './http/http.js' );
+var httpAdapterFn = require( './http/adapter.js' );
+var socketFn = require( './websocket/socket.js' );
+var socketAdapterFn = require( './websocket/adapter.js' );
+var postal = require( 'postal' );
+var eventChannel = postal.channel( 'events' );
+var wrapper = {
 	 	actions: undefined,
 	 	auth: undefined,
 		config: undefined,
@@ -17,11 +19,12 @@ var path = require( 'path' ),
 		request: request,
 		meta: undefined,
 		http: undefined,
-		socket: undefined
-	},
-	api = require( './api.js' )( wrapper ),
-	passport, httpAdapter, socketAdapter, middleware,
-	initialized;
+		socket: undefined,
+		on: onEvent
+	};
+var api = require( './api.js' )( wrapper );
+var passport, httpAdapter, socketAdapter, middleware;
+var initialized;
 
 function initialize( cfg, authProvider, fount ) { //jshint ignore:line
 	if( initialized ) {
@@ -42,6 +45,10 @@ function initialize( cfg, authProvider, fount ) { //jshint ignore:line
 			setup( authProvider );
 		}
 	}
+}
+
+function onEvent( topic, handle ) {
+	eventChannel.subscribe( topic, handle );
 }
 
 function setup( authProvider ) { //jshint ignore:line

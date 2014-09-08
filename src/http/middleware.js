@@ -45,6 +45,7 @@ function crossOrigin( req, res, next ) {
 
 function requestMetrics( req, res, next ) {
 	req.context = {};
+	res.setMaxListeners( 0 );
 	var timerKey = [ req.method.toUpperCase(), req.url, 'timer' ].join( ' ' );
 	metrics.timer( timerKey ).start();
 	res.once( 'finish', function() { 

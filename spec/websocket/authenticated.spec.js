@@ -5,7 +5,8 @@ var metrics = require( 'cluster-metrics' );
 var port = 88988;
 var config = {
 		port: port,
-		socketio: true,
+		origin: 'console',
+		socketIO: true,
 		websocket: true
 	};
 var authProvider = require( '../auth/mock.js' )( config );
@@ -25,12 +26,14 @@ describe( 'with websocket and valid credentials', function() {
 		socket.start( passport );
 		
 		client = new WebSocketClient();
+		
 		client.connect(
 			'http://localhost:88988/websocket',
 			'echo-protocol', 
 			'console', 
 			{ 'Authorization': 'Basic YWRtaW46YWRtaW4=' }
 		);
+
 		client.on( 'connect', function( cs ) {
 			clientSocket = cs;
 			done();
