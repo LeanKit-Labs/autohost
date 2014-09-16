@@ -10,7 +10,7 @@ As more services are introduced to a system, the tedium of fitting together all 
  * increases the surface area for defects and maintenance
  
 I created autohost so we could have a consistent, reliable and extendible way to create HTTP/socket powered sites and services. Autohost also attempts to introduce some conventions and structure to projects so that express routes don't end up all over the place and mixed with application logic.
- 
+
 ## Features
 
  * Resource-based: define transport-agnostic resources that interact via HTTP or WebSockets
@@ -79,7 +79,7 @@ Planned support for:
 [fount](https://github.com/LeanKit-Labs/fount) is a dependency injection library for Node. If your application is using fount, you can provide the instance at the end of the init call so that your resources will have access to the same fount instance from the `host.fount` property within the resource callback.
 
 ## Resources
-Resources are expected to be simple modules containing a factory method that return a resource definition:
+Resources are expected to be simple modules containing a factory method that return a resource definition. Autohost now supports the ability to take dependencies registered with fount. This requires you to list the dependency names as arguments to your resource function after the `host`. This allows you to take dependencies on promises or factories that don't resolve synchronously without having to deal with promises or callbacks in the resource itself.
 
 ### Path conventions
 Autohost expects to find all your resources under one folder (`./resource` by default) and your shared static resources under one folder (`./public` by default). Each resource should have its own sub-folder and contain a `resource.js` file that contains a module defining the resource.
@@ -101,6 +101,7 @@ Autohost expects to find all your resources under one folder (`./resource` by de
 	 |  |--index.html
 
 ####Module
+__Synchronous Module - No Fount Dependencies__
 ```js
 module.exports = function( host ) {
 	return {
@@ -120,6 +121,30 @@ module.exports = function( host ) {
 	};
 };
 ```
+
+__Asynchronous Module - Fount Dependencies__
+```js
+// Each argument after `host` will be passed to fount for resolution before the resource
+// is resolved.
+module.exports = function( host, myDepednency1, ... ) {
+	return {
+		name: 'resource-name',
+		resources: '', // relative path to static assets for this resource
+		actions: [ 
+			{
+				alias: 'send', // not presently utilized
+				verb: 'get', // http verb
+				topic: 'send', // topic segment appended the resource name
+				path: '', // url pattern appended to the resource name
+				handle: function( envelope ) {
+					// see section on envelope for more detail			
+				}
+			}
+		]
+	};
+};
+```
+
 ### name
 The resource name is pre-pended to the action's alias to create a globally unique action name: `resource-name.action-alias`. The resource name is also the first part of the action's URL (after the api prefix) and the first part of a socket message's topic:
 

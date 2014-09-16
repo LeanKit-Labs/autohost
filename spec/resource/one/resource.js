@@ -1,4 +1,4 @@
-module.exports = function( /* fount */ ) {
+module.exports = function( host ) {
 	return {
 		name: 'one',
 		actions: [
