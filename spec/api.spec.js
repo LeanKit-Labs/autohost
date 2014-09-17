@@ -106,11 +106,13 @@ describe( 'when loading from a bad path', function() {
 describe( 'when loading from a good path', function() {
 	var result,
 		api,
-		host = { actions: undefined },
+		host = { actions: undefined, fount: fount },
 		adapter = getAdapter();
 
 	before( function( done ) {
-		api = require( '../src/api.js' )( host, fount );
+		fount.register( 'durp1', 'hello' );
+		fount.register( 'durp2', 'goodbye' );
+		api = require( '../src/api.js' )( host );
 		api.addAdapter( adapter );
 		api.start( './spec/resource' )
 			.then( null, function( /* err */ ) {
@@ -196,5 +198,6 @@ describe( 'when loading from a good path', function() {
 
 	after( function() {
 		api.clearAdapters();
+		fount.purgeAll();
 	} );
 } );

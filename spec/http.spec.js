@@ -9,10 +9,12 @@ var port = 88988;
 var config = {
 		port: port
 	};
-var authProvider = require( './auth/mock.js' )( config );
-var passport = require( '../src/http/passport.js' )( config, authProvider, metrics );
-var middleware = require( '../src/http/middleware.js' )( config, metrics );
-var http = require( '../src/http/http.js' )( config, requestor, passport, middleware, metrics );
+// var authProvider = require( './auth/mock.js' )( config );
+// var passport = require( '../src/http/passport.js' )( config, authProvider, metrics );
+// var middleware = require( '../src/http/middleware.js' )( config, metrics );
+// var http = require( '../src/http/http.js' )( config, requestor, passport, middleware, metrics );
+
+var authProvider, passport, middleware, http;
 
 describe( 'with http module', function() {
 	var middlewareHit = [],
@@ -27,6 +29,11 @@ describe( 'with http module', function() {
 		};
 
 	before( function() {
+		authProvider = require( './auth/mock.js' )( config );
+		passport = require( '../src/http/passport.js' )( config, authProvider, metrics );
+		middleware = require( '../src/http/middleware.js' )( config, metrics );
+		http = require( '../src/http/http.js' )( config, requestor, passport, middleware, metrics );
+
 		authProvider.users = {};
 		passport.resetUserCheck();
 
@@ -127,9 +134,8 @@ describe( 'with http module', function() {
 	} );
 
 	describe( 'when authenticating with session support', function() {
-		var originalAuthenticate = authProvider.authenticate,
-			counter = 0,
-			codes,
+		var counter = 0,
+			codes, originalAuthenticate,
 			get = function() { 
 				return when.promise( function( resolve ) {
 					requestor.get( {
@@ -142,6 +148,7 @@ describe( 'with http module', function() {
 			};
 
 		before( function( done ) {
+			originalAuthenticate = authProvider.authenticate;
 			authProvider.authenticate = function( req, res, next ) {
 				counter = counter + 1;				
 				originalAuthenticate( req, res, next );
@@ -168,5 +175,7 @@ describe( 'with http module', function() {
 		} );
 	} );
 
-	after( http.stop );
+	after( function() {
+		http.stop();
+	} );
 } );

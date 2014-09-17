@@ -12,28 +12,24 @@ var config = {
 		websocket: true
 	};
 
-var authProvider, passport, middleware, http, socket;
+var middleware, http, socket;
 
 describe( 'with socketio and no users', function() {
 	var client;
 
 	before( function( done ) {
-		authProvider = require( '../auth/mock.js' )( config );
-		passport = require( '../../src/http/passport.js' )( config, authProvider, metrics );
 		middleware = require( '../../src/http/middleware.js' )( config, metrics );
-		http = require( '../../src/http/http.js' )( config, requestor, passport, middleware, metrics );
+		http = require( '../../src/http/http.js' )( config, requestor, undefined, middleware, metrics );
 		socket = require( '../../src/websocket/socket.js' )( config, http );
 
 		http.start();
-		socket.start( passport );
+		socket.start();
 		var onConnect = function() {
 			onConnect = function() {};
 			done();
 		};
-		authProvider.users = {};
-		passport.resetUserCheck();
 		var io = require( 'socket.io-client', {} );
-		client = io( 'http://localhost:88988', { query: 'token=blorp' } );
+		client = io( 'http://localhost:88988' );
 		client.once( 'connect', onConnect );
 		client.once( 'reconnect', onConnect );
 		client.io.open();

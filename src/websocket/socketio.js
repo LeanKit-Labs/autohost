@@ -1,13 +1,15 @@
-var _ = require( 'lodash' ),
-	socketio = require( 'socket.io' ),
-	debug = require( 'debug' )( 'autohost:socketio' ),
-	authStrategy,
-	registry,
-	config,
-	io,
-	middleware;
+var _ = require( 'lodash' );
+var socketio = require( 'socket.io' );
+var debug = require( 'debug' )( 'autohost:socketio' );
+var authStrategy;
+var registry;
+var config;
+var io;
+var middleware;
 
 function acceptSocket( socket ) {
+	debug( 'Processing socket.io connection attempt' );
+
 	var handshake = socket.handshake;
 
 	// grab user from request
@@ -43,6 +45,7 @@ function acceptSocket( socket ) {
 
 	// add a way to close a socket
 	socket.close = function() {
+		debug( 'Closing socket.io client (user: %s)', JSON.stringify( socket.user ) );
 		socket.removeAllListeners();
 		socket.disconnect( true );
 		registry.remove( socket ); 
@@ -68,7 +71,8 @@ function acceptSocket( socket ) {
 	} );
 
 	socket.publish( 'server.connected', { user: socket.user } );
-	socket.on( 'disconnect', function() { 
+	socket.on( 'disconnect', function() {
+		debug( 'socket.io client disconnected (user: %s)', JSON.stringify( socket.user ) );
 		socket.removeAllListeners();
 		registry.remove( socket ); 
 	} );
@@ -76,22 +80,29 @@ function acceptSocket( socket ) {
 
 function authSocketIO( req, allow ) {
 	var allowed;
-	middleware
-		.use( '/', function( hreq, hres, next ) {
-			allowed = hreq.user;
-			next();
-		} )
-		.handle( req, req.res, function( err ) {
-			if( err ) {
-				allow( err );
-			} else {
-				allow( null, allowed );
-			}
-		} );
+	if( authStrategy ) {
+		middleware
+			.use( '/', function( hreq, hres, next ) {
+				debug( 'Setting socket.io connection user to %s', hreq.user );
+				allowed = hreq.user;
+				next();
+			} )
+			.handle( req, req.res, function( err ) {
+				if( err ) {
+					debug( 'Error in authenticating socket.io connection %s', err.stack );
+					allow( err );
+				} else {
+					debug( 'Authenticated socket.io connection as user %s', allowed );
+					allow( null, allowed );
+				}
+			} );
+	} else {
+		allow( null, { id: 'anonymous', name: 'anonymous', roles: [] } );
+	}
 }
 
 function configureSocketIO( http ) {
-	io = socketio( http.server );
+	io = socketio( http.server, { destroyUpgrade: false } );
 	middleware = http.getAuthMiddleware();
 	io.engine.allowRequest = authSocketIO;
 	io.on( 'connection', acceptSocket );

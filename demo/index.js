@@ -9,11 +9,13 @@ try {
 		socketIO: true,
 		websockets: true,
 		origin: 'console'
+	} );
+	host.http.middleware( '/', function derp( req, res, next ) { next(); } );
 	// }, require( 'autohost-nedb-auth' )( {} ) );
-	}, require( 'autohost-riak-auth' )(
-		{ appName: 'ahdemo', 
-			riak: { nodes: [
-				{ host: 'ubuntu' }
-			] }
-		} ) );
+	// }, require( 'autohost-riak-auth' )(
+	// 	{ appName: 'ahdemo', 
+	// 		riak: { nodes: [
+	// 			{ host: 'ubuntu' }
+	// 		] }
+	// 	} ) );
 } catch( e ) { console.log( e.stack ); }

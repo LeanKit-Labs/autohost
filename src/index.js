@@ -1,34 +1,38 @@
-var path = require( 'path' ),
-	metrics = require( 'cluster-metrics' ),
-	request = require( 'request' ).defaults( { jar: true } ),
-	when = require( 'when' ),
-	passportFn = require( './http/passport.js' ),
-	httpFn = require( './http/http.js' ),
-	httpAdapterFn = require( './http/adapter.js' ),
-	socketFn = require( './websocket/socket.js' ),
-	socketAdapterFn = require( './websocket/adapter.js' ),
-	wrapper = {
+var path = require( 'path' );
+var metrics = require( 'cluster-metrics' );
+var request = require( 'request' ).defaults( { jar: true } );
+var when = require( 'when' );
+var passportFn = require( './http/passport.js' );
+var httpFn = require( './http/http.js' );
+var httpAdapterFn = require( './http/adapter.js' );
+var socketFn = require( './websocket/socket.js' );
+var socketAdapterFn = require( './websocket/adapter.js' );
+var postal = require( 'postal' );
+var eventChannel = postal.channel( 'events' );
+var internalFount = require( 'fount' );
+var wrapper = {
 	 	actions: undefined,
 	 	auth: undefined,
 		config: undefined,
-		fount: undefined,
+		fount: internalFount,
 		init: initialize,
 		metrics: metrics,
 		request: request,
 		meta: undefined,
 		http: undefined,
-		socket: undefined
-	},
-	api = require( './api.js' )( wrapper ),
-	passport, httpAdapter, socketAdapter, middleware,
-	initialized;
+		socket: undefined,
+		on: onEvent
+	};
+var api = require( './api.js' )( wrapper );
+var passport, httpAdapter, socketAdapter, middleware;
+var initialized;
 
 function initialize( cfg, authProvider, fount ) { //jshint ignore:line
+	wrapper.fount = fount || internalFount;
 	if( initialized ) {
 		api.startAdapters();
 	} else {
 		wrapper.config = cfg;
-		wrapper.fount = fount || require( 'fount' );
 		wrapper.stop = api.stop;
 		middleware = require( '../src/http/middleware.js' )( cfg, metrics );
 		if( when.isPromiseLike( authProvider ) ) {
@@ -42,6 +46,10 @@ function initialize( cfg, authProvider, fount ) { //jshint ignore:line
 			setup( authProvider );
 		}
 	}
+}
+
+function onEvent( topic, handle ) {
+	eventChannel.subscribe( topic, handle );
 }
 
 function setup( authProvider ) { //jshint ignore:line

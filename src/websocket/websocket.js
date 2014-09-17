@@ -13,13 +13,15 @@ function allowOrigin( origin ) {
 }
 
 function acceptSocketRequest( request ) {
+	debug( 'Processing websocket connection attempt' );
+
 	var protocol = request.requestedProtocols[ 0 ];
 	var socket = request.accept( protocol, request.origin );
 	
 	// grab user from request
 	socket.user = {
 		id: request.user.name,
-		name: request.httpRequest.user.name 
+		name: request.user.name 
 	};
 
 	// grab cookies parsed from middleware
@@ -52,6 +54,7 @@ function acceptSocketRequest( request ) {
 
 	var originalClose = socket.close;
 	socket.close = function() {
+		debug( 'Closing websocket client (user: %s)', JSON.stringify( socket.user ) );
 		socket.removeAllListeners();
 		originalClose();
 		registry.remove( socket ); 
@@ -74,14 +77,16 @@ function acceptSocketRequest( request ) {
 	} );
 
 	socket.publish( 'server.connected', { user: socket.user } );
-	socket.on( 'close', function() { 
+	socket.on( 'close', function() {
+		debug( 'websocket client disconnected (user: %s)', JSON.stringify( socket.user ) );
 		registry.remove( socket ); 
 	} );
+	debug( 'Finished processing websocket connection attempt' );
 }
 
 function configureWebsocket( http ) {
 	if( config.websockets || config.websocket ) {
-		middleware = http.getAuthMiddleware();
+		middleware = authStrategy ? http.getAuthMiddleware() : http.getMiddleware();
 		socketServer = new WS( { 
 			httpServer: http.server,
 			autoAcceptConnections: false 
@@ -93,26 +98,39 @@ function configureWebsocket( http ) {
 function handleWebSocketRequest( request ) {
 	// if this doesn't end in websocket, we should ignore the request, it isn't for this lib
 	if( !/websocket[\/]?$/.test( request.resourceURL.path ) ) {
+		debug( 'Websocket connection attempt (%s) does not match allowed URL /websocket', request.resourceURL.path );
 		return;
 	}
 
 	// check origin
 	if( !allowOrigin( request.origin ) ) {
+		debug( 'Websocket origin (%s) does not match allowed origin %s', request.origin, config.origin );
 		request.reject();
 		return;
 	}
 
 	var response = new ServerResponse( request.httpRequest );
 	response.assignSocket( request.socket );
-	middleware
-		.handle( request.httpRequest, response, function( err ) {
-			if( err || !request.httpRequest.user ) {
-				request.reject( 401, 'Authentication Required', { 'WWW-Authenticate': 'Basic' } );
-			} else {
-				request.user = request.httpRequest.user;
-				acceptSocketRequest( request );
-			}
-		} );
+	if( authStrategy ) {
+		middleware
+			.handle( request.httpRequest, response, function( err ) {
+				if( err || !request.httpRequest.user ) {
+					debug( 'Websocket connection rejected: authentication required' );
+					request.reject( 401, 'Authentication Required', { 'WWW-Authenticate': 'Basic' } );
+				} else {
+					debug( 'Websocket connection accepted as user %s', JSON.stringify( request.httpRequest.user ) );
+					request.user = request.httpRequest.user;
+					acceptSocketRequest( request );
+				}
+			} );
+	} else {
+		request.user = {
+			id: 'anonymous',
+			name: 'anonymous',
+			roles: []
+		};
+		acceptSocketRequest( request );
+	}
 }
 
 function stop() {

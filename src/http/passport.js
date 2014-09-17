@@ -1,18 +1,18 @@
-var _ = require( 'lodash' ),
-	when = require( 'when' ),
-	passport = require( 'passport' ),
-	debug = require( 'debug' )( 'autohost:passport' ),
-	noOp = function() { return when( true ); },
-	userCountCheck = noOp,
-	authorizationErrorCount = 'autohost.authorization.errors',
-	authorizationErrorRate = 'autohost.authorization.error.rate',
-	authenticationTimer = 'autohost.authentication.timer',
-	authorizationTimer = 'autohost.authorization.timer',
-	passportInitialize = passport.initialize(),
-	passportSession = passport.session(),
-	authProvider,
-	anonPaths,
-	metrics;
+var _ = require( 'lodash' );
+var when = require( 'when' );
+var passport = require( 'passport' );
+var debug = require( 'debug' )( 'autohost:passport' );
+var noOp = function() { return when( true ); };
+var userCountCheck = noOp;
+var authorizationErrorCount = 'autohost.authorization.errors';
+var authorizationErrorRate = 'autohost.authorization.error.rate';
+var authenticationTimer = 'autohost.authentication.timer';
+var authorizationTimer = 'autohost.authorization.timer';
+var passportInitialize = passport.initialize();
+var passportSession = passport.session();
+var authProvider;
+var anonPaths;
+var metrics;
 
 function addPassport( http ) {
 	http.middleware( '/', passportInitialize );
@@ -29,6 +29,18 @@ function addPassport( http ) {
 	passport.serializeUser( authProvider.serializeUser );
 	passport.deserializeUser( authProvider.deserializeUser );
 	debug( 'passport configured' );
+}
+
+function authConditionally( req, res, next ) {
+	// if previous middleware has said to skip auth OR
+	// a user was attached from a session, skip authenticating
+	if( req.skipAuth || ( req.user && req.user.name ) ) {
+		next();
+	} else {
+		metrics.timer( authenticationTimer ).start();
+		authProvider.authenticate( req, res, next );
+		metrics.timer( authenticationTimer ).record();
+	}
 }
 
 function getAuthMiddleware( uri ) {
@@ -103,18 +115,6 @@ function skipAuthentication( req, res, next ) {
 	};
 	debug( 'Skipping authentication and assigning user anonymous to request %s %s', req.method, req.url );
 	next();
-}
-
-function authConditionally( req, res, next ) {
-	// if previous middleware has said to skip auth OR
-	// a user was attached from a session, skip authenticating
-	if( req.skipAuth || ( req.user && req.user.name ) ) {
-		next();
-	} else {
-		metrics.timer( authenticationTimer ).start();
-		authProvider.authenticate( req, res, next );
-		metrics.timer( authenticationTimer ).record();
-	}
 }
 
 function whenNoUsers( req, res, next ) {

@@ -1,22 +1,22 @@
-var _ = require( 'lodash' ),
-	path = require( 'path' ),
-	when = require('when'),
-	nodeWhen = require( 'when/node' ),
-	fs = require( 'fs' ),
-	debug = require( 'debug' )( 'autohost:api' ),
-	readDirectory = nodeWhen.lift( fs.readdir ),
-	wrapper = {
-		actionList: {},
-		addAdapter: addAdapter,
-		clearAdapters: clearAdapters,
-		loadResources: loadResources,
-		start: start,
-		startAdapters: startAdapters,
-		stop: stop
-	},
-	adapters = [],
-	host,
-	fount;
+var _ = require( 'lodash' );
+var path = require( 'path' );
+var when = require('when');
+var nodeWhen = require( 'when/node' );
+var fs = require( 'fs' );
+var debug = require( 'debug' )( 'autohost:api' );
+var readDirectory = nodeWhen.lift( fs.readdir );
+var wrapper = {
+	actionList: {},
+	addAdapter: addAdapter,
+	clearAdapters: clearAdapters,
+	loadResources: loadResources,
+	start: start,
+	startAdapters: startAdapters,
+	stop: stop,
+};
+var adapters = [];
+var host;
+var fount;
 
 function addAdapter( adapter ) { //jshint ignore:line
 	adapters.push( adapter );
@@ -24,6 +24,10 @@ function addAdapter( adapter ) { //jshint ignore:line
 
 function clearAdapters() { //jshint ignore:line
 	adapters = [];
+}
+
+function getArguments( fn ) {
+	return _.isFunction( fn ) ? trim( /[(]([^)]*)[)]/.exec( fn.toString() )[ 1 ].split( ',' ) ) : [];
 }
 
 function getResources( filePath ) {
@@ -53,15 +57,36 @@ function loadModule( resourcePath ) {
 	try {
 		var key = path.resolve( resourcePath );
 		delete require.cache[ key ];
-		var mod = require( resourcePath )( host );
-		if( mod && mod.name ) {
-			return processResource( mod, path.dirname( resourcePath ) );
-		} else {
-			debug( 'Skipping resource at %s - no valid metadata provided', resourcePath );
-			return when( [] );
+		var modFn = require( resourcePath );
+		var args = getArguments( modFn );
+		if( args[ 0 ] === 'host' ) {
+			args.shift();
 		}
-	} catch (err) {
+		if( args.length ) {
+			var modPromise = fount.resolve( args )
+				.then( function( deps ) {
+					var argList = _.map( args, function( arg ) {
+						return deps[ arg ];
+					} );
+					return modFn.apply( modFn, argList );
+				} );
+			return when.try( processModule, modPromise, resourcePath )
+				.then( null, function( err ) { console.log( err.stack ); } );
+		} else {
+			var mod = modFn( host );
+			return processModule( mod, resourcePath );
+		}
+	} catch ( err ) {
 		debug( 'Error loading resource module at %s with: %s', resourcePath, err.stack );
+		return when( [] );
+	}
+}
+
+function processModule( mod, resourcePath ) {
+	if( mod && mod.name ) {
+		return processResource( mod, path.dirname( resourcePath ) );
+	} else {
+		debug( 'Skipping resource at %s - no valid metadata provided', resourcePath );
 		return when( [] );
 	}
 }
@@ -135,7 +160,14 @@ function startAdapters() { //jshint ignore:line
 	} );
 }
 
+function trimString( str ) { return str.trim(); }
+
+function trim( list ) { 
+	return ( list && list.length ) ? _.filter( list.map( trimString ) ) : []; 
+}
+
 module.exports = function( ah ) {
 	host = ah;
+	fount = ah.fount;
 	return wrapper;
 };

@@ -10,7 +10,7 @@ As more services are introduced to a system, the tedium of fitting together all 
  * increases the surface area for defects and maintenance
  
 I created autohost so we could have a consistent, reliable and extendible way to create HTTP/socket powered sites and services. Autohost also attempts to introduce some conventions and structure to projects so that express routes don't end up all over the place and mixed with application logic.
- 
+
 ## Features
 
  * Resource-based: define transport-agnostic resources that interact via HTTP or WebSockets
@@ -55,11 +55,12 @@ The object literal follows the format:
 	allowedOrigin: 'leankit.com', // used to filter incoming web socket connections based on origin
 	apiPrefix: '/api', // allows you to change the prefix for resource action URLs
 	socketIO: false, // enables socket.io,
-	websockets: false, // enables websockets
+	websocket: false, // enables websockets
 	noSession: false, // disables sessions
 	noCookie: false, // disables cookies
 	noBody: false, // disables body parsing
-	noCrossOrigin: false // disables cross origin
+	noCrossOrigin: false, // disables cross origin
+	anonymous: [], // add paths or url patterns that bypass authentication and authorization
 }
 ```
 
@@ -79,7 +80,7 @@ Planned support for:
 [fount](https://github.com/LeanKit-Labs/fount) is a dependency injection library for Node. If your application is using fount, you can provide the instance at the end of the init call so that your resources will have access to the same fount instance from the `host.fount` property within the resource callback.
 
 ## Resources
-Resources are expected to be simple modules containing a factory method that return a resource definition:
+Resources are expected to be simple modules containing a factory method that return a resource definition. Autohost now supports dependency resolution by argument in these factory methods. All arguments after the first (`host`) will be checked against autohost's fount instance. This is especially useful when you need to take a dependency on a promise or asynchronous function - fount will only invoke your resource's factory once all dependnecies are available eliminating the need to handle these concerns with callbacks or promises in your resource's implementation. See the Asynchronous Module example under the Module section. 
 
 ### Path conventions
 Autohost expects to find all your resources under one folder (`./resource` by default) and your shared static resources under one folder (`./public` by default). Each resource should have its own sub-folder and contain a `resource.js` file that contains a module defining the resource.
@@ -101,6 +102,7 @@ Autohost expects to find all your resources under one folder (`./resource` by de
 	 |  |--index.html
 
 ####Module
+__Synchronous Module - No Fount Dependencies__
 ```js
 module.exports = function( host ) {
 	return {
@@ -120,6 +122,41 @@ module.exports = function( host ) {
 	};
 };
 ```
+
+__Asynchronous Module - Fount Dependencies__
+This example assumes that you have either provided your own fount instance to autohost or defined dependencies via autohost's fount instance before calling autohost's `init` call.
+
+```js
+// example using autohost's fount instance
+var host = require( 'autohost' );
+
+host.register( 'myDependency1', { ... } );
+host.register( 'myDependency2', somePromise );
+
+```
+
+```js
+// Each argument after `host` will be passed to fount for resolution before the exported function
+// is called.
+module.exports = function( host, myDependency1, myDependency2 ) {
+	return {
+		name: 'resource-name',
+		resources: '', // relative path to static assets for this resource
+		actions: [ 
+			{
+				alias: 'send', // not presently utilized
+				verb: 'get', // http verb
+				topic: 'send', // topic segment appended the resource name
+				path: '', // url pattern appended to the resource name
+				handle: function( envelope ) {
+					// see section on envelope for more detail			
+				}
+			}
+		]
+	};
+};
+```
+
 ### name
 The resource name is pre-pended to the action's alias to create a globally unique action name: `resource-name.action-alias`. The resource name is also the first part of the action's URL (after the api prefix) and the first part of a socket message's topic:
 
@@ -244,10 +281,11 @@ When establishing a connection to autohost using the WebSocket-Node client, you'
 Autohost normalizes the differences between each library with the same set of calls:
 
  * `socket.publish( topic, message )` - sends a message with the topic and message contents to the socket
- * `host.socket.sendToClient( id, topic, message )` - sends message to specific client via websocket (returns true if successful)
- * `host.socket.notifyClients( topic, message )` - sends message to all clients connected via socket
+ * `host.socket.send( id, topic, message )` - sends message to specific client via websocket (returns true if successful)
+ * `host.socket.notify( topic, message )` - sends message to all clients connected via socket
 
 ### Events
+These events can be subscribed to via `host.on`:
 
  * 'socket.client.connected', { socket: socketConnection } - raised when a client connects
  * 'socket.client.identified', { socket: socketConnection, id: id } - raised when client reports unique id
