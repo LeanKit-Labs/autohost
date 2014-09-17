@@ -21,7 +21,7 @@ function acceptSocketRequest( request ) {
 	// grab user from request
 	socket.user = {
 		id: request.user.name,
-		name: request.httpRequest.user.name 
+		name: request.user.name 
 	};
 
 	// grab cookies parsed from middleware
@@ -86,7 +86,7 @@ function acceptSocketRequest( request ) {
 
 function configureWebsocket( http ) {
 	if( config.websockets || config.websocket ) {
-		middleware = http.getAuthMiddleware();
+		middleware = authStrategy ? http.getAuthMiddleware() : http.getMiddleware();
 		socketServer = new WS( { 
 			httpServer: http.server,
 			autoAcceptConnections: false 
@@ -111,17 +111,26 @@ function handleWebSocketRequest( request ) {
 
 	var response = new ServerResponse( request.httpRequest );
 	response.assignSocket( request.socket );
-	middleware
-		.handle( request.httpRequest, response, function( err ) {
-			if( err || !request.httpRequest.user ) {
-				debug( 'Websocket connection rejected: authentication required' );
-				request.reject( 401, 'Authentication Required', { 'WWW-Authenticate': 'Basic' } );
-			} else {
-				debug( 'Websocket connection accepted as user %s', JSON.stringify( request.httpRequest.user ) );
-				request.user = request.httpRequest.user;
-				acceptSocketRequest( request );
-			}
-		} );
+	if( authStrategy ) {
+		middleware
+			.handle( request.httpRequest, response, function( err ) {
+				if( err || !request.httpRequest.user ) {
+					debug( 'Websocket connection rejected: authentication required' );
+					request.reject( 401, 'Authentication Required', { 'WWW-Authenticate': 'Basic' } );
+				} else {
+					debug( 'Websocket connection accepted as user %s', JSON.stringify( request.httpRequest.user ) );
+					request.user = request.httpRequest.user;
+					acceptSocketRequest( request );
+				}
+			} );
+	} else {
+		request.user = {
+			id: 'anonymous',
+			name: 'anonymous',
+			roles: []
+		};
+		acceptSocketRequest( request );
+	}
 }
 
 function stop() {

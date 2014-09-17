@@ -9,12 +9,13 @@ var config = {
 		socketio: true,
 		websocket: true
 	};
-var authProvider = require( './auth/mock.js' )( config );
-var passport = require( '../src/http/passport.js' )( config, authProvider, metrics );
-var middleware = require( '../src/http/middleware.js' )( config, metrics );
-var http = require( '../src/http/http.js' )( config, requestor, passport, middleware, metrics );
-var socket = require( '../src/websocket/socket.js' )( config, http, middleware );
-var socketAdapter = require( '../src/websocket/adapter.js' )( config, authProvider, socket, metrics );
+// var authProvider = require( './auth/mock.js' )( config );
+// var passport = require( '../src/http/passport.js' )( config, authProvider, metrics );
+// var middleware = require( '../src/http/middleware.js' )( config, metrics );
+// var http = require( '../src/http/http.js' )( config, requestor, passport, middleware, metrics );
+// var socket = require( '../src/websocket/socket.js' )( config, http, middleware );
+// var socketAdapter = require( '../src/websocket/adapter.js' )( config, authProvider, socket, metrics );
+var authProvider, passport, middleware, http, socket, socketAdapter;
 var actionRoles = function( action, roles ) {
 		authProvider.actions[ action ] = { roles: roles };
 	};
@@ -33,6 +34,13 @@ describe( 'with socket adapter', function() {
 		};
 
 	before( function( done ) {
+		authProvider = require( './auth/mock.js' )( config );
+		passport = require( '../src/http/passport.js' )( config, authProvider, metrics );
+		middleware = require( '../src/http/middleware.js' )( config, metrics );
+		http = require( '../src/http/http.js' )( config, requestor, passport, middleware, metrics );
+		socket = require( '../src/websocket/socket.js' )( config, http, middleware );
+		socketAdapter = require( '../src/websocket/adapter.js' )( config, authProvider, socket, metrics );
+
 		authProvider.tokens = { 'blorp': 'userman' };
 		authProvider.users = { 
 			'userman': { name: 'userman', password: 'hi', roles: [] },

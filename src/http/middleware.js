@@ -1,19 +1,26 @@
-var bodyParser = require( 'body-parser' ),
-	cookies = require('cookie-parser'),
-	multer = require( 'multer' ),
-	sessionLib = require( 'express-session' ),
-	wrapper = {
-		attach: applyMiddelware
-	},
-	config, metrics, session, cookieParser;
+var bodyParser = require( 'body-parser' );
+var cookies = require('cookie-parser');
+var sessionLib = require( 'express-session' );
+var multer = require( 'multer' );
+var wrapper = {
+		attach: applyMiddelware,
+		useCookies: applyCookieMiddleware,
+		useSession: applySessionMiddleware
+	};
+var config, metrics, session, cookieParser;
 
-function applyMiddelware( attach ) {
+function applyCookieMiddleware( attach ) {
+	if( !config.noCookies ) {
+		attach( '/', cookieParser );
+	}
+}
+
+function applyMiddelware( attach, hasAuth ) {
 	// add a timer to track ALL requests
 	attach( '/', requestMetrics );
 
-	// turn on cookies unless turned off by the consumer
-	if( !config.noCookies ) {
-		attach( '/', cookieParser );
+	if( !hasAuth ) {
+		applyCookieMiddleware( attach );
 	}
 
 	// turn on body parser unless turned off by the consumer
@@ -26,14 +33,20 @@ function applyMiddelware( attach ) {
 		} ) );
 	}
 
-	// turn on sessions unless turned off by the consumer
-	if( !config.noSession ) {
-		attach( '/', session );
+	if( !hasAuth ) {
+		applySessionMiddleware( attach );
 	}
 
 	// turn on cross origin unless turned off by the consumer
 	if( !config.noCrossOrigin ) {
 		attach( '/', crossOrigin );
+	}
+}
+
+function applySessionMiddleware( attach ) {
+	// turn on sessions unless turned off by the consumer
+	if( !config.noSession ) {
+		attach( '/', session );
 	}
 }
 

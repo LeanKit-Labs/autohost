@@ -1,21 +1,15 @@
-var path = require( 'path' ),
-	_ = require( 'lodash' ),
-	parseUrl = require( 'parseurl' ),
-	qs = require( 'qs' ),
-	express = require( 'express' ),
-	http = require( 'http' ),
-	debug = require( 'debug' )( 'autohost:http-transport' ),
-	Router = express.Router,
-	expreq = express.request,
-	expres = express.response,
-	queryparse = qs.parse,
-	middleware = [],
-	routes = [],
-	paths = [],
-	request, 
-	config, 
-	metrics,
-	middlewareLib;
+var path = require( 'path' );
+var _ = require( 'lodash' );
+var parseUrl = require( 'parseurl' );
+var qs = require( 'qs' );
+var express = require( 'express' );
+var http = require( 'http' );
+var debug = require( 'debug' )( 'autohost:http-transport' );
+var Router = express.Router;
+var expreq = express.request;
+var expres = express.response;
+var queryparse = qs.parse;
+var middleware, routes, paths, request, config, metrics, middlewareLib;
 
 var wrapper = {
 	getMiddleware: createMiddlewareStack,
@@ -46,9 +40,11 @@ function createAuthMiddlewareStack() { //jshint ignore:line
 	_.each( middleware, function( m ) {
 		m( router );
 	} );
-	_.each( wrapper.passport.getMiddleware( '/' ), function( m ) {
-		router.use( m.path, m.fn );
-	} );
+	if( wrapper.passport ) {
+		_.each( wrapper.passport.getMiddleware( '/' ), function( m ) {
+			router.use( m.path, m.fn );
+		} );
+	}
 	return router;
 }
 
@@ -70,13 +66,6 @@ function initialize() {
 	config.tmp = path.resolve( cwd, ( config.temp || './tmp' ) );
 
 	registerStaticPath( '/', public );
-
-	// prime middleware with defaults
-	middlewareLib.attach( registerMiddleware );
-
-	if( wrapper.passport ) {
-		wrapper.passport.wireupPassport( wrapper );
-	}
 
 	// apply user-supplied middleware
 	_.each( middleware, function( m ) { m( wrapper.app ); } );
@@ -141,11 +130,24 @@ function stop() {
 }
 
 module.exports = function( cfg, req, pass, mw, metric ) {
+	middleware = [];
+	routes = [];
+	paths = [];
 	config = cfg;
 	metrics = metric;
 	request = req;
 	wrapper.passport = pass;
 	wrapper.app = express();
 	middlewareLib = mw;
+	
+	// if using an auth strategy, move cookie and session middleware before passport middleware
+	// to take advantage of sessions/cookies and avoid authenticating on every request
+	if( pass ) {
+		middlewareLib.useCookies( registerMiddleware );
+		middlewareLib.useSession( registerMiddleware );
+		wrapper.passport.wireupPassport( wrapper );
+	}
+	// prime middleware with defaults
+	middlewareLib.attach( registerMiddleware, pass !== undefined );
 	return wrapper;
 };

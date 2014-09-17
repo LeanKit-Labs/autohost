@@ -9,42 +9,30 @@ var config = {
 		socketIO: true,
 		websocket: true
 	};
-// var authProvider = require( '../auth/mock.js' )( config );
-// var passport = require( '../../src/http/passport.js' )( config, authProvider, metrics );
-// var middleware = require( '../../src/http/middleware.js' )( config, metrics );
-// var http = require( '../../src/http/http.js' )( config, requestor, passport, middleware, metrics );
-// var socket = require( '../../src/websocket/socket.js' )( config, http, middleware );
 
-// authProvider.users[ 'admin' ] = { name: 'admin', password: 'admin' };
+var middleware, http, socket;
 
-var authProvider, passport, middleware, http, socket;
-
-describe( 'with websocket and valid credentials', function() {
+describe( 'with websocket and no auth strategy', function() {
 	var client,
 		clientSocket;
 
 	before( function( done ) {
-		authProvider = require( '../auth/mock.js' )( config );
-		passport = require( '../../src/http/passport.js' )( config, authProvider, metrics );
 		middleware = require( '../../src/http/middleware.js' )( config, metrics );
-		http = require( '../../src/http/http.js' )( config, requestor, passport, middleware, metrics );
-		socket = require( '../../src/websocket/socket.js' )( config, http, middleware );
-
-		authProvider.users[ 'admin' ] = { name: 'admin', password: 'admin' };
+		http = require( '../../src/http/http.js' )( config, requestor, undefined, middleware, metrics );
+		socket = require( '../../src/websocket/socket.js' )( config, http );
 
 		http.start();
-		socket.start( passport );
+		socket.start();
 		
 		client = new WebSocketClient();
 		
 		client.connect(
 			'http://localhost:88988/websocket',
 			'echo-protocol', 
-			'console', 
-			{ 'Authorization': 'Basic YWRtaW46YWRtaW4=' }
+			'console'
 		);
 
-		client.on( 'connect', function( cs ) {
+		client.once( 'connect', function( cs ) {
 			clientSocket = cs;
 			done();
 		} );

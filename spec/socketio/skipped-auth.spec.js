@@ -1,26 +1,29 @@
-var should = require( 'should' ),
-	path = require( 'path' ),
-	_ = require( 'lodash' ),
-	requestor = require( 'request' ).defaults( { jar: false } ),
-	metrics = require( 'cluster-metrics' ),
-	debug = require( 'debug' )( 'autohost-spec:skipped-auth' ),
-	when = require( 'when' ),
-	port = 88988,
-	config = {
+var should = require( 'should' );
+var path = require( 'path' );
+var _ = require( 'lodash' );
+var requestor = require( 'request' ).defaults( { jar: false } );
+var metrics = require( 'cluster-metrics' );
+var debug = require( 'debug' )( 'autohost-spec:skipped-auth' );
+var when = require( 'when' );
+var port = 88988;
+var config = {
 		port: port,
 		socketio: true,
 		websocket: true
-	},
-	authProvider = require( '../auth/mock.js' )( config ),
-	passport = require( '../../src/http/passport.js' )( config, authProvider, metrics ),
-	middleware = require( '../../src/http/middleware.js' )( config, metrics ),
-	http = require( '../../src/http/http.js' )( config, requestor, passport, middleware, metrics ),
-	socket = require( '../../src/websocket/socket.js' )( config, http );
+	};
+
+var authProvider, passport, middleware, http, socket;
 
 describe( 'with socketio and no users', function() {
 	var client;
 
 	before( function( done ) {
+		authProvider = require( '../auth/mock.js' )( config );
+		passport = require( '../../src/http/passport.js' )( config, authProvider, metrics );
+		middleware = require( '../../src/http/middleware.js' )( config, metrics );
+		http = require( '../../src/http/http.js' )( config, requestor, passport, middleware, metrics );
+		socket = require( '../../src/websocket/socket.js' )( config, http );
+
 		http.start();
 		socket.start( passport );
 		var onConnect = function() {
