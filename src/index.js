@@ -9,11 +9,12 @@ var socketFn = require( './websocket/socket.js' );
 var socketAdapterFn = require( './websocket/adapter.js' );
 var postal = require( 'postal' );
 var eventChannel = postal.channel( 'events' );
+var internalFount = require( 'fount' );
 var wrapper = {
 	 	actions: undefined,
 	 	auth: undefined,
 		config: undefined,
-		fount: undefined,
+		fount: internalFount,
 		init: initialize,
 		metrics: metrics,
 		request: request,
@@ -27,11 +28,11 @@ var passport, httpAdapter, socketAdapter, middleware;
 var initialized;
 
 function initialize( cfg, authProvider, fount ) { //jshint ignore:line
+	wrapper.fount = fount || internalFount;
 	if( initialized ) {
 		api.startAdapters();
 	} else {
 		wrapper.config = cfg;
-		wrapper.fount = fount || require( 'fount' );
 		wrapper.stop = api.stop;
 		middleware = require( '../src/http/middleware.js' )( cfg, metrics );
 		if( when.isPromiseLike( authProvider ) ) {

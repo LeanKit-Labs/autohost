@@ -59,7 +59,8 @@ The object literal follows the format:
 	noSession: false, // disables sessions
 	noCookie: false, // disables cookies
 	noBody: false, // disables body parsing
-	noCrossOrigin: false // disables cross origin
+	noCrossOrigin: false, // disables cross origin
+	anonymous: [], // add paths or url patterns that bypass authentication and authorization
 }
 ```
 
@@ -79,7 +80,7 @@ Planned support for:
 [fount](https://github.com/LeanKit-Labs/fount) is a dependency injection library for Node. If your application is using fount, you can provide the instance at the end of the init call so that your resources will have access to the same fount instance from the `host.fount` property within the resource callback.
 
 ## Resources
-Resources are expected to be simple modules containing a factory method that return a resource definition. Autohost now supports the ability to take dependencies registered with fount. This requires you to list the dependency names as arguments to your resource function after the `host`. This allows you to take dependencies on promises or factories that don't resolve synchronously without having to deal with promises or callbacks in the resource itself.
+Resources are expected to be simple modules containing a factory method that return a resource definition. Autohost now supports dependency resolution by argument in these factory methods. All arguments after the first (`host`) will be checked against autohost's fount instance. This is especially useful when you need to take a dependency on a promise or asynchronous function - fount will only invoke your resource's factory once all dependnecies are available eliminating the need to handle these concerns with callbacks or promises in your resource's implementation. See the Asynchronous Module example under the Module section. 
 
 ### Path conventions
 Autohost expects to find all your resources under one folder (`./resource` by default) and your shared static resources under one folder (`./public` by default). Each resource should have its own sub-folder and contain a `resource.js` file that contains a module defining the resource.
@@ -123,10 +124,21 @@ module.exports = function( host ) {
 ```
 
 __Asynchronous Module - Fount Dependencies__
+This example assumes that you have either provided your own fount instance to autohost or defined dependencies via autohost's fount instance before calling autohost's `init` call.
+
 ```js
-// Each argument after `host` will be passed to fount for resolution before the resource
-// is resolved.
-module.exports = function( host, myDepednency1, ... ) {
+// example using autohost's fount instance
+var host = require( 'autohost' );
+
+host.register( 'myDependency1', { ... } );
+host.register( 'myDependency2', somePromise );
+
+```
+
+```js
+// Each argument after `host` will be passed to fount for resolution before the exported function
+// is called.
+module.exports = function( host, myDependency1, myDependency2 ) {
 	return {
 		name: 'resource-name',
 		resources: '', // relative path to static assets for this resource

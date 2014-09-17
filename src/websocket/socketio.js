@@ -80,21 +80,25 @@ function acceptSocket( socket ) {
 
 function authSocketIO( req, allow ) {
 	var allowed;
-	middleware
-		.use( '/', function( hreq, hres, next ) {
-			debug( 'Setting socket.io connection user to %s', hreq.user );
-			allowed = hreq.user;
-			next();
-		} )
-		.handle( req, req.res, function( err ) {
-			if( err ) {
-				debug( 'Error in authenticating socket.io connection %s', err.stack );
-				allow( err );
-			} else {
-				debug( 'Authenticated socket.io connection as user %s', allowed );
-				allow( null, allowed );
-			}
-		} );
+	if( authStrategy ) {
+		middleware
+			.use( '/', function( hreq, hres, next ) {
+				debug( 'Setting socket.io connection user to %s', hreq.user );
+				allowed = hreq.user;
+				next();
+			} )
+			.handle( req, req.res, function( err ) {
+				if( err ) {
+					debug( 'Error in authenticating socket.io connection %s', err.stack );
+					allow( err );
+				} else {
+					debug( 'Authenticated socket.io connection as user %s', allowed );
+					allow( null, allowed );
+				}
+			} );
+	} else {
+		allow( null, { id: 'anonymous', name: 'anonymous', roles: [] } );
+	}
 }
 
 function configureSocketIO( http ) {
