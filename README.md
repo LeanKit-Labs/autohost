@@ -223,6 +223,7 @@ Envelopes are an abstraction around the incoming message or request. They are in
 	params: // query parameters
 	files: // files supplied in body
 	forwardTo: function( options ) // forward the request (for building proxies)
+    redirect: function( [statusCode = 302 ,] url) //redirects to url.
 }
 
 // the following properties are only available on Socket envelopes

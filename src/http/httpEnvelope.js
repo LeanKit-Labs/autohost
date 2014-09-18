@@ -31,6 +31,14 @@ HttpEnvelope.prototype.forwardTo = function( options ) {
 	return this._original.req.pipe( request( options ) );
 };
 
+HttpEnvelope.prototype.redirect = function( statusCode, url ) {
+	if(url === undefined){
+		url = statusCode;
+		statusCode = 302;
+	}
+	this._original.res.redirect( statusCode, url );
+};
+
 HttpEnvelope.prototype.reply = function( envelope ) {
 	var code = envelope.statusCode || 200;
 	this._original.res.status( code ).send( envelope.data );
