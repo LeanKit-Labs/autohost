@@ -6,25 +6,34 @@ var express = require( 'express' );
 var http = require( 'http' );
 var debug = require( 'debug' )( 'autohost:http-transport' );
 var Router = express.Router;
-var expreq = express.request;
-var expres = express.response;
+var expreq = express.request; //jshint ignore:line
+var expres = express.response; //jshint ignore:line
 var queryparse = qs.parse;
 var middleware, routes, paths, request, config, metrics, middlewareLib;
 
-var wrapper = {
-	getMiddleware: createMiddlewareStack,
-	getAuthMiddleware: createAuthMiddlewareStack,
-	middleware: registerMiddleware,
-	route: registerRoute,
-	start: start,
-	static: registerStaticPath,
-	server: undefined,
-	app: undefined,
-	passport: undefined,
-	stop: stop
-};
+var wrapper;
 
-function createMiddlewareStack() { //jshint ignore:line
+function buildUrl() {
+	var idx = 0,
+		cleaned = [],
+		segment;
+	while( idx < arguments.length ) {
+		segment = arguments[ idx ];
+		if( segment.substr( 0, 1 ) === '/' ) {
+			segment = segment.substr( 1 );
+		}
+		if( segment.substr( segment.length-1, 1 ) === '/' ) {
+			segment = segment.substring( 0, segment.length - 1 );
+		}
+		if( !_.isEmpty( segment ) ) {
+			cleaned.push( segment );
+		}
+		idx ++;
+	}
+	return '/' + cleaned.join( '/' );
+}
+
+function createMiddlewareStack() {
 	var router = new Router();
 	router
 		.use( expressInit )
@@ -35,7 +44,7 @@ function createMiddlewareStack() { //jshint ignore:line
 	return router;
 }
 
-function createAuthMiddlewareStack() { //jshint ignore:line
+function createAuthMiddlewareStack() {
 	var router = new Router().use( expressInit );
 	_.each( middleware, function( m ) {
 		m( router );
@@ -50,13 +59,13 @@ function createAuthMiddlewareStack() { //jshint ignore:line
 
 // adaptation of express's initializing middleware
 // the original approach breaks engine-io
-function expressInit( req, res, next ) { //jshint ignore:line
+function expressInit( req, res, next ) { // jshint ignore:line
     req.next = next;
     // patching this according to how express does it
     /* jshint ignore:start */
     req.__proto__ = expreq;
     res.__proto__ = expres;
-    /* jshint ignore:start */
+    /* jshint ignore:end */
     next();
 }
 
@@ -73,9 +82,21 @@ function initialize() {
 	_.each( paths, function( p ) { p(); } );
 }
 
+// intercept and apply prefix to url if one exists
+function prefix( fn ) {
+	return function() {
+		var args = Array.prototype.slice.call( arguments );
+		if( config.urlPrefix ) {
+			var url = args.shift();
+			args.unshift( buildUrl( config.urlPrefix, url ) );
+		}
+		fn.apply( null, args );
+	};
+}
+
 // Internal query-parsing middleware from express
 // (not exposed, so copied here)
-function queryParser( req, res, next ) {
+function queryParser( req, res, next ) { // jshint ignore:line
 	if ( !req.query ) {
 		var val = parseUrl( req ).query;
 		req.query = queryparse( val );
@@ -107,11 +128,11 @@ function registerRoute( url, verb, callback ) {
 	} );
 }
 
-function registerStaticPath( url, filePath ) {
+function registerStaticPath( url, filePath ) { // jshint ignore:line
 	paths.push( function() {
 		var target = path.resolve( filePath );
 		debug( 'STATIC: %s -> %s', url, target );
-		wrapper.app.use( url, express[ 'static' ]( target ) );
+		wrapper.app.use( url, express.static( target ) );
 	} );
 }
 
@@ -128,6 +149,20 @@ function stop() {
 		wrapper.server = undefined;
 	}
 }
+
+wrapper = {
+	buildUrl: buildUrl,
+	getMiddleware: createMiddlewareStack,
+	getAuthMiddleware: createAuthMiddlewareStack,
+	middleware: registerMiddleware,
+	route: prefix( registerRoute ),
+	start: start,
+	static: prefix( registerStaticPath ),
+	server: undefined,
+	app: undefined,
+	passport: undefined,
+	stop: stop
+};
 
 module.exports = function( cfg, req, pass, mw, metric ) {
 	middleware = [];

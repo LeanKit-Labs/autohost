@@ -54,7 +54,8 @@ The object literal follows the format:
 	modules: [], // list of npm resource modules to load
 	port: 8800, // what port to host at
 	allowedOrigin: 'leankit.com', // used to filter incoming web socket connections based on origin
-	apiPrefix: '/api', // allows you to change the prefix for resource action URLs
+	urlPrefix: undefined, // applies a global prefix to all routes - for use behind reverse proxy
+	apiPrefix: '/api', // allows you to change the prefix for resource action URLs only
 	socketIO: false, // enables socket.io,
 	websocket: false, // enables websockets
 	noSession: false, // disables sessions
@@ -168,9 +169,6 @@ The resource name is pre-pended to the action's alias to create a globally uniqu
 ### resources
 You can host nested static files under a resource using this property. The directory and its contents found at the path will be hosted after the resource name in the URL.
 
-### External Resources - Loading an NPM Resource Module
-Autohost allows you to specify a list of NPM modules that it will attempt to load as resources. This feature is intended to allow you to package a resource and its static files into an NPM module that can be shared. This may seem like an odd feature at first, but hopefully it will lead to some interesting sharing of common APIs and/or UIs for autohost based services. (example - realtime metrics dashboard)
-
 To enable this, simply add the module names as an array in the `modules` property of the configuration hash passed to init.
 
 ## Actions
@@ -261,6 +259,9 @@ Forwards the request using the request library and returns the resulting stream.
 	} ).pipe( envelope.responseStream );
 ```
 
+## External Resources - Loading an NPM Resource Module
+Autohost allows you to specify a list of NPM modules that it will attempt to load as resources. This feature is intended to allow you to package a resource and its static files into an NPM module that can be shared. This may seem like an odd feature at first, but hopefully it will lead to some interesting sharing of common APIs and/or UIs for autohost based services. (example - realtime metrics dashboard)
+
 ## HTTP Transport
 The http transport API has three methods you can call to add middleware, API routes and static content routes. While you should rely on resources to supply routes, it's very common to add your own middleware. Authost will always add your middleware *after* its standard middleware and passport (unless you have turned off specific middleware via configuration).
 
@@ -269,6 +270,24 @@ The http transport API has three methods you can call to add middleware, API rou
  * `host.http.static( url, filePath )`
 
 Keep in mind - most of the features you'll want to add beyond what autohost provides can probably be accomplished via middleware.
+
+### Route prefixes
+Autohost's config provides two optional arguments you can use to control the HTTP routes that get created on your behalf.
+
+#### apiPrefix
+By default autohost places all resource action routes behind `/api` to prevent any collisions with static routes. You can remove this entirely by providing an empty string or simply change it so something else.
+
+	Note: a `urlPrefix` will always precede this if one has been supplied.
+
+#### urlPrefix
+In the rare event that you are using a reverse proxy in front of autohost that is routing requests from a path segment to your autohost service, you can use a urlPrefix to ensure that whatever leading path from the original url causes a redirection to your autohost service aligns with the routes supplied to express.
+
+__Example__
+You have a public HTTP endpoint that directs traffic to your primary application (`http://yourco.io`). You want to reverse proxy any request sent to the path `http://yourco.io/special/` to an interal application. The challenge is that all your static resources (html, css, js) that contain paths would normally expect that they could use absolute paths when referencing api routes or other static resources. ( examples: `/css/style.css`, `/js/lib/jquery.min.js`, `/api/thingy/10`) The problem is that the browser will make these requests which will be directed to your original application server since they don't begin with the `/special` path segment that is activating the reverse proxy to begin with. This will cause you to either activate routes in the original application (which will be incorrect) _or_ get a bunch of 404s back from your front-end application.
+
+While you could simple prefix all of your absolute URLs in static resources with `/special' (in this example), this will cause your application to be unusable without a reverse proxy sitting in front of it since the browser would be making requests to a route that doesn't exist and nothing is there to intercept and strip away the `/special` path prefix. This makes integration testing and local development unecessarily painful.
+
+The solution is to use `urlPrefix` set to 'special' and to either write all your URLs in static resources with the prefix (meh) OR use a build step that will find absolute paths in your static files and prefix them for you. Autohost will automatically apply this prefix to all routes in your service so that requests from the proxy align with the routes defined in your application consistently. This results in an application that remains usable outside of the reverse proxy and can even be built and deployed with different path prefixes (or no prefixes).
 
 ## Web Socket Transport
 Autohost supports two socket libraries - socket.io for browser clients and websocket-node for programmatic/server clients.
