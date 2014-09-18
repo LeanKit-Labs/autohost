@@ -29,7 +29,7 @@ describe( 'when loading from a bad path', function() {
 		adapter = getAdapter();
 
 	before( function( done ) {
-		api = require( '../src/api.js' )( host, fount );
+		api = require( '../src/api.js' )( host, {} );
 		api.addAdapter( adapter );
 		api.start( './spec/durp' )
 			.then( null, function( /* err */ ) {
@@ -112,7 +112,7 @@ describe( 'when loading from a good path', function() {
 	before( function( done ) {
 		fount.register( 'durp1', 'hello' );
 		fount.register( 'durp2', 'goodbye' );
-		api = require( '../src/api.js' )( host );
+		api = require( '../src/api.js' )( host, { modules: [ '../spec/misc/anresource.js' ] } );
 		api.addAdapter( adapter );
 		api.start( './spec/resource' )
 			.then( null, function( /* err */ ) {
@@ -133,6 +133,11 @@ describe( 'when loading from a good path', function() {
 		result.two.routes.should.eql( {
 			a: { verb: undefined, url: undefined },
 			b: { verb: undefined, url: undefined }
+		} );
+
+		result.three.routes.should.eql( {
+			c: { verb: undefined, url: undefined },
+			d: { verb: undefined, url: undefined }
 		} );
 
 		result._autohost.routes.should.eql( { 
@@ -188,7 +193,8 @@ describe( 'when loading from a good path', function() {
 			'_autohost.metrics'
 			],
 			one: [ 'one.a', 'one.b' ],
-			two: [ 'two.a', 'two.b' ] 
+			two: [ 'two.a', 'two.b' ],
+			three: [ 'three.c', 'three.d' ]
 		} );
 	} );
 

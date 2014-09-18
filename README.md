@@ -51,6 +51,7 @@ The object literal follows the format:
 {
 	static: './public', // where to host static resources from
 	resources: './resource', // where to load resource modules from
+	modules: [], // list of npm resource modules to load
 	port: 8800, // what port to host at
 	allowedOrigin: 'leankit.com', // used to filter incoming web socket connections based on origin
 	apiPrefix: '/api', // allows you to change the prefix for resource action URLs
@@ -166,6 +167,11 @@ The resource name is pre-pended to the action's alias to create a globally uniqu
 
 ### resources
 You can host nested static files under a resource using this property. The directory and its contents found at the path will be hosted after the resource name in the URL.
+
+### External Resources - Loading an NPM Resource Module
+Autohost allows you to specify a list of NPM modules that it will attempt to load as resources. This feature is intended to allow you to package a resource and its static files into an NPM module that can be shared. This may seem like an odd feature at first, but hopefully it will lead to some interesting sharing of common APIs and/or UIs for autohost based services. (example - realtime metrics dashboard)
+
+To enable this, simply add the module names as an array in the `modules` property of the configuration hash passed to init.
 
 ## Actions
 The list of actions are the operations exposed on a resource on the available transports.

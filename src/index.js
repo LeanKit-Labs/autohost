@@ -23,11 +23,12 @@ var wrapper = {
 		socket: undefined,
 		on: onEvent
 	};
-var api = require( './api.js' )( wrapper );
 var passport, httpAdapter, socketAdapter, middleware;
-var initialized;
+var initialized, api;
 
 function initialize( cfg, authProvider, fount ) { //jshint ignore:line
+	console.log( cfg );
+	api = require( './api.js' )( wrapper, cfg );
 	wrapper.fount = fount || internalFount;
 	if( initialized ) {
 		api.startAdapters();
