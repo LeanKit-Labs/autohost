@@ -263,8 +263,6 @@ The http transport API has three methods you can call to add middleware, API rou
 
 Keep in mind - most of the features you'll want to add beyond what autohost provides can probably be accomplished via middleware.
 
-### Metadata
-
 ## Web Socket Transport
 Autohost supports two socket libraries - socket.io for browser clients and websocket-node for programmatic/server clients.
 
@@ -331,10 +329,11 @@ Autohost provides metadata to describe the routes and topic available via an OPT
 
 	OPTIONS http://{host}:{port}/api
 	
-	Note: you CANNOT change this route. It must be consistent so that autohost's dashboards can find
+	Note: you CANNOT change this route. It must be consistent so that autohost's dashboards can always reach this endpoint.
 	
 The metadata follows this format:
 
+```json
 {
     "resource-name": {
         "routes": {
@@ -355,6 +354,7 @@ The metadata follows this format:
     },
     "prefix": "/api"
 }
+```
 
 In the future, the intent is to provide more metadata like this in various contexts as well as provide clients (for Node and the browser) that can consume this information to create clients dynamically based on the data.
 
