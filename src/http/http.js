@@ -74,7 +74,7 @@ function initialize() {
 		public = path.resolve( cwd, ( config.static || './public' ) );
 	config.tmp = path.resolve( cwd, ( config.temp || './tmp' ) );
 
-	registerStaticPath( '/', public );
+	wrapper.static( '/', public );
 
 	// apply user-supplied middleware
 	_.each( middleware, function( m ) { m( wrapper.app ); } );
