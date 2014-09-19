@@ -39,6 +39,9 @@ define( [
 				var resource = obj[ resourceName ];
 				var index = _.findIndex( resource, { name: actionName } );
 				if( e.target.checked ) {
+					if( _.isEmpty( resource[ index ].roles ) ) {
+						resource[ index ].roles = [];
+					}
 					resource[ index ].roles.push( this.state.selectedRole );
 					actions.addRole( actionName, this.state.selectedRole );
 				} else {
