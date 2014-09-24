@@ -9,6 +9,7 @@ function SocketEnvelope( topic, message, socket ) {
 	this.user = socket.user;
 	this.replyTo = this.data.replyTo || topic;
 	this.responseStream = new SocketStream( this.replyTo, socket );
+	this.session = socket.session;
 	this._original = {
 		message: message,
 		socket: socket

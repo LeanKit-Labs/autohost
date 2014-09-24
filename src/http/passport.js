@@ -15,6 +15,7 @@ var anonPaths;
 var metrics;
 
 function addPassport( http ) {
+
 	http.middleware( '/', passportInitialize );
 	http.middleware( '/', passportSession );
 	
@@ -31,7 +32,7 @@ function addPassport( http ) {
 	debug( 'passport configured' );
 }
 
-function authConditionally( req, res, next ) {
+function authConditionally( req, res, next ) { // jshint ignore:line
 	// if previous middleware has said to skip auth OR
 	// a user was attached from a session, skip authenticating
 	if( req.skipAuth || ( req.user && req.user.name ) ) {
@@ -57,7 +58,7 @@ function getAuthMiddleware( uri ) {
 	return list;
 }
 
-function getRoles( req, res, next ) {
+function getRoles( req, res, next ) { // jshint ignore:line
 	var userName = _.isObject( req.user.name ) ? req.user.name.name : req.user.name;
 	if( userName === 'anonymous' ) {
 		req.user.roles = [ 'anonymous' ];
@@ -106,18 +107,20 @@ function resetUserCount() {
 	userCountCheck = authProvider.hasUsers;
 }
 
-function skipAuthentication( req, res, next ) {
+function skipAuthentication( req, res, next ) { // jshint ignore:line
 	req.skipAuth = true;
-	req.user = {
-		id: 'anonymous',
-		name: 'anonymous',
-		roles: []
-	};
-	debug( 'Skipping authentication and assigning user anonymous to request %s %s', req.method, req.url );
+	if( !req.user ) {
+		debug( 'Skipping authentication and assigning user anonymous to request %s %s', req.method, req.url );
+		req.user = {
+			id: 'anonymous',
+			name: 'anonymous',
+			roles: []
+		};
+	}
 	next();
 }
 
-function whenNoUsers( req, res, next ) {
+function whenNoUsers( req, res, next ) { // jshint ignore:line
 	userCountCheck()
 		.then( function( hasUsers ) {
 			if( hasUsers ) {

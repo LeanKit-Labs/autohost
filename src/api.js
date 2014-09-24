@@ -177,7 +177,6 @@ function trim( list ) {
 }
 
 module.exports = function( ah, cfg ) {
-	console.log( cfg );
 	config = cfg;
 	host = ah;
 	fount = ah.fount;

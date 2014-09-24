@@ -7,6 +7,7 @@ var httpFn = require( './http/http.js' );
 var httpAdapterFn = require( './http/adapter.js' );
 var socketFn = require( './websocket/socket.js' );
 var socketAdapterFn = require( './websocket/adapter.js' );
+var middlewareLib = require( '../src/http/middleware.js' );
 var postal = require( 'postal' );
 var eventChannel = postal.channel( 'events' );
 var internalFount = require( 'fount' );
@@ -21,13 +22,13 @@ var wrapper = {
 		meta: undefined,
 		http: undefined,
 		socket: undefined,
+		session: middlewareLib.sessionLib,
 		on: onEvent
 	};
 var passport, httpAdapter, socketAdapter, middleware;
 var initialized, api;
 
 function initialize( cfg, authProvider, fount ) { //jshint ignore:line
-	console.log( cfg );
 	api = require( './api.js' )( wrapper, cfg );
 	wrapper.fount = fount || internalFount;
 	if( initialized ) {
@@ -35,7 +36,7 @@ function initialize( cfg, authProvider, fount ) { //jshint ignore:line
 	} else {
 		wrapper.config = cfg;
 		wrapper.stop = api.stop;
-		middleware = require( '../src/http/middleware.js' )( cfg, metrics );
+		middleware = middlewareLib( cfg, metrics );
 		if( when.isPromiseLike( authProvider ) ) {
 			authProvider
 				.then( function( result ) {

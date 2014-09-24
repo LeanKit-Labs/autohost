@@ -9,13 +9,13 @@ var wrapper = {
 	};
 var config, metrics, session, cookieParser;
 
-function applyCookieMiddleware( attach ) {
+function applyCookieMiddleware( attach ) { // jshint ignore: line
 	if( !config.noCookies ) {
 		attach( '/', cookieParser );
 	}
 }
 
-function applyMiddelware( attach, hasAuth ) {
+function applyMiddelware( attach, hasAuth ) { // jshint ignore: line
 	// add a timer to track ALL requests
 	attach( '/', requestMetrics );
 
@@ -43,20 +43,20 @@ function applyMiddelware( attach, hasAuth ) {
 	}
 }
 
-function applySessionMiddleware( attach ) {
+function applySessionMiddleware( attach ) { // jshint ignore: line
 	// turn on sessions unless turned off by the consumer
 	if( !config.noSession ) {
 		attach( '/', session );
 	}
 }
 
-function crossOrigin( req, res, next ) {
+function crossOrigin( req, res, next ) { // jshint ignore: line
 	res.header( 'Access-Control-Allow-Origin', '*' );
 	res.header( 'Access-Control-Allow-Headers', 'X-Requested-With' );
 	next();
 }
 
-function requestMetrics( req, res, next ) {
+function requestMetrics( req, res, next ) { // jshint ignore: line
 	req.context = {};
 	res.setMaxListeners( 0 );
 	var timerKey = [ req.method.toUpperCase(), req.url, 'timer' ].join( ' ' );
@@ -73,7 +73,7 @@ module.exports = function( cfg, meter ) {
 	cookieParser = cookies();
 	cfg.sessionStore = cfg.sessionStore || new sessionLib.MemoryStore();
 	session = sessionLib( { 
-		key: config.sessionId || 'sid',
+		name: config.sessionId || 'ah.sid',
 		secret: config.sessionSecret || 'authostthing',
 		saveUninitialized: true,
 		resave: true,
@@ -81,3 +81,5 @@ module.exports = function( cfg, meter ) {
 	} );
 	return wrapper;
 };
+
+module.exports.sessionLib = sessionLib;

@@ -10,6 +10,7 @@ function HttpEnvelope( req, res ) {
 	this.params = {};
 	this.files = req.files;
 	this.user = req.user;
+	this.session = req.session;
 	this.responseStream = res;
 	this._original = {
 		req: req,

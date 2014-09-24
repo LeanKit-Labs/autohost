@@ -62,9 +62,11 @@ The object literal follows the format:
 	noCookie: false, // disables cookies
 	noBody: false, // disables body parsing
 	noCrossOrigin: false, // disables cross origin
-	anonymous: [], // add paths or url patterns that bypass authentication and authorization
+	anonymous: [] // add paths or url patterns that bypass authentication and authorization
 }
 ```
+
+Please refer to the [session](#session) section for information on additional configuration options that control how the session is configured.
 
 ### AuthProvider
 There are already two available auth provider libraries available:
@@ -212,6 +214,7 @@ Envelopes are an abstraction around the incoming message or request. They are in
 {
 	context: // metadata added by middleware
 	cookies: // cookies on the request
+	session: // session hash
 	data: // the request/message body
 	headers: // request or message headers
 	path: // url of the request (minus protocol/domain/port) OR message topic
@@ -337,6 +340,32 @@ The general approach is this:
    1. if the action has NO roles assigned to it, the user will be able to activate the action
 
 This basically goes against least-priviledge and is really only in place to prevent services from spinning up and rejecting everything. To prevent issues here, you should never expose a service publicly before configuring users, roles and actions.
+
+### Session
+By default, Autohost uses [express session](https://github.com/expressjs/session) as the built in session provider. You can change several of the configuration settings for the session via Autohost's config hash:
+
+ * sessionId - provides a name for the session cookie. default: 'ah.sid'
+ * sessionSecret - signs cookie with a secret to prevent tampering. default: 'autohostthing'
+ * sessionStore - the session store interface/instance to use for persisting session. default: in memory store
+
+This example demonstrates using the redis and connect-redis libraries to create a redis-backed session store.
+```javascript
+var host = require( 'autohost' );
+var authProvider = require( 'autohost-nedb-auth' )( {} );
+
+var redis = require( 'redis' ).createClient( port, address );
+var RedisStore = require( 'connect-redis' )( host.session );
+var store = new RedisStore( {
+		client: redis,
+		prefix: 'ah:'
+	} );
+
+host.init( {
+	sessionId: 'myapp.sid',
+	sessionSecret: 'youdontevenknow',
+	sessionStore: store,
+}, authProvider );
+```
 
 ### Auth API and Admin Dashboard (Under development)
 The auth dashboard only works with auth providers that implement the entire specification. If that's available, you can fully manage users, roles and actions from this. It is hosted at http://{your server}:{port}/_autohost/auth.html
