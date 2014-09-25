@@ -1,11 +1,11 @@
-var path = require( 'path' ),
-	_ = require( 'lodash' ),
-	debug = require( 'debug' )( 'autohost:http-adapter' ),
-	HttpEnvelope,
-	http,
-	config, 
-	metrics, 
-	authStrategy;
+var path = require( 'path' );
+var _ = require( 'lodash' );
+var debug = require( 'debug' )( 'autohost:http-adapter' );
+var HttpEnvelope;
+var http;
+var config;
+var metrics;
+var authStrategy;
 
 var wrapper = {
 	action: wireupAction,

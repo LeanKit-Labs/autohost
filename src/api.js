@@ -55,7 +55,7 @@ function getActions( resource ) {
 	} );
 }
 
-function loadModule( resourcePath ) {
+function loadModule( resourcePath ) { // jshint ignore:line
 	try {
 		var key = path.resolve( resourcePath );
 		delete require.cache[ key ];
@@ -68,6 +68,7 @@ function loadModule( resourcePath ) {
 					var argList = _.map( args, function( arg ) {
 						return deps[ arg ];
 					} );
+					argList.unshift( host );
 					return modFn.apply( modFn, argList );
 				} );
 			return when.try( processModule, modPromise, resourcePath )
@@ -93,7 +94,7 @@ function loadResources( filePath ) { //jshint ignore:line
 		} );
 }
 
-function processModule( mod, resourcePath ) {
+function processModule( mod, resourcePath ) { // jshint ignore:line
 	if( mod && mod.name ) {
 		return processResource( mod, path.dirname( resourcePath ) );
 	} else {

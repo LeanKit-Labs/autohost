@@ -53,7 +53,7 @@ HttpEnvelope.prototype.replyWithFile = function( contentType, fileName, fileStre
 	fileStream.pipe( this._original.res );
 };
 
-module.exports = function( request ) {
-	request = request;
+module.exports = function( req ) {
+	request = req;
 	return HttpEnvelope;
 };
