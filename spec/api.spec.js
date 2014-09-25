@@ -110,6 +110,9 @@ describe( 'when loading from a good path', function() {
 		adapter = getAdapter();
 
 	before( function( done ) {
+		// use dependencies for resource two to set the action aliases
+		// this helps prove a fix for the defect that was dropping the host
+		// argument from resource function calls with dependencies
 		fount.register( 'durp1', 'hello' );
 		fount.register( 'durp2', 'goodbye' );
 		api = require( '../src/api.js' )( host, { modules: [ '../spec/misc/anresource.js' ] } );
@@ -131,8 +134,8 @@ describe( 'when loading from a good path', function() {
 		} );
 
 		result.two.routes.should.eql( {
-			a: { verb: undefined, url: undefined },
-			b: { verb: undefined, url: undefined }
+			hello: { verb: undefined, url: undefined },
+			goodbye: { verb: undefined, url: undefined }
 		} );
 
 		result.three.routes.should.eql( {
@@ -193,7 +196,7 @@ describe( 'when loading from a good path', function() {
 			'_autohost.metrics'
 			],
 			one: [ 'one.a', 'one.b' ],
-			two: [ 'two.a', 'two.b' ],
+			two: [ 'two.hello', 'two.goodbye' ],
 			three: [ 'three.c', 'three.d' ]
 		} );
 	} );

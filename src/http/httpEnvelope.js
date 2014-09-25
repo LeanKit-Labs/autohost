@@ -29,7 +29,7 @@ function HttpEnvelope( req, res ) {
 }
 
 HttpEnvelope.prototype.forwardTo = function( options ) {
-	return this._original.req.pipe( request( options ) );
+	return this._original.req.pipe( request( options ) ).pipe( this._original.res );
 };
 
 HttpEnvelope.prototype.redirect = function( statusCode, url ) {

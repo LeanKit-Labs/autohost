@@ -3,10 +3,10 @@ module.exports = function( host, durp1, durp2 ) {
 		name: 'two',
 		actions: [
 			{
-				alias: 'a'
+				alias: durp1
 			},
 			{
-				alias: 'b'
+				alias: durp2
 			}
 		]
 	};
