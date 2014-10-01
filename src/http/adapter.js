@@ -74,7 +74,12 @@ function wireupAction( resource, action, meta ) {
 	http.route( url, action.verb, function( req, res ) {
 		var respond = function() {
 			var envelope = new HttpEnvelope( req, res );
-			action.handle.apply( resource, [ envelope ] );
+			try {
+				action.handle.apply( resource, [ envelope ] );
+			} catch( err ) {
+				debug('Unhandled exception in resource [%s];\n', resource.name, err.stack );
+				envelope.reply( { statusCode: 500, data:err.stack } );
+			};
 		};
 		if( authStrategy ) {
 			checkPermissionFor( req.user, alias )
