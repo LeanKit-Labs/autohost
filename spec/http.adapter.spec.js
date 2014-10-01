@@ -34,6 +34,17 @@ describe( 'with http adapter', function() {
 				env.reply( { data: 'ta-da!' } );
 			}
 		}, { routes: {} } );
+
+		// a resource that crashes
+		httpAdapter.action( { name: 'test' }, {
+			alias: 'bomb',
+			verb: 'get',
+			path: '/bomb',
+			handle: function( env ) {
+				boom();
+			}
+		}, { routes: {} } );
+
 		http.start();
 	} );
 
@@ -82,6 +93,36 @@ describe( 'with http adapter', function() {
 		it( 'should return action response', function() {
 			result.should.equal( 'ta-da!' );
 		} );
+
+		after( cleanup );
+	} );
+
+	describe( 'when making a request to a resource that throws an unhandled exception', function() {
+		var result;
+
+		before( function( done ) {
+			actionRoles( 'test.bomb', [ 'guest' ] );
+			userRoles( 'userman', [ 'guest' ] );
+			requestor.get( {
+				url: 'http://localhost:88988/api/test/bomb',
+				headers: {
+					'Authorization': 'Bearer blorp'
+				}
+			}, function( err, resp ) {
+				result = resp;
+				done();
+			} );
+		} );
+
+		it( 'returns 500', function() {
+			result.statusCode.should.equal( 500 );
+		});
+
+		it( 'response body has error and stack trace', function() {
+			var pos = result.body.indexOf( 'at Object.httpAdapter.action.handle' );
+			var msg = result.body.substring(0, pos-5);
+			msg.should.equal( 'ReferenceError: boom is not defined' );
+		});
 
 		after( cleanup );
 	} );
