@@ -1,6 +1,6 @@
 var path = require( 'path' ),
 	_ = require( 'lodash' ),
-	debug = require( 'debug' )( 'autohost:http-adapter' ),
+	debug = require( '../debug.js' )( 'autohost:http-adapter' ),
 	HttpEnvelope,
 	http,
 	config, 
@@ -57,7 +57,7 @@ function checkPermissionFor( user, action ) {
 	debug( 'Checking %s\'s permissions for %s', ( user ? user.name : 'nouser' ), action );
 	return authStrategy.checkPermission( user, action )
 		.then( null, function( err ) {
-			debug( 'Error during check permissions: %s', err.stack );
+			debug.site( 'Error during check permissions: %s', err.stack );
 			return false;
 		} )
 		.then( function( granted ) {
@@ -97,7 +97,7 @@ function wireupAction( resource, action, meta ) {
 			try {
 				action.handle.apply( resource, [ envelope ] );
 			} catch( err ) {
-				debug('Unhandled exception in resource [%s];\n', resource.name, err.stack );
+				debug.site('Unhandled exception in resource [%s];\n', resource.name, err.stack );
 				envelope.reply( { statusCode: 500, data:err.stack } );
 			};
 		};
