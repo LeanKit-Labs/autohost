@@ -98,7 +98,7 @@ function wireupAction( resource, action, meta ) {
 				action.handle.apply( resource, [ envelope ] );
 			} catch( err ) {
 				debug.site('Unhandled exception in resource [%s];\n', resource.name, err.stack );
-				envelope.reply( { statusCode: 500, data:err.stack } );
+				envelope.reply( { statusCode: 500, data:'An error occurred while processing this request.' } );
 			};
 		};
 		if( authStrategy ) {
