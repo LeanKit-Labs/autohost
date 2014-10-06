@@ -152,10 +152,8 @@ describe( 'with http adapter', function() {
 			result.statusCode.should.equal( 500 );
 		});
 
-		it( 'response body has error and stack trace', function() {
-			var pos = result.body.indexOf( 'at Object.httpAdapter.action.handle' );
-			var msg = result.body.substring(0, pos-5);
-			msg.should.equal( 'ReferenceError: boom is not defined' );
+		it( 'response body has error', function() {
+			result.body.should.equal( 'An error occurred while processing this request.' );
 		});
 
 		after( cleanup );
