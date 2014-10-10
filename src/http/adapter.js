@@ -1,6 +1,6 @@
 var path = require( 'path' );
 var _ = require( 'lodash' );
-var debug = require( 'debug' )( 'autohost:http-adapter' );
+var debug = require( '../debug.js' )( 'autohost:http-adapter' );
 var HttpEnvelope;
 var http;
 var config;
@@ -37,7 +37,7 @@ function checkPermissionFor( user, action ) {
 	debug( 'Checking %s\'s permissions for %s', ( user ? user.name : 'nouser' ), action );
 	return authStrategy.checkPermission( user, action )
 		.then( null, function( err ) {
-			debug( 'Error during check permissions: %s', err.stack );
+			debug.site( 'Error during check permissions: %s', err.stack );
 			return false;
 		} )
 		.then( function( granted ) {
@@ -74,7 +74,12 @@ function wireupAction( resource, action, meta ) {
 	http.route( url, action.verb, function( req, res ) {
 		var respond = function() {
 			var envelope = new HttpEnvelope( req, res );
-			action.handle.apply( resource, [ envelope ] );
+			try {
+				action.handle.apply( resource, [ envelope ] );
+			} catch( err ) {
+				debug.site('Unhandled exception in resource [%s];\n', resource.name, err.stack );
+				envelope.reply( { statusCode: 500, data:'An error occurred while processing this request.' } );
+			};
 		};
 		if( authStrategy ) {
 			checkPermissionFor( req.user, alias )

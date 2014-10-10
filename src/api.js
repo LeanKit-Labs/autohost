@@ -3,7 +3,7 @@ var path = require( 'path' );
 var when = require('when');
 var nodeWhen = require( 'when/node' );
 var fs = require( 'fs' );
-var debug = require( 'debug' )( 'autohost:api' );
+var debug = require( './debug.js' )( 'autohost:api' );
 var readDirectory = nodeWhen.lift( fs.readdir );
 var wrapper = {
 	actionList: {},
@@ -78,7 +78,16 @@ function loadModule( resourcePath ) { // jshint ignore:line
 			return processModule( mod, resourcePath );
 		}
 	} catch ( err ) {
-		debug( 'Error loading resource module at %s with: %s', resourcePath, err.stack );
+		debug.site( 'Error loading resource module at %s with: %s', resourcePath, err.stack );
+		return when( [] );
+	}
+}
+
+function processModule( mod, resourcePath ) {
+	if( mod && mod.name ) {
+		return processResource( mod, path.dirname( resourcePath ) );
+	} else {
+		debug.site( 'Skipping resource at %s - no valid metadata provided', resourcePath );
 		return when( [] );
 	}
 }
