@@ -24,7 +24,8 @@ function acceptSocketRequest( request ) {
 		name: request.user.name 
 	};
 
-	// grab cookies parsed from middleware
+	// grab session and cookies parsed from middleware
+	socket.session = request.session;
 	socket.cookies = request.cookies;
 
 	// attach roles to user on socket
@@ -120,6 +121,7 @@ function handleWebSocketRequest( request ) {
 				} else {
 					debug( 'Websocket connection accepted as user %s', JSON.stringify( request.httpRequest.user ) );
 					request.user = request.httpRequest.user;
+					request.session = request.httpRequest.session;
 					acceptSocketRequest( request );
 				}
 			} );

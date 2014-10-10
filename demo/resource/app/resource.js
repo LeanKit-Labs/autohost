@@ -1,20 +1,33 @@
-var fs = require( 'fs' ),
-	path = require( 'path' ),
-	_ = require( 'lodash' ),
-	rootApp = path.resolve( './demo/public/app' );
-
 module.exports = function() {
 	return {
 		name: 'app',
 		resources: 'public',
 		actions: [
 			{
-				alias: 'list',
-				verb: 'get',
-				topic: 'list',
-				path: '',
+				alias: 'echo',
+				verb: 'post',
+				topic: 'echo',
+				path: '/echo',
 				handle: function( envelope ) {
-					envelope.reply( { data: [ 'lol' ] } );
+					console.log( 'got', envelope.data );
+					envelope.reply( { data: envelope.data } );
+				}
+			},
+			{
+				alias: 'get-session',
+				verb: 'get',
+				path: '/session',
+				handle: function( envelope ) {
+					envelope.reply( { data: envelope.session } );
+				}
+			},
+			{
+				alias: 'add-session',
+				verb: 'put',
+				path: '/session',
+				handle: function( envelope ) {
+					envelope.session[ envelope.data.key ] = envelope.data.value;
+					envelope.reply( { data: 'COOL BEANS!' } );
 				}
 			}
 		]

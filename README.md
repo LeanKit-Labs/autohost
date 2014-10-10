@@ -51,18 +51,22 @@ The object literal follows the format:
 {
 	static: './public', // where to host static resources from
 	resources: './resource', // where to load resource modules from
+	modules: [], // list of npm resource modules to load
 	port: 8800, // what port to host at
 	allowedOrigin: 'leankit.com', // used to filter incoming web socket connections based on origin
-	apiPrefix: '/api', // allows you to change the prefix for resource action URLs
+	urlPrefix: undefined, // applies a global prefix to all routes - for use behind reverse proxy
+	apiPrefix: '/api', // allows you to change the prefix for resource action URLs only
 	socketIO: false, // enables socket.io,
 	websocket: false, // enables websockets
 	noSession: false, // disables sessions
 	noCookie: false, // disables cookies
 	noBody: false, // disables body parsing
 	noCrossOrigin: false, // disables cross origin
-	anonymous: [], // add paths or url patterns that bypass authentication and authorization
+	anonymous: [] // add paths or url patterns that bypass authentication and authorization
 }
 ```
+
+Please refer to the [session](#session) section for information on additional configuration options that control how the session is configured.
 
 ### AuthProvider
 There are already two available auth provider libraries available:
@@ -167,6 +171,8 @@ The resource name is pre-pended to the action's alias to create a globally uniqu
 ### resources
 You can host nested static files under a resource using this property. The directory and its contents found at the path will be hosted after the resource name in the URL.
 
+To enable this, simply add the module names as an array in the `modules` property of the configuration hash passed to init.
+
 ## Actions
 The list of actions are the operations exposed on a resource on the available transports.
 
@@ -208,6 +214,7 @@ Envelopes are an abstraction around the incoming message or request. They are in
 {
 	context: // metadata added by middleware
 	cookies: // cookies on the request
+	session: // session hash
 	data: // the request/message body
 	headers: // request or message headers
 	path: // url of the request (minus protocol/domain/port) OR message topic
@@ -255,6 +262,9 @@ Forwards the request using the request library and returns the resulting stream.
 	} ).pipe( envelope.responseStream );
 ```
 
+## External Resources - Loading an NPM Resource Module
+Autohost allows you to specify a list of NPM modules that it will attempt to load as resources. This feature is intended to allow you to package a resource and its static files into an NPM module that can be shared. This may seem like an odd feature at first, but hopefully it will lead to some interesting sharing of common APIs and/or UIs for autohost based services. (example - realtime metrics dashboard)
+
 ## HTTP Transport
 The http transport API has three methods you can call to add middleware, API routes and static content routes. While you should rely on resources to supply routes, it's very common to add your own middleware. Authost will always add your middleware *after* its standard middleware and passport (unless you have turned off specific middleware via configuration).
 
@@ -264,7 +274,23 @@ The http transport API has three methods you can call to add middleware, API rou
 
 Keep in mind - most of the features you'll want to add beyond what autohost provides can probably be accomplished via middleware.
 
-### Metadata
+### Route prefixes
+Autohost's config provides two optional arguments you can use to control the HTTP routes that get created on your behalf.
+
+#### apiPrefix
+By default autohost places all resource action routes behind `/api` to prevent any collisions with static routes. You can remove this entirely by providing an empty string or simply change it so something else.
+
+	Note: a `urlPrefix` will always precede this if one has been supplied.
+
+#### urlPrefix
+In the rare event that you are using a reverse proxy in front of autohost that is routing requests from a path segment to your autohost service, you can use a urlPrefix to ensure that whatever leading path from the original url causes a redirection to your autohost service aligns with the routes supplied to express.
+
+__Example__
+You have a public HTTP endpoint that directs traffic to your primary application (`http://yourco.io`). You want to reverse proxy any request sent to the path `http://yourco.io/special/` to an interal application. The challenge is that all your static resources (html, css, js) that contain paths would normally expect that they could use absolute paths when referencing api routes or other static resources. ( examples: `/css/style.css`, `/js/lib/jquery.min.js`, `/api/thingy/10`) The problem is that the browser will make these requests which will be directed to your original application server since they don't begin with the `/special` path segment that is activating the reverse proxy to begin with. This will cause you to either activate routes in the original application (which will be incorrect) _or_ get a bunch of 404s back from your front-end application.
+
+While you could simple prefix all of your absolute URLs in static resources with `/special' (in this example), this will cause your application to be unusable without a reverse proxy sitting in front of it since the browser would be making requests to a route that doesn't exist and nothing is there to intercept and strip away the `/special` path prefix. This makes integration testing and local development unecessarily painful.
+
+The solution is to use `urlPrefix` set to 'special' and to either write all your URLs in static resources with the prefix (meh) OR use a build step that will find absolute paths in your static files and prefix them for you. Autohost will automatically apply this prefix to all routes in your service so that requests from the proxy align with the routes defined in your application consistently. This results in an application that remains usable outside of the reverse proxy and can even be built and deployed with different path prefixes (or no prefixes).
 
 ## Web Socket Transport
 Autohost supports two socket libraries - socket.io for browser clients and websocket-node for programmatic/server clients.
@@ -315,6 +341,32 @@ The general approach is this:
 
 This basically goes against least-priviledge and is really only in place to prevent services from spinning up and rejecting everything. To prevent issues here, you should never expose a service publicly before configuring users, roles and actions.
 
+### Session
+By default, Autohost uses [express session](https://github.com/expressjs/session) as the built in session provider. You can change several of the configuration settings for the session via Autohost's config hash:
+
+ * sessionId - provides a name for the session cookie. default: 'ah.sid'
+ * sessionSecret - signs cookie with a secret to prevent tampering. default: 'autohostthing'
+ * sessionStore - the session store interface/instance to use for persisting session. default: in memory store
+
+This example demonstrates using the redis and connect-redis libraries to create a redis-backed session store.
+```javascript
+var host = require( 'autohost' );
+var authProvider = require( 'autohost-nedb-auth' )( {} );
+
+var redis = require( 'redis' ).createClient( port, address );
+var RedisStore = require( 'connect-redis' )( host.session );
+var store = new RedisStore( {
+		client: redis,
+		prefix: 'ah:'
+	} );
+
+host.init( {
+	sessionId: 'myapp.sid',
+	sessionSecret: 'youdontevenknow',
+	sessionStore: store,
+}, authProvider );
+```
+
 ### Auth API and Admin Dashboard (Under development)
 The auth dashboard only works with auth providers that implement the entire specification. If that's available, you can fully manage users, roles and actions from this. It is hosted at http://{your server}:{port}/_autohost/auth.html
 
@@ -332,10 +384,11 @@ Autohost provides metadata to describe the routes and topic available via an OPT
 
 	OPTIONS http://{host}:{port}/api
 	
-	Note: you CANNOT change this route. It must be consistent so that autohost's dashboards can find
+	Note: you CANNOT change this route. It must be consistent so that autohost's dashboards can always reach this endpoint.
 	
 The metadata follows this format:
 
+```json
 {
     "resource-name": {
         "routes": {
@@ -356,6 +409,7 @@ The metadata follows this format:
     },
     "prefix": "/api"
 }
+```
 
 In the future, the intent is to provide more metadata like this in various contexts as well as provide clients (for Node and the browser) that can consume this information to create clients dynamically based on the data.
 

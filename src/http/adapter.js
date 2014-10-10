@@ -1,11 +1,11 @@
-var path = require( 'path' ),
-	_ = require( 'lodash' ),
-	debug = require( 'debug' )( 'autohost:http-adapter' ),
-	HttpEnvelope,
-	http,
-	config, 
-	metrics, 
-	authStrategy;
+var path = require( 'path' );
+var _ = require( 'lodash' );
+var debug = require( 'debug' )( 'autohost:http-adapter' );
+var HttpEnvelope;
+var http;
+var config;
+var metrics;
+var authStrategy;
 
 var wrapper = {
 	action: wireupAction,
@@ -14,28 +14,8 @@ var wrapper = {
 	stop: stop
 };
 
-function buildUrl() {
-	var idx = 0,
-		cleaned = [],
-		segment;
-	while( idx < arguments.length ) {
-		segment = arguments[ idx ];
-		if( segment.substr( 0, 1 ) === '/' ) {
-			segment = segment.substr( 1 );
-		}
-		if( segment.substr( segment.length-1, 1 ) === '/' ) {
-			segment = segment.substring( 0, segment.length - 1 );
-		}
-		if( !_.isEmpty( segment ) ) {
-			cleaned.push( segment );
-		}
-		idx ++;
-	}
-	return '/' + cleaned.join( '/' );
-}
-
 function buildActionUrl( resourceName, action ) {
-	return action.url || buildUrl( ( config.apiPrefix || 'api' ), resourceName, ( action.path || '' ) );
+	return action.url || http.buildUrl( ( config.apiPrefix || 'api' ), resourceName, ( action.path || '' ) );
 }
 
 function buildActionAlias( resourceName, action ) {

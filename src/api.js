@@ -9,11 +9,13 @@ var wrapper = {
 	actionList: {},
 	addAdapter: addAdapter,
 	clearAdapters: clearAdapters,
+	loadModule: loadModule,
 	loadResources: loadResources,
 	start: start,
 	startAdapters: startAdapters,
 	stop: stop,
 };
+var config;
 var adapters = [];
 var host;
 var fount;
@@ -53,21 +55,20 @@ function getActions( resource ) {
 	} );
 }
 
-function loadModule( resourcePath ) {
+function loadModule( resourcePath ) { // jshint ignore:line
 	try {
 		var key = path.resolve( resourcePath );
 		delete require.cache[ key ];
 		var modFn = require( resourcePath );
 		var args = getArguments( modFn );
-		if( args[ 0 ] === 'host' ) {
-			args.shift();
-		}
+		args.shift();
 		if( args.length ) {
 			var modPromise = fount.resolve( args )
 				.then( function( deps ) {
 					var argList = _.map( args, function( arg ) {
 						return deps[ arg ];
 					} );
+					argList.unshift( host );
 					return modFn.apply( modFn, argList );
 				} );
 			return when.try( processModule, modPromise, resourcePath )
@@ -78,15 +79,6 @@ function loadModule( resourcePath ) {
 		}
 	} catch ( err ) {
 		debug( 'Error loading resource module at %s with: %s', resourcePath, err.stack );
-		return when( [] );
-	}
-}
-
-function processModule( mod, resourcePath ) {
-	if( mod && mod.name ) {
-		return processResource( mod, path.dirname( resourcePath ) );
-	} else {
-		debug( 'Skipping resource at %s - no valid metadata provided', resourcePath );
 		return when( [] );
 	}
 }
@@ -102,11 +94,23 @@ function loadResources( filePath ) { //jshint ignore:line
 		} );
 }
 
+function processModule( mod, resourcePath ) { // jshint ignore:line
+	if( mod && mod.name ) {
+		return processResource( mod, path.dirname( resourcePath ) );
+	} else {
+		debug( 'Skipping resource at %s - no valid metadata provided', resourcePath );
+		return when( [] );
+	}
+}
+
 function processResource( resource, basePath ) { //jshint ignore:line
 	getActions( resource );
 	return when.all( _.map( adapters, function( adapter ) {
 		return when.try( adapter.resource, resource, basePath );
 	} ) )
+	.then( null, function( e ) {
+		console.log( e.stack );
+	} )
 	.then( function( meta ) {
 		var container = {};
 		container[ resource.name ] = _.reduce( meta, reduce, {} );
@@ -129,10 +133,17 @@ function reduce( acc, resource ) { //jshint ignore:line
 
 function start( resourcePath, auth ) { //jshint ignore:line
 	wrapper.actionList = {};
-	return when.all( [
-			loadResources( resourcePath ),
-			processResource( require( './_autohost/resource.js' )( host, fount ), path.resolve( __dirname, './_autohost' ) )
-		] )
+	var loadActions = [
+		loadResources( resourcePath ),
+		processResource( require( './_autohost/resource.js' )( host, fount ), path.resolve( __dirname, './_autohost' ) )
+	];
+	if( config.modules ) {
+		_.each( config.modules, function( mod ) {
+			var modPath = require.resolve( mod );
+			loadActions.push( loadModule( modPath ) );	
+		} );
+	}
+	return when.all( loadActions )
 		.then( function ( list ) {
 			host.actions = wrapper.actionList;
 			if( auth ) {
@@ -166,7 +177,8 @@ function trim( list ) {
 	return ( list && list.length ) ? _.filter( list.map( trimString ) ) : []; 
 }
 
-module.exports = function( ah ) {
+module.exports = function( ah, cfg ) {
+	config = cfg;
 	host = ah;
 	fount = ah.fount;
 	return wrapper;

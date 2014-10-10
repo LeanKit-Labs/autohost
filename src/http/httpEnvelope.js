@@ -10,6 +10,7 @@ function HttpEnvelope( req, res ) {
 	this.params = {};
 	this.files = req.files;
 	this.user = req.user;
+	this.session = req.session;
 	this.responseStream = res;
 	this._original = {
 		req: req,
@@ -28,7 +29,7 @@ function HttpEnvelope( req, res ) {
 }
 
 HttpEnvelope.prototype.forwardTo = function( options ) {
-	return this._original.req.pipe( request( options ) );
+	return this._original.req.pipe( request( options ) ).pipe( this._original.res );
 };
 
 HttpEnvelope.prototype.redirect = function( statusCode, url ) {
@@ -52,7 +53,7 @@ HttpEnvelope.prototype.replyWithFile = function( contentType, fileName, fileStre
 	fileStream.pipe( this._original.res );
 };
 
-module.exports = function( request ) {
-	request = request;
+module.exports = function( req ) {
+	request = req;
 	return HttpEnvelope;
 };

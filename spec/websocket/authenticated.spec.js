@@ -9,13 +9,6 @@ var config = {
 		socketIO: true,
 		websocket: true
 	};
-// var authProvider = require( '../auth/mock.js' )( config );
-// var passport = require( '../../src/http/passport.js' )( config, authProvider, metrics );
-// var middleware = require( '../../src/http/middleware.js' )( config, metrics );
-// var http = require( '../../src/http/http.js' )( config, requestor, passport, middleware, metrics );
-// var socket = require( '../../src/websocket/socket.js' )( config, http, middleware );
-
-// authProvider.users[ 'admin' ] = { name: 'admin', password: 'admin' };
 
 var authProvider, passport, middleware, http, socket;
 
@@ -30,7 +23,7 @@ describe( 'with websocket and valid credentials', function() {
 		http = require( '../../src/http/http.js' )( config, requestor, passport, middleware, metrics );
 		socket = require( '../../src/websocket/socket.js' )( config, http, middleware );
 
-		authProvider.users[ 'admin' ] = { name: 'admin', password: 'admin' };
+		authProvider.users.admin = { name: 'admin', password: 'admin' };
 
 		http.start();
 		socket.start( passport );

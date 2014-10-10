@@ -18,6 +18,9 @@ function acceptSocket( socket ) {
 		name: handshake.user || 'anonymous' 
 	};
 	
+	// copy session from request
+	socket.session = handshake.session;
+
 	// copy cookies from request from middleware
 	socket.cookies = {};
 	if( handshake.headers.cookie ) {

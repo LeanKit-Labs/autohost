@@ -7,6 +7,7 @@ var requestor = require( 'request' ).defaults( { jar: true } );
 var metrics = require( 'cluster-metrics' );
 var port = 88988;
 var config = {
+		urlPrefix: 'herpDeDerp',
 		port: port
 	};
 
@@ -58,7 +59,7 @@ describe( 'with http module', function() {
 
 		before( function( done ) {
 			requestor.get( {
-				url: 'http://localhost:88988/files/txt/hello.txt' 
+				url: 'http://localhost:88988/herpDeDerp/files/txt/hello.txt' 
 			}, function( err, resp ) {
 				result = resp.body;
 				done();
@@ -81,7 +82,7 @@ describe( 'with http module', function() {
 
 		before( function( done ) {
 			requestor.get( {
-				url: 'http://localhost:88988/files/txt/missing.txt'
+				url: 'http://localhost:88988/herpDeDerp/files/txt/missing.txt'
 			}, function( err, resp ) {
 				result = resp.body;
 				done();
@@ -89,7 +90,7 @@ describe( 'with http module', function() {
 		} );
 
 		it( 'should report files as unavailable', function() {
-			result.should.equal( 'Cannot GET /files/txt/missing.txt\n' );
+			result.should.equal( 'Cannot GET /herpDeDerp/files/txt/missing.txt\n' );
 		} );
 
 		it( 'should execute all middleware in order', function() {
@@ -105,7 +106,7 @@ describe( 'with http module', function() {
 		before( function( done ) {
 			response = 'hey, a thing';
 			requestor.get( {
-				url: 'http://localhost:88988/thing/a/b?c=3' 
+				url: 'http://localhost:88988/herpDeDerp/thing/a/b?c=3' 
 			}, function( err, resp ) {
 				result = resp;
 				done();
@@ -135,7 +136,7 @@ describe( 'with http module', function() {
 			get = function() { 
 				return when.promise( function( resolve ) {
 					requestor.get( {
-						url: 'http://localhost:88988/thing/a/b?c=3',
+						url: 'http://localhost:88988/herpDeDerp/thing/a/b?c=3',
 						headers: { 'Authorization': 'Basic dGVzdDp0ZXN0' }
 					}, function( err, resp ) {
 						resolve( err || resp );

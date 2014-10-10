@@ -1,6 +1,6 @@
 {
   "name": "autohost",
-  "version": "0.2.0-15",
+  "version": "0.2.0-22",
   "description": "Resource driven transport agnostic host",
   "main": "src/index.js",
   "dependencies": {
@@ -25,8 +25,8 @@
     "when": "^3.4.2"
   },
   "devDependencies": {
-    "autohost-nedb-auth": "0.1.0-1",
-    "autohost-riak-auth": "0.1.0-3",
+    "autohost-nedb-auth": "~0.1.0",
+    "autohost-riak-auth": "~0.1.0",
     "gulp": "^3.8.6",
     "gulp-mocha": "^0.5.2",
     "gulp-mocha-phantomjs": "^0.4.0",
@@ -51,6 +51,10 @@
     "transport"
   ],
   "author": "Alex Robson",
+  "contributors": [ {
+    "name": "Josh Bush",
+    "url": "http://digitalbush.com"
+  } ],
   "license": "MIT License - http://opensource.org/licenses/MIT",
   "bugs": {
     "url": "https://github.com/LeanKit-Labs/autohost/issues"

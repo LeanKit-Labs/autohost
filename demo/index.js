@@ -1,5 +1,12 @@
 var host = require( '../src/index.js' );
-var _ = require( 'lodash' );
+var authProvider = require( 'autohost-nedb-auth' )( {} );
+
+var redis = require( 'redis' ).createClient(); // assumes a locally running redis server
+var RedisStore = require( 'connect-redis' )( host.session );
+var store = new RedisStore( {
+		client: redis,
+		prefix: 'ah:'
+	} );
 
 try {
 	host.init( {
@@ -8,9 +15,15 @@ try {
 		static: './demo/public',
 		socketIO: true,
 		websockets: true,
-		origin: 'console'
-	} );
-	host.http.middleware( '/', function derp( req, res, next ) { next(); } );
+		origin: 'console',
+		anonymous: [ '/$', '/js', '/css' ],
+		sessionId: 'myapp.sid',
+		sessionSecret: 'youdontevenknow',
+		sessionStore: store,
+	}, 
+	authProvider );
+	
+	
 	// }, require( 'autohost-nedb-auth' )( {} ) );
 	// }, require( 'autohost-riak-auth' )(
 	// 	{ appName: 'ahdemo', 
