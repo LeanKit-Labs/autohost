@@ -78,7 +78,7 @@ function loadModule( resourcePath ) { // jshint ignore:line
 			return processModule( mod, resourcePath );
 		}
 	} catch ( err ) {
-		debug( 'Error loading resource module at %s with: %s', resourcePath, err.stack );
+		console.error( 'Error loading resource module at %s with: %s', resourcePath, err.stack );
 		return when( [] );
 	}
 }
