@@ -1,13 +1,11 @@
 module.exports = function( autohost ) {
 	return {
 		name: 'three',
-		actions: [
-			{
-				alias: 'c'
+		actions: {
+			c: {
 			},
-			{
-				alias: 'd'
+			d: {
 			}
-		]
+		}
 	};
 };

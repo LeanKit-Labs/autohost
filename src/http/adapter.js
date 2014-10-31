@@ -15,11 +15,13 @@ var wrapper = {
 };
 
 function buildActionUrl( resourceName, action ) {
-	return action.url || http.buildUrl( ( config.apiPrefix || 'api' ), resourceName, ( action.path || '' ) );
+	var resourceIndex = action.url.indexOf( resourceName );
+	var resource = resourceIndex === 0 || resourceIndex === 1 ? '' : resourceName;
+	return http.buildUrl( ( config.apiPrefix || 'api' ), resource, ( action.url || '' ) );
 }
 
-function buildActionAlias( resourceName, action ) {
-	return [ resourceName, action.alias ].join( '.' );
+function buildActionAlias( resourceName, actionName ) {
+	return [ resourceName, actionName ].join( '.' );
 }
 
 function buildPath( pathSpec ) {
@@ -60,18 +62,21 @@ function wireupResource( resource, basePath ) {
 		http.static( '/' + resource.name, directory );
 		meta.path = { url: '/' + resource.name, directory: directory };
 	}
-	_.each( resource.actions, function( action ) {
-		wireupAction( resource, action, meta );
+	_.each( resource.actions, function( action, actionName ) {
+		wireupAction( resource, actionName, action, meta );
 	} );
 	return meta;
 }
 
-function wireupAction( resource, action, meta ) {
-	var url = buildActionUrl( resource.name, action ),
-		alias = buildActionAlias( resource.name, action );
-	meta.routes[ action.alias ] = { verb: action.verb, url: url };
-	debug( 'Mapping resource \'%s\' action \'%s\' to %s %s', resource.name, action.alias, action.verb, url );
-	http.route( url, action.verb, function( req, res ) {
+function wireupAction( resource, actionName, action, meta ) {
+	var url = buildActionUrl( resource.name, action );
+	var alias = buildActionAlias( resource.name, actionName );
+	meta.routes[ actionName ] = { method: action.method, url: url };
+	debug( 'Mapping resource \'%s\' action \'%s\' to %s %s', resource.name, actionName, action.method, url );
+	http.route( url, action.method, function( req, res ) {
+		req._resource = resource.name;
+		req._action = actionName;
+		req._checkPermission = authStrategy ? checkPermissionFor.bind( undefined, req.user ) : undefined;
 		var respond = function() {
 			var envelope = new HttpEnvelope( req, res );
 			action.handle.apply( resource, [ envelope ] );
@@ -80,10 +85,10 @@ function wireupAction( resource, action, meta ) {
 			checkPermissionFor( req.user, alias )
 				.then( function( pass ) {
 					if( pass ) {
-						debug( 'HTTP activation of action %s (%s %s) for %s granted', alias, action.verb, url, req.user.name );
+						debug( 'HTTP activation of action %s (%s %s) for %s granted', alias, action.method, url, req.user.name );
 						respond();
 					} else {
-						debug( 'User %s was denied HTTP activation of action %s (%s %s)', req.user.name, alias, action.verb, url );
+						debug( 'User %s was denied HTTP activation of action %s (%s %s)', req.user.name, alias, action.method, url );
 						res.status( 403 ).send( "User lacks sufficient permissions" );
 					}
 				} );

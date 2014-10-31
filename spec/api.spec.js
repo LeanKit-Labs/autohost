@@ -9,8 +9,8 @@ var getAdapter = function() {
 		resource: function( resource ) {
 			this.resources.push( resource );
 			var meta = { routes: {} };
-			_.map( resource.actions, function( action ) {
-				meta.routes[ action.alias ] = { verb: action.verb, url: action.url };
+			_.map( resource.actions, function( action, actionName ) {
+				meta.routes[ actionName ] = { method: action.method, url: undefined };
 			} );
 			return meta;
 		},
@@ -42,30 +42,30 @@ describe( 'when loading from a bad path', function() {
 	} );
 
 	it( 'should still load _autohost resource actions', function() {
-		result._autohost.routes.should.eql( { 
-			api: { verb: 'get', url: undefined },
-			resources: { verb: 'get', url: undefined },
-			actions: { verb: 'get', url: undefined },
-			'change-password': { verb: 'patch', url: undefined },
-			'connected-sockets': { verb: 'get', url: undefined },
-			'create-token': { verb: 'post', url: undefined },
-			'destroy-token': { verb: 'delete', url: undefined },
-			'list-users': { verb: 'get', url: undefined },
-			'list-roles': { verb: 'get', url: undefined },
-			'list-user-roles': { verb: 'get', url: undefined },
-			'list-action-roles': { verb: 'get', url: undefined },
-			'list-tokens': { verb: 'get', url: undefined },
-			'add-action-roles': { verb: 'patch', url: undefined },
-			'remove-action-roles': { verb: 'delete', url: undefined },
-			'add-user-roles': { verb: 'patch', url: undefined },
-			'remove-user-roles': { verb: 'delete', url: undefined },
-			'add-role': { verb: 'post', url: undefined },
-			'remove-role': { verb: 'delete', url: undefined },
-			'create-user': { verb: 'post', url: undefined },
+		result._autohost.routes.should.eql( {
+			api: { method: 'get', url: undefined },
+			resources: { method: 'get', url: undefined },
+			actions: { method: 'get', url: undefined },
+			'change-password': { method: 'patch', url: undefined },
+			'connected-sockets': { method: 'get', url: undefined },
+			'create-token': { method: 'post', url: undefined },
+			'destroy-token': { method: 'delete', url: undefined },
+			'list-users': { method: 'get', url: undefined },
+			'list-roles': { method: 'get', url: undefined },
+			'list-user-roles': { method: 'get', url: undefined },
+			'list-action-roles': { method: 'get', url: undefined },
+			'list-tokens': { method: 'get', url: undefined },
+			'add-action-roles': { method: 'patch', url: undefined },
+			'remove-action-roles': { method: 'delete', url: undefined },
+			'add-user-roles': { method: 'patch', url: undefined },
+			'remove-user-roles': { method: 'delete', url: undefined },
+			'add-role': { method: 'post', url: undefined },
+			'remove-role': { method: 'delete', url: undefined },
+			'create-user': { method: 'post', url: undefined },
 
-			'enable-user': { verb: 'put', url: undefined },
-			'disable-user': { verb: 'delete', url: undefined },
-			metrics: { verb: 'get', url: undefined } 
+			'enable-user': { method: 'put', url: undefined },
+			'disable-user': { method: 'delete', url: undefined },
+			metrics: { method: 'get', url: undefined } 
 		} );
 	} );
 
@@ -129,43 +129,43 @@ describe( 'when loading from a good path', function() {
 
 	it( 'should load all resources and actions', function() {
 		result.one.routes.should.eql( {
-			a: { verb: undefined, url: undefined },
-			b: { verb: undefined, url: undefined }
+			a: { method: undefined, url: undefined },
+			b: { method: undefined, url: undefined }
 		} );
 
 		result.two.routes.should.eql( {
-			hello: { verb: undefined, url: undefined },
-			goodbye: { verb: undefined, url: undefined }
+			hello: { method: undefined, url: undefined },
+			goodbye: { method: undefined, url: undefined }
 		} );
 
 		result.three.routes.should.eql( {
-			c: { verb: undefined, url: undefined },
-			d: { verb: undefined, url: undefined }
+			c: { method: undefined, url: undefined },
+			d: { method: undefined, url: undefined }
 		} );
 
 		result._autohost.routes.should.eql( { 
-			api: { verb: 'get', url: undefined },
-			resources: { verb: 'get', url: undefined },
-			actions: { verb: 'get', url: undefined },
-			'change-password': { verb: 'patch', url: undefined },
-			'connected-sockets': { verb: 'get', url: undefined },
-			'create-token': { verb: 'post', url: undefined },
-			'destroy-token': { verb: 'delete', url: undefined },
-			'list-users': { verb: 'get', url: undefined },
-			'list-roles': { verb: 'get', url: undefined },
-			'list-user-roles': { verb: 'get', url: undefined },
-			'list-action-roles': { verb: 'get', url: undefined },
-			'list-tokens': { verb: 'get', url: undefined },
-			'add-action-roles': { verb: 'patch', url: undefined },
-			'remove-action-roles': { verb: 'delete', url: undefined },
-			'add-user-roles': { verb: 'patch', url: undefined },
-			'remove-user-roles': { verb: 'delete', url: undefined },
-			'add-role': { verb: 'post', url: undefined },
-			'remove-role': { verb: 'delete', url: undefined },
-			'create-user': { verb: 'post', url: undefined },
-			'enable-user': { verb: 'put', url: undefined },
-			'disable-user': { verb: 'delete', url: undefined },
-			metrics: { verb: 'get', url: undefined } 
+			api: { method: 'get', url: undefined },
+			resources: { method: 'get', url: undefined },
+			actions: { method: 'get', url: undefined },
+			'change-password': { method: 'patch', url: undefined },
+			'connected-sockets': { method: 'get', url: undefined },
+			'create-token': { method: 'post', url: undefined },
+			'destroy-token': { method: 'delete', url: undefined },
+			'list-users': { method: 'get', url: undefined },
+			'list-roles': { method: 'get', url: undefined },
+			'list-user-roles': { method: 'get', url: undefined },
+			'list-action-roles': { method: 'get', url: undefined },
+			'list-tokens': { method: 'get', url: undefined },
+			'add-action-roles': { method: 'patch', url: undefined },
+			'remove-action-roles': { method: 'delete', url: undefined },
+			'add-user-roles': { method: 'patch', url: undefined },
+			'remove-user-roles': { method: 'delete', url: undefined },
+			'add-role': { method: 'post', url: undefined },
+			'remove-role': { method: 'delete', url: undefined },
+			'create-user': { method: 'post', url: undefined },
+			'enable-user': { method: 'put', url: undefined },
+			'disable-user': { method: 'delete', url: undefined },
+			metrics: { method: 'get', url: undefined } 
 		} );
 	} );
 

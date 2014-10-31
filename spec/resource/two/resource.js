@@ -1,13 +1,10 @@
 module.exports = function( host, durp1, durp2 ) {
-	return {
+	var resource = {
 		name: 'two',
-		actions: [
-			{
-				alias: durp1
-			},
-			{
-				alias: durp2
-			}
-		]
+		actions: {
+		}
 	};
+	resource.actions[ durp1 ] = {};
+	resource.actions[ durp2 ] = {};
+	return resource;
 };

@@ -62,6 +62,7 @@ The object literal follows the format:
 	noCookie: false, // disables cookies
 	noBody: false, // disables body parsing
 	noCrossOrigin: false, // disables cross origin
+	noOptions: false, // disables automatic options middleware, use this when providing your own
 	anonymous: [] // add paths or url patterns that bypass authentication and authorization
 }
 ```
@@ -112,17 +113,16 @@ module.exports = function( host ) {
 	return {
 		name: 'resource-name',
 		resources: '', // relative path to static assets for this resource
-		actions: [ 
-			{
-				alias: 'send', // not presently utilized
-				verb: 'get', // http verb
+		actions:  {
+			send: {
+				method: 'get', // http verb
+				url: '', // url pattern appended to the resource name
 				topic: 'send', // topic segment appended the resource name
-				path: '', // url pattern appended to the resource name
 				handle: function( envelope ) {
 					// see section on envelope for more detail			
 				}
 			}
-		]
+		}
 	};
 };
 ```
@@ -146,12 +146,11 @@ module.exports = function( host, myDependency1, myDependency2 ) {
 	return {
 		name: 'resource-name',
 		resources: '', // relative path to static assets for this resource
-		actions: [ 
-			{
-				alias: 'send', // not presently utilized
-				verb: 'get', // http verb
+		actions: { 
+			send: {
+				method: 'get', // http verb
+				url: '', // url pattern appended to the resource name
 				topic: 'send', // topic segment appended the resource name
-				path: '', // url pattern appended to the resource name
 				handle: function( envelope ) {
 					// see section on envelope for more detail			
 				}
@@ -168,25 +167,28 @@ The resource name is pre-pended to the action's alias to create a globally uniqu
 	
 	topic: {resource-name}.{action-topic|action-alias}
 
+
+	Note: If you are defining resources for use with [hyped](https://github.com/leankit-labs/hyped) - you will need to provide the resource in the url property. Autohost will not add the resource name as a prefix if it's already present.
+
 ### resources
 You can host nested static files under a resource using this property. The directory and its contents found at the path will be hosted after the resource name in the URL.
 
 To enable this, simply add the module names as an array in the `modules` property of the configuration hash passed to init.
 
 ## Actions
-The list of actions are the operations exposed on a resource on the available transports.
+The hash of actions are the operations exposed on a resource on the available transports.
 
-### alias
-An alias is the 'friendly' name for the action. To create a globally unique action name, autohost pre-pends the resource name to the alias: `resource-name.action-alias`.
+### [key]
+They key of the action in the hash acts as the 'friendly' name for the action. To create a globally unique action name, autohost pre-pends the resource name to the alias: `resource-name.action-alias`.
 
-### verb
+### method
 Controls the HTTP method an action will be bound to.
 
 ### topic
 This property controls what is appended to the resource name in order to create a socket topic. The topic is what a socket client would publish a message to in order to activate an action.
 
-### path
-The path property overrides the URL assigned to this action. You can put path variables in this following the express convention of a leading `:`
+### url
+The path property provides the URL assigned to this action. You can put path variables in this following the express convention of a leading `:`
 
 	path: '/thing/:arg1/:arg2'
 	

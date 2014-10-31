@@ -13,8 +13,8 @@ var wrapper = {
 	stop: stop
 };
 
-function buildActionAlias( resourceName, action ) {
-	return [ resourceName, action.alias ].join( '.' );
+function buildActionAlias( resourceName, actionName ) {
+	return [ resourceName, actionName ].join( '.' );
 }
 
 function buildActionTopic( resourceName, action ) {
@@ -43,18 +43,18 @@ function stop() {
 
 function wireupResource( resource ) {
 	var meta = { topics: {} };
-	_.each( resource.actions, function( action ) {
-		wireupAction( resource, action, meta );
+	_.each( resource.actions, function( action, actionName ) {
+		wireupAction( resource, actionName, action, meta );
 	} );
 	return meta;
 }
 
-function wireupAction( resource, action, meta ) {
-	var topic = buildActionTopic( resource.name, action ),
-		alias = buildActionAlias( resource.name, action );
+function wireupAction( resource, actionName, action, meta ) {
+	var topic = buildActionTopic( resource.name, action );
+	var alias = buildActionAlias( resource.name, actionName );
 
-	meta.topics[ action.alias ] = { topic: topic };
-	debug( 'Mapping resource \'%s\' action \'%s\' to topic %s', resource.name, action.alias, alias );
+	meta.topics[ actionName ] = { topic: topic };
+	debug( 'Mapping resource \'%s\' action \'%s\' to topic %s', resource.name, actionName, alias );
 	socket.on( topic, function( message, socket ) {
 		var data = message.data || message;
 		var respond = function() {

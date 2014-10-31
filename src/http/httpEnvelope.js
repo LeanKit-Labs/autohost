@@ -1,4 +1,5 @@
 var request;
+var _ = require( 'lodash' );
 
 function HttpEnvelope( req, res ) {
 	this.transport = 'http';
@@ -26,6 +27,12 @@ function HttpEnvelope( req, res ) {
 			this.params[ key ] = val;
 		}.bind(this));
 	}.bind(this));
+
+	if( req.extendHttp ) {
+		_.each( req.extendHttp, function( val, key ) {
+			this[ key ] = val;
+		}.bind( this ) );
+	}
 }
 
 HttpEnvelope.prototype.forwardTo = function( options ) {

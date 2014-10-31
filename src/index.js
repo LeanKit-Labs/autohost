@@ -11,6 +11,8 @@ var middlewareLib = require( '../src/http/middleware.js' );
 var postal = require( 'postal' );
 var eventChannel = postal.channel( 'events' );
 var internalFount = require( 'fount' );
+var passport, httpAdapter, socketAdapter, middleware;
+var initialized, api;
 var wrapper = {
 	 	actions: undefined,
 	 	auth: undefined,
@@ -25,27 +27,26 @@ var wrapper = {
 		session: middlewareLib.sessionLib,
 		on: onEvent
 	};
-var passport, httpAdapter, socketAdapter, middleware;
-var initialized, api;
 
 function initialize( cfg, authProvider, fount ) { //jshint ignore:line
 	api = require( './api.js' )( wrapper, cfg );
 	wrapper.fount = fount || internalFount;
 	if( initialized ) {
 		api.startAdapters();
+		return when( api.resources );
 	} else {
 		wrapper.config = cfg;
 		wrapper.stop = api.stop;
 		middleware = middlewareLib( cfg, metrics );
 		if( when.isPromiseLike( authProvider ) ) {
-			authProvider
+			return authProvider
 				.then( function( result ) {
 					wrapper.auth = result;
-					setup( result );
+					return setup( result );
 				} );
 		} else {
 			wrapper.auth = authProvider;
-			setup( authProvider );
+			return setup( authProvider );
 		}
 	}
 }
@@ -67,23 +68,26 @@ function setup( authProvider ) { //jshint ignore:line
 	api.addAdapter( httpAdapter );
 
 	// API metadata
-	wrapper.http.middleware( '/api', function( req, res, next ) {
-		if( req.method === 'OPTIONS' || req.method === 'options' ) {
-			res.status( 200 ).send( wrapper.meta );
-		} else {
-			next();
-		}
-	} );
+	if( !config.noOptions ) {
+		wrapper.http.middleware( '/api', function( req, res, next ) {
+			if( req.method === 'OPTIONS' || req.method === 'options' ) {
+				res.status( 200 ).send( wrapper.meta );
+			} else {
+				next();
+			}
+		} );
+	}
 
 	wrapper.socket = socketFn( config, wrapper.http, middleware );
 	socketAdapter = socketAdapterFn( config, authProvider, wrapper.socket, metrics );
 	api.addAdapter( socketAdapter );
 
-	api.start( config.resources || path.join( process.cwd(), './resource' ), authProvider )
+	return api.start( config.resources || path.join( process.cwd(), './resource' ), authProvider )
 		.then( function( meta ) {
 			meta.prefix = config.apiPrefix || '/api';
 			wrapper.meta = meta;
 			initialized = true;
+			return api.resources;
 		} );
 }
 

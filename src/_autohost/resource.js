@@ -38,30 +38,27 @@ module.exports = function( host ) {
 	return {
 		name: '_autohost',
 		resources: 'public',
-		actions: [
-			{
-				alias: 'api',
-				verb: 'get',
+		actions: {
+			api: {
+				method: 'get',
 				topic: 'api',
-				path: '',
+				url: '',
 				handle: function( envelope) {
 					envelope.reply( { data: host.meta._autohost.routes } );
 				}
 			},
-			{
-				alias: 'resources',
-				verb: 'get',
+			resources: {
+				method: 'get',
 				topic: 'resource.list',
-				path: 'resource',
+				url: '/resource',
 				handle: function( envelope ) {
 					envelope.reply( { data: host.meta } );
 				}
 			},
-			{
-				alias: 'actions',
-				verb: 'get',
+			'actions': {
+				method: 'get',
 				topic: 'actions.list',
-				path: 'action',
+				url: '/action',
 				handle: function( envelope ) {
 					if( host.auth && host.auth.getActions ) {
 						var continuation = getContinuation( envelope );
@@ -75,20 +72,18 @@ module.exports = function( host ) {
 					}
 				}
 			},
-			{
-				alias: 'connected-sockets',
-				verb: 'get',
+			'connected-sockets': {
+				method: 'get',
 				topic: 'socket.count',
-				path: 'sockets',
+				url: '/sockets',
 				handle: function( envelope ) {
 					envelope.reply( { data: { connected: host.socket.clients.length } } );
 				}
 			},
-			{
-				alias: 'list-users',
-				verb: 'get',
+			'list-users': {
+				method: 'get',
 				topic: 'user.list',
-				path: 'user',
+				url: '/user',
 				handle: function( envelope ) {
 					if( host.auth && host.auth.getUsers ) {
 						var continuation = getContinuation( envelope );
@@ -102,11 +97,10 @@ module.exports = function( host ) {
 					}
 				}
 			},
-			{
-				alias: 'list-roles',
-				verb: 'get',
+			'list-roles': {
+				method: 'get',
 				topic: 'role.list',
-				path: 'role',
+				url: '/role',
 				handle: function( envelope ) {
 					if( host.auth && host.auth.getRoles ) {
 						var continuation = getContinuation( envelope );
@@ -120,11 +114,10 @@ module.exports = function( host ) {
 					}
 				}
 			},
-			{
-				alias: 'list-user-roles',
-				verb: 'get',
+			'list-user-roles': {
+				method: 'get',
 				topic: 'user.role.list',
-				path: 'user/:user/role',
+				url: '/user/:user/role',
 				handle: function( envelope ) {
 					if( host.auth && host.auth.getUserRoles ) {
 						var user = envelope.data.user;
@@ -138,11 +131,10 @@ module.exports = function( host ) {
 					}
 				}
 			},
-			{
-				alias: 'list-action-roles',
-				verb: 'get',
+			'list-action-roles': {
+				method: 'get',
 				topic: 'action.role.list',
-				path: 'action/:action/role',
+				url: '/action/:action/role',
 				handle: function( envelope ) {
 					if( host.auth && host.auth.getActionRoles ) {
 						var action = envelope.data.action;
@@ -156,11 +148,10 @@ module.exports = function( host ) {
 					}
 				}
 			},
-			{
-				alias: 'add-action-roles',
-				verb: 'patch',
+			'add-action-roles': {
+				method: 'patch',
 				topic: 'add.action.roles',
-				path: 'action/:action/role',
+				url: '/action/:action/role',
 				handle: function( envelope ) {
 					if( host.auth && host.auth.changeActionRoles ) {
 						var action = envelope.data.action;
@@ -175,11 +166,10 @@ module.exports = function( host ) {
 					}
 				}
 			},
-			{
-				alias: 'remove-action-roles',
-				verb: 'delete',
+			'remove-action-roles': {
+				method: 'delete',
 				topic: 'remove.action.roles',
-				path: 'action/:action/role',
+				url: '/action/:action/role',
 				handle: function( envelope ) {
 					if( host.auth && host.auth.changeActionRoles ) {
 						var action = envelope.data.action;
@@ -194,11 +184,10 @@ module.exports = function( host ) {
 					}
 				}
 			},
-			{
-				alias: 'add-user-roles',
-				verb: 'patch',
+			'add-user-roles': {
+				method: 'patch',
 				topic: 'add.user.roles',
-				path: 'user/:user/role',
+				url: '/user/:user/role',
 				handle: function( envelope ) {
 					if( host.auth && host.auth.changeUserRoles ) {
 						var user = envelope.data.user;
@@ -213,11 +202,10 @@ module.exports = function( host ) {
 					}
 				}
 			},
-			{
-				alias: 'remove-user-roles',
-				verb: 'delete',
+			'remove-user-roles': {
+				method: 'delete',
 				topic: 'remove.user.roles',
-				path: 'user/:user/role',
+				url: '/user/:user/role',
 				handle: function( envelope ) {
 					if( host.auth && host.auth.changeUserRoles ) {
 						var user = envelope.data.user;
@@ -232,11 +220,10 @@ module.exports = function( host ) {
 					}
 				}
 			},
-			{
-				alias: 'add-role',
-				verb: 'post',
+			'add-role': {
+				method: 'post',
 				topic: 'add.role',
-				path: 'role/:role',
+				url: '/role/:role',
 				handle: function( envelope ) {
 					if( host.auth && host.auth.createRole ) {
 						var role = envelope.data.role;
@@ -250,11 +237,10 @@ module.exports = function( host ) {
 					}
 				}
 			},
-			{
-				alias: 'remove-role',
-				verb: 'delete',
+			'remove-role': {
+				method: 'delete',
 				topic: 'remove.role',
-				path: 'role/:role',
+				url: '/role/:role',
 				handle: function( envelope ) {
 					if( host.auth && host.auth.deleteRole ) {
 						var role = envelope.data.role;
@@ -268,11 +254,10 @@ module.exports = function( host ) {
 					}
 				}
 			},
-			{
-				'alias': 'create-user',
-				'verb': 'post',
-				'topic': 'create.user',
-				'path': 'user/:userName',
+			'create-user': {
+				method: 'post',
+				topic: 'create.user',
+				url: '/user/:userName',
 				handle: function( envelope ) {
 					if( host.auth && host.auth.createUser ) {
 						var user = envelope.data.userName,
@@ -287,11 +272,10 @@ module.exports = function( host ) {
 					}
 				}
 			},
-			{
-				'alias': 'change-password',
-				'verb': 'patch',
-				'topic': 'change.password',
-				'path': 'user/:userName',
+			'change-password': {
+				method: 'patch',
+				topic: 'change.password',
+				url: '/user/:userName',
 				handle: function( envelope ) {
 					if( host.auth && host.auth.createUser ) {
 						var user = envelope.data.userName,
@@ -306,11 +290,10 @@ module.exports = function( host ) {
 					}
 				}
 			},
-			{
-				'alias': 'create-token',
-				'verb': 'post',
-				'topic': 'create.token',
-				'path': 'token',
+			'create-token': {
+				method: 'post',
+				topic: 'create.token',
+				url: '/token',
 				handle: function( envelope ) {
 					if( host.auth && host.auth.createToken ) {
 						var user = envelope.user.name,
@@ -325,11 +308,10 @@ module.exports = function( host ) {
 					}
 				}
 			},
-			{
-				'alias': 'destroy-token',
-				'verb': 'delete',
-				'topic': 'delete.token',
-				'path': 'token/:token',
+			'destroy-token': {
+				method: 'delete',
+				topic: 'delete.token',
+				url: '/token/:token',
 				handle: function( envelope ) {
 					if( host.auth && host.auth.createToken ) {
 						var user = envelope.user.name,
@@ -344,11 +326,10 @@ module.exports = function( host ) {
 					}
 				}
 			},
-			{
-				'alias': 'list-tokens',
-				'verb': 'get',
-				'topic': 'list.tokens',
-				'path': 'token/',
+			'list-tokens': {
+				method: 'get',
+				topic: 'list.tokens',
+				url: '/token/',
 				handle: function( envelope ) {
 					if( host.auth && host.auth.getTokens ) {
 						var user = envelope.user.name;
@@ -362,11 +343,10 @@ module.exports = function( host ) {
 					}
 				}
 			},
-			{
-				'alias': 'enable-user',
-				'verb': 'put',
-				'topic': 'enable.user',
-				'path': 'user/:userName',
+			'enable-user': {
+				method: 'put',
+				topic: 'enable.user',
+				url: '/user/:userName',
 				handle: function( envelope ) {
 					if( host.auth && host.auth.enableUser ) {
 						var user = envelope.data.userName;
@@ -380,11 +360,10 @@ module.exports = function( host ) {
 					}	
 				}
 			},
-			{
-				'alias': 'disable-user',
-				'verb': 'delete',
-				'topic': 'disable.user',
-				'path': 'user/:userName',
+			'disable-user': {
+				method: 'delete',
+				topic: 'disable.user',
+				url: '/user/:userName',
 				handle: function( envelope ) {
 					if( host.auth && host.auth.disableUser ) {
 						var user = envelope.data.userName;
@@ -398,17 +377,16 @@ module.exports = function( host ) {
 					}
 				}
 			},
-			{
-				'alias': 'metrics',
-				'verb': 'get',
-				'topic': 'get.metrics',
-				'path': 'metrics',
+			'metrics': {
+				method: 'get',
+				topic: 'get.metrics',
+				url: '/metrics',
 				handle: function( envelope ) {
 					host.metrics.getMetrics( function( metrics ) {
 						envelope.reply( { data: metrics } );
 					} );
 				}
 			}
-		]
+		}
 	};
 };

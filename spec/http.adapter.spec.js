@@ -28,18 +28,16 @@ describe( 'with http adapter', function() {
 	before( function() {
 		authProvider.tokens = { 'blorp': 'userman' };
 		authProvider.users = { 'userman': { name: 'userman', password: 'hi', roles: [] } };
-		httpAdapter.action( { name: 'test' }, {
-			alias: 'call',
-			verb: 'get',
-			path: '/call/:one/:two',
+		httpAdapter.action( { name: 'test' }, 'call', {
+			method: 'get',
+			url: '/call/:one/:two',
 			handle: function( env ) {
 				env.reply( { data: 'ta-da!' } );
 			}
 		}, { routes: {} } );
-		httpAdapter.action( { name: 'test' }, {
-			alias: 'forward',
-			verb: 'get',
-			path: '/forward/:one/:two',
+		httpAdapter.action( { name: 'test' }, 'forward', {
+			method: 'get',
+			url: '/forward/:one/:two',
 			handle: function( env ) {
 				env.forwardTo( {
 					url: 'http://userman:herp@localhost:88988/api/test/call/10/20'

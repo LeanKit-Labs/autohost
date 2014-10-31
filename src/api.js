@@ -5,12 +5,14 @@ var nodeWhen = require( 'when/node' );
 var fs = require( 'fs' );
 var debug = require( 'debug' )( 'autohost:api' );
 var readDirectory = nodeWhen.lift( fs.readdir );
+var resources = {};
 var wrapper = {
 	actionList: {},
 	addAdapter: addAdapter,
 	clearAdapters: clearAdapters,
 	loadModule: loadModule,
 	loadResources: loadResources,
+	resources: resources,
 	start: start,
 	startAdapters: startAdapters,
 	stop: stop,
@@ -50,8 +52,8 @@ function getResources( filePath ) {
 
 function getActions( resource ) {
 	var list = wrapper.actionList[ resource.name ] = [];
-	_.each( resource.actions, function( action ) {
-		list.push( [ resource.name, action.alias ].join( '.' ) );
+	_.each( resource.actions, function( action, actionName ) {
+		list.push( [ resource.name, actionName ].join( '.' ) );
 	} );
 }
 
@@ -104,6 +106,7 @@ function processModule( mod, resourcePath ) { // jshint ignore:line
 }
 
 function processResource( resource, basePath ) { //jshint ignore:line
+	resources[ resource.name ] = resource;
 	getActions( resource );
 	return when.all( _.map( adapters, function( adapter ) {
 		return when.try( adapter.resource, resource, basePath );
