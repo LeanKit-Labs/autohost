@@ -42,7 +42,7 @@ module.exports = function( host ) {
 			api: {
 				method: 'get',
 				topic: 'api',
-				url: '',
+				url: '/_autohost',
 				handle: function( envelope) {
 					envelope.reply( { data: host.meta._autohost.routes } );
 				}
@@ -50,7 +50,7 @@ module.exports = function( host ) {
 			resources: {
 				method: 'get',
 				topic: 'resource.list',
-				url: '/resource',
+				url: '/_autohost/resource',
 				handle: function( envelope ) {
 					envelope.reply( { data: host.meta } );
 				}
@@ -58,7 +58,7 @@ module.exports = function( host ) {
 			'actions': {
 				method: 'get',
 				topic: 'actions.list',
-				url: '/action',
+				url: '/_autohost/action',
 				handle: function( envelope ) {
 					if( host.auth && host.auth.getActions ) {
 						var continuation = getContinuation( envelope );
@@ -75,7 +75,7 @@ module.exports = function( host ) {
 			'connected-sockets': {
 				method: 'get',
 				topic: 'socket.count',
-				url: '/sockets',
+				url: '/_autohost/sockets',
 				handle: function( envelope ) {
 					envelope.reply( { data: { connected: host.socket.clients.length } } );
 				}
@@ -83,7 +83,7 @@ module.exports = function( host ) {
 			'list-users': {
 				method: 'get',
 				topic: 'user.list',
-				url: '/user',
+				url: '/_autohost/user',
 				handle: function( envelope ) {
 					if( host.auth && host.auth.getUsers ) {
 						var continuation = getContinuation( envelope );
@@ -100,7 +100,7 @@ module.exports = function( host ) {
 			'list-roles': {
 				method: 'get',
 				topic: 'role.list',
-				url: '/role',
+				url: '/_autohost/role',
 				handle: function( envelope ) {
 					if( host.auth && host.auth.getRoles ) {
 						var continuation = getContinuation( envelope );
@@ -117,7 +117,7 @@ module.exports = function( host ) {
 			'list-user-roles': {
 				method: 'get',
 				topic: 'user.role.list',
-				url: '/user/:user/role',
+				url: '/_autohost/user/:user/role',
 				handle: function( envelope ) {
 					if( host.auth && host.auth.getUserRoles ) {
 						var user = envelope.data.user;
@@ -134,7 +134,7 @@ module.exports = function( host ) {
 			'list-action-roles': {
 				method: 'get',
 				topic: 'action.role.list',
-				url: '/action/:action/role',
+				url: '/_autohost/action/:action/role',
 				handle: function( envelope ) {
 					if( host.auth && host.auth.getActionRoles ) {
 						var action = envelope.data.action;
@@ -151,7 +151,7 @@ module.exports = function( host ) {
 			'add-action-roles': {
 				method: 'patch',
 				topic: 'add.action.roles',
-				url: '/action/:action/role',
+				url: '/_autohost/action/:action/role',
 				handle: function( envelope ) {
 					if( host.auth && host.auth.changeActionRoles ) {
 						var action = envelope.data.action;
@@ -169,7 +169,7 @@ module.exports = function( host ) {
 			'remove-action-roles': {
 				method: 'delete',
 				topic: 'remove.action.roles',
-				url: '/action/:action/role',
+				url: '/_autohost/action/:action/role',
 				handle: function( envelope ) {
 					if( host.auth && host.auth.changeActionRoles ) {
 						var action = envelope.data.action;
@@ -187,7 +187,7 @@ module.exports = function( host ) {
 			'add-user-roles': {
 				method: 'patch',
 				topic: 'add.user.roles',
-				url: '/user/:user/role',
+				url: '/_autohost/user/:user/role',
 				handle: function( envelope ) {
 					if( host.auth && host.auth.changeUserRoles ) {
 						var user = envelope.data.user;
@@ -205,7 +205,7 @@ module.exports = function( host ) {
 			'remove-user-roles': {
 				method: 'delete',
 				topic: 'remove.user.roles',
-				url: '/user/:user/role',
+				url: '/_autohost/user/:user/role',
 				handle: function( envelope ) {
 					if( host.auth && host.auth.changeUserRoles ) {
 						var user = envelope.data.user;
@@ -223,7 +223,7 @@ module.exports = function( host ) {
 			'add-role': {
 				method: 'post',
 				topic: 'add.role',
-				url: '/role/:role',
+				url: '/_autohost/role/:role',
 				handle: function( envelope ) {
 					if( host.auth && host.auth.createRole ) {
 						var role = envelope.data.role;
@@ -240,7 +240,7 @@ module.exports = function( host ) {
 			'remove-role': {
 				method: 'delete',
 				topic: 'remove.role',
-				url: '/role/:role',
+				url: '/_autohost/role/:role',
 				handle: function( envelope ) {
 					if( host.auth && host.auth.deleteRole ) {
 						var role = envelope.data.role;
@@ -257,7 +257,7 @@ module.exports = function( host ) {
 			'create-user': {
 				method: 'post',
 				topic: 'create.user',
-				url: '/user/:userName',
+				url: '/_autohost/user/:userName',
 				handle: function( envelope ) {
 					if( host.auth && host.auth.createUser ) {
 						var user = envelope.data.userName,
@@ -275,7 +275,7 @@ module.exports = function( host ) {
 			'change-password': {
 				method: 'patch',
 				topic: 'change.password',
-				url: '/user/:userName',
+				url: '/_autohost/user/:userName',
 				handle: function( envelope ) {
 					if( host.auth && host.auth.createUser ) {
 						var user = envelope.data.userName,
@@ -293,7 +293,7 @@ module.exports = function( host ) {
 			'create-token': {
 				method: 'post',
 				topic: 'create.token',
-				url: '/token',
+				url: '/_autohost/token',
 				handle: function( envelope ) {
 					if( host.auth && host.auth.createToken ) {
 						var user = envelope.user.name,
@@ -311,7 +311,7 @@ module.exports = function( host ) {
 			'destroy-token': {
 				method: 'delete',
 				topic: 'delete.token',
-				url: '/token/:token',
+				url: '/_autohost/token/:token',
 				handle: function( envelope ) {
 					if( host.auth && host.auth.createToken ) {
 						var user = envelope.user.name,
@@ -329,7 +329,7 @@ module.exports = function( host ) {
 			'list-tokens': {
 				method: 'get',
 				topic: 'list.tokens',
-				url: '/token/',
+				url: '/_autohost/token/',
 				handle: function( envelope ) {
 					if( host.auth && host.auth.getTokens ) {
 						var user = envelope.user.name;
@@ -346,7 +346,7 @@ module.exports = function( host ) {
 			'enable-user': {
 				method: 'put',
 				topic: 'enable.user',
-				url: '/user/:userName',
+				url: '/_autohost/user/:userName',
 				handle: function( envelope ) {
 					if( host.auth && host.auth.enableUser ) {
 						var user = envelope.data.userName;
@@ -363,7 +363,7 @@ module.exports = function( host ) {
 			'disable-user': {
 				method: 'delete',
 				topic: 'disable.user',
-				url: '/user/:userName',
+				url: '/_autohost/user/:userName',
 				handle: function( envelope ) {
 					if( host.auth && host.auth.disableUser ) {
 						var user = envelope.data.userName;
@@ -380,7 +380,7 @@ module.exports = function( host ) {
 			'metrics': {
 				method: 'get',
 				topic: 'get.metrics',
-				url: '/metrics',
+				url: '/_autohost/metrics',
 				handle: function( envelope ) {
 					host.metrics.getMetrics( function( metrics ) {
 						envelope.reply( { data: metrics } );

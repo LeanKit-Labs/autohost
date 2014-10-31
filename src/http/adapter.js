@@ -15,9 +15,7 @@ var wrapper = {
 };
 
 function buildActionUrl( resourceName, action ) {
-	var resourceIndex = action.url.indexOf( resourceName );
-	var resource = resourceIndex === 0 || resourceIndex === 1 ? '' : resourceName;
-	return http.buildUrl( ( config.apiPrefix || 'api' ), resource, ( action.url || '' ) );
+	return http.buildUrl( ( config.apiPrefix || 'api' ), ( action.url || '' ) );
 }
 
 function buildActionAlias( resourceName, actionName ) {

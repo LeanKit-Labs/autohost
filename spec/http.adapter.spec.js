@@ -30,14 +30,14 @@ describe( 'with http adapter', function() {
 		authProvider.users = { 'userman': { name: 'userman', password: 'hi', roles: [] } };
 		httpAdapter.action( { name: 'test' }, 'call', {
 			method: 'get',
-			url: '/call/:one/:two',
+			url: '/test/call/:one/:two',
 			handle: function( env ) {
 				env.reply( { data: 'ta-da!' } );
 			}
 		}, { routes: {} } );
 		httpAdapter.action( { name: 'test' }, 'forward', {
 			method: 'get',
-			url: '/forward/:one/:two',
+			url: '/test/forward/:one/:two',
 			handle: function( env ) {
 				env.forwardTo( {
 					url: 'http://userman:herp@localhost:88988/api/test/call/10/20'
