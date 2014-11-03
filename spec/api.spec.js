@@ -62,10 +62,9 @@ describe( 'when loading from a bad path', function() {
 			'add-role': { method: 'post', url: undefined },
 			'remove-role': { method: 'delete', url: undefined },
 			'create-user': { method: 'post', url: undefined },
-
 			'enable-user': { method: 'put', url: undefined },
 			'disable-user': { method: 'delete', url: undefined },
-			metrics: { method: 'get', url: undefined } 
+			metrics: { method: 'get', url: undefined }
 		} );
 	} );
 
@@ -106,6 +105,7 @@ describe( 'when loading from a bad path', function() {
 describe( 'when loading from a good path', function() {
 	var result,
 		api,
+		err,
 		host = { actions: undefined, fount: fount },
 		adapter = getAdapter();
 
@@ -118,13 +118,18 @@ describe( 'when loading from a good path', function() {
 		api = require( '../src/api.js' )( host, { modules: [ '../spec/misc/anresource.js' ] } );
 		api.addAdapter( adapter );
 		api.start( './spec/resource' )
-			.then( null, function( /* err */ ) {
+			.then( null, function( error ) {
+				err = error;
 				return [];
 			} )
 			.then( function( list ) {
 				result = list;
 				done();
 			} );
+	} );
+
+	it( 'should not result in an error', function() {
+		should( err ).not.exist; // jshint ignore:line
 	} );
 
 	it( 'should load all resources and actions', function() {

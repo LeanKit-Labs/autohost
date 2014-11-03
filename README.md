@@ -63,6 +63,7 @@ The object literal follows the format:
 	noBody: false, // disables body parsing
 	noCrossOrigin: false, // disables cross origin
 	noOptions: false, // disables automatic options middleware, use this when providing your own
+	urlStrategy: undefined // a function that generates the URL per resource action
 	anonymous: [] // add paths or url patterns that bypass authentication and authorization
 }
 ```
@@ -188,9 +189,9 @@ Controls the HTTP method an action will be bound to.
 This property controls what is appended to the resource name in order to create a socket topic. The topic is what a socket client would publish a message to in order to activate an action.
 
 ### url
-The path property provides the URL assigned to this action. You can put path variables in this following the express convention of a leading `:`
+The `url` property provides the URL assigned to this action. You can put path variables in this following the express convention of a leading `:`
 
-	path: '/thing/:arg1/:arg2'
+	url: '/thing/:arg1/:arg2'
 	
 Path variables are accessible on the envelope's `params` property. If a path variable does NOT collide with a property on the request body, the path variable is written to the `envelope.data` hash as well:
 
@@ -200,6 +201,15 @@ Path variables are accessible on the envelope's `params` property. If a path var
 
 #### query parameters
 Query parameters behave exactly like path variables. They are available on the `params` property of the envelope and copied to the `envelope.data` hash if they wouldn't collide with an existing property.
+
+#### custom url strategy
+Autohost allows you to provide a function during configuration that will determine the url assigned to an action. The function should take the form:
+
+```javascript
+function myStrategy( resourceName, actionName, action, resourceList ) { ... }
+```
+
+The string returned will be the URL used to route requests to this action. Proceed with extreme caution.
 
 ### handle
 The handle is a callback that will be invoked if the caller has adequate permissions. Read the section on envelopes to understand how to communicate results back to the caller.

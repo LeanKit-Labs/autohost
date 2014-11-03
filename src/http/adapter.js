@@ -14,8 +14,18 @@ var wrapper = {
 	stop: stop
 };
 
-function buildActionUrl( resourceName, action ) {
-	return http.buildUrl( ( config.apiPrefix || 'api' ), ( action.url || '' ) );
+function buildActionUrl( resourceName, actionName, action, resources ) {
+	var prefix = ( config.apiPrefix || 'api' );
+	if( config.urlStrategy ) {
+		var url = config.urlStrategy( resourceName, actionName, action, resources );
+		var prefixIndex = url.indexOf( prefix );
+		prefix = prefixIndex === 0 || prefixIndex === 1 ? '' : prefix;
+		return http.buildUrl( prefix, url );
+	} else {
+		var resourceIndex = action.url.indexOf( resourceName );
+		var resource = resourceIndex === 0 || resourceIndex === 1 ? '' : resourceName;
+		return http.buildUrl( prefix, resource, ( action.url || '' ) );
+	}
 }
 
 function buildActionAlias( resourceName, actionName ) {
@@ -53,7 +63,7 @@ function stop() {
 	http.stop();
 }
 
-function wireupResource( resource, basePath ) {
+function wireupResource( resource, basePath, resources ) {
 	var meta = { routes: {} };
 	if( resource.resources && resource.resources !== '' ) {
 		var directory = buildPath( [ basePath, resource.resources ] );
@@ -61,13 +71,13 @@ function wireupResource( resource, basePath ) {
 		meta.path = { url: '/' + resource.name, directory: directory };
 	}
 	_.each( resource.actions, function( action, actionName ) {
-		wireupAction( resource, actionName, action, meta );
+		wireupAction( resource, actionName, action, meta, resources );
 	} );
 	return meta;
 }
 
-function wireupAction( resource, actionName, action, meta ) {
-	var url = buildActionUrl( resource.name, action );
+function wireupAction( resource, actionName, action, meta, resources ) {
+	var url = buildActionUrl( resource.name, actionName, action, resources );
 	var alias = buildActionAlias( resource.name, actionName );
 	meta.routes[ actionName ] = { method: action.method, url: url };
 	debug( 'Mapping resource \'%s\' action \'%s\' to %s %s', resource.name, actionName, action.method, url );
