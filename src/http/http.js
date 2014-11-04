@@ -88,7 +88,9 @@ function prefix( fn ) {
 		var args = Array.prototype.slice.call( arguments );
 		if( config.urlPrefix ) {
 			var url = args.shift();
-			args.unshift( buildUrl( config.urlPrefix, url ) );
+			var prefixIndex = url.indexOf( config.urlPrefix );
+			var prefix = prefixIndex === 0 ? '' : config.urlPrefix;
+			args.unshift( buildUrl( prefix, url ) );
 		}
 		fn.apply( null, args );
 	};

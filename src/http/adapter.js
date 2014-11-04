@@ -18,8 +18,7 @@ function buildActionUrl( resourceName, actionName, action, resources ) {
 	var prefix = ( config.apiPrefix || 'api' );
 	if( config.urlStrategy ) {
 		var url = config.urlStrategy( resourceName, actionName, action, resources );
-		var prefixIndex = url.indexOf( prefix );
-		prefix = prefixIndex === 0 || prefixIndex === 1 ? '' : prefix;
+		prefix = hasPrefix( url ) ? '' : prefix;
 		return http.buildUrl( prefix, url );
 	} else {
 		var resourceIndex = action.url.indexOf( resourceName );
@@ -53,6 +52,11 @@ function checkPermissionFor( user, action ) {
 		.then( function( granted ) {
 			return granted;
 		} );
+}
+
+function hasPrefix( url ) {
+	var prefix = http.buildUrl( config.urlPrefix || '', config.apiPrefix || '' );
+	return url.indexOf( prefix ) === 0;
 }
 
 function start() {
