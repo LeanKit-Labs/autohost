@@ -30,7 +30,7 @@ function buildUrl() {
 		}
 		idx ++;
 	}
-	return '/' + cleaned.join( '/' );
+	return cleaned.length ? '/' + cleaned.join( '/' ) : '';
 }
 
 function createMiddlewareStack() {

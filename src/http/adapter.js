@@ -16,7 +16,7 @@ var wrapper = {
 };
 
 function buildActionUrl( resourceName, actionName, action, resources ) {
-	var prefix = ( config.apiPrefix || 'api' );
+	var prefix = config.apiPrefix === undefined ? 'api' : config.apiPrefix;
 	if( _.isRegExp( action.url ) ) {
 		return regex.prefix( http.buildUrl( config.urlPrefix || '', prefix ), action.url );
 	} else if( config.urlStrategy ) {

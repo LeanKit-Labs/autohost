@@ -3,14 +3,14 @@ var requestor = require( 'request' ).defaults( { jar: true } );
 var metrics = require( 'cluster-metrics' );
 var port = 88988;
 var config = {
-		port: port,
-		anonymous: [ '/api/forward' ]
-	};
+	port: port,
+	anonymous: [ '/api/forward' ]
+};
 var authProvider = require( './auth/mock.js' )( config );
 var passport = require( '../src/http/passport.js' )( config, authProvider, metrics );
 var middleware = require( '../src/http/middleware.js' )( config, metrics );
 var http = require( '../src/http/http.js' )( config, requestor, passport, middleware, metrics );
-var httpAdapter = require( '../src/http/adapter.js' )( config, authProvider, http, requestor, metrics );
+var httpAdapterFn = require( '../src/http/adapter.js' );
 var actionRoles = function( action, roles ) {
 		authProvider.actions[ action ] = { roles: roles };
 	};
@@ -18,15 +18,19 @@ var userRoles = function( user, roles ) {
 		authProvider.users[ user ].roles = roles;
 	};
 
-describe( 'with http adapter', function() {
+describe( 'with http adapter and api prefix', function() {
+	var httpAdapter;
+
 	var cleanup = function() {
 			userRoles( 'userman', [] );
 			actionRoles( 'test.call', [] );
 			actionRoles( 'test.forward', [] );
 			actionRoles( 'test.echo', [] );
+			actionRoles( 'test.regex', [] );
 		};
 
 	before( function() {
+		httpAdapter = httpAdapterFn( config, authProvider, http, requestor, metrics );
 		authProvider.tokens = { 'blorp': 'userman' };
 		authProvider.users = { 'userman': { name: 'userman', password: 'hi', roles: [] } };
 		httpAdapter.action( { name: 'test' }, 'call', {
@@ -50,6 +54,13 @@ describe( 'with http adapter', function() {
 			url: /.*\/echo/,
 			handle: function( env ) {
 				env.reply( { data: 'echo-echo-echo-echo-echo-o-o-o-o-o-o-oooooo' } );
+			}
+		}, { routes: {} } );
+		httpAdapter.action( { name: 'test' }, 'regex', {
+			method: 'get',
+			url: /^\/views\//,
+			handle: function( env ) {
+				env.reply( { data: 'SWEET' } );
 			}
 		}, { routes: {} } );
 		http.start();
@@ -144,6 +155,58 @@ describe( 'with http adapter', function() {
 
 		it( 'should return action response', function() {
 			result.should.equal( 'ta-da!' );
+		} );
+
+		after( cleanup );
+	} );
+
+	after( http.stop );
+} );
+
+describe( 'with http adapter and no api prefix', function() {
+	var httpAdapter;
+	var cleanup = function() {
+			userRoles( 'userman', [] );
+			actionRoles( 'test.call', [] );
+			actionRoles( 'test.forward', [] );
+			actionRoles( 'test.echo', [] );
+			actionRoles( 'test.regex', [] );
+		};
+
+	before( function() {
+		config.apiPrefix = '';
+		httpAdapter = httpAdapterFn( config, authProvider, http, requestor, metrics );
+		authProvider.tokens = { 'blorp': 'userman' };
+		authProvider.users = { 'userman': { name: 'userman', password: 'hi', roles: [] } };
+		httpAdapter.action( { name: 'test' }, 'regex', {
+			method: 'get',
+			url: /^\/views\//,
+			handle: function( env ) {
+				env.reply( { data: 'SWEET' } );
+			}
+		}, { routes: {} } );
+		http.start();
+	} );
+
+	describe( 'when making a request to a pattern route with adequate permissions', function() {
+		var result;
+
+		before( function( done ) {
+			actionRoles( 'test.regex', [ 'guest' ] );
+			userRoles( 'userman', [ 'guest' ] );
+			requestor.get( {
+				url: 'http://localhost:88988/views/this/is/the/greatest/url/ever',
+				headers: {
+					'Authorization': 'Bearer blorp'
+				}
+			}, function( err, resp ) {
+				result = new Buffer( resp.body, 'utf-8' ).toString();
+				done();
+			} );
+		} );
+
+		it( 'should return action response', function() {
+			result.should.equal( 'SWEET' );
 		} );
 
 		after( cleanup );

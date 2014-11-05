@@ -1,6 +1,6 @@
 function parseRegex( pattern ) {
 	var str = pattern.toString();
-	return str.substring( 1, str.length - 2 );
+	return str.substring( 1, str.length - 1 );
 }
 
 function getRegex( pattern ) {
@@ -9,10 +9,14 @@ function getRegex( pattern ) {
 
 function applyPrefix( prefix, pattern ) {
 	var original = parseRegex( pattern );
-	if( original.slice( 0, 1 ) === '^' ) {
-		return getRegex( '^' + prefix + '/' + original.slice( 1, original.length ) );
+	if( !prefix ) {
+		return pattern;
 	} else {
-		return getRegex( '^' + prefix + '/.*' + original );
+		if( original.slice( 0, 1 ) === '^' ) {
+			return getRegex( '^' + prefix + '/' + original.slice( 1, original.length ) );
+		} else {
+			return getRegex( '^' + prefix + '/.*' + original );
+		}
 	}
 }
 
