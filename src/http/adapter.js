@@ -1,5 +1,6 @@
 var path = require( 'path' );
 var _ = require( 'lodash' );
+var regex = require( './regex.js' );
 var debug = require( 'debug' )( 'autohost:http-adapter' );
 var HttpEnvelope;
 var http;
@@ -16,7 +17,9 @@ var wrapper = {
 
 function buildActionUrl( resourceName, actionName, action, resources ) {
 	var prefix = ( config.apiPrefix || 'api' );
-	if( config.urlStrategy ) {
+	if( _.isRegExp( action.url ) ) {
+		return regex.prefix( http.buildUrl( config.urlPrefix || '', prefix ), action.url );
+	} else if( config.urlStrategy ) {
 		var url = config.urlStrategy( resourceName, actionName, action, resources );
 		prefix = hasPrefix( url ) ? '' : prefix;
 		return http.buildUrl( prefix, url );

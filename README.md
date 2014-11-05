@@ -188,7 +188,7 @@ Controls the HTTP method an action will be bound to.
 ### topic
 This property controls what is appended to the resource name in order to create a socket topic. The topic is what a socket client would publish a message to in order to activate an action.
 
-### url
+### url - string pattern
 The `url` property provides the URL assigned to this action. You can put path variables in this following the express convention of a leading `:`
 
 	url: '/thing/:arg1/:arg2'
@@ -198,6 +198,9 @@ Path variables are accessible on the envelope's `params` property. If a path var
 ```javascript
 	envelope.data.arg1 === envelope.params.arg1;
 ```
+
+### url - regular expression
+The `url` can also be defined as a regular expression that will be evaluated against incoming URLs. Both `apiPrefix` and `urlPrefix` will be pre-pended to the regular expression automatically - do not include them in the expression provided.
 
 #### query parameters
 Query parameters behave exactly like path variables. They are available on the `params` property of the envelope and copied to the `envelope.data` hash if they wouldn't collide with an existing property.

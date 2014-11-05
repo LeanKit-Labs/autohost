@@ -1,6 +1,9 @@
 ## 0.3.0
 Primary motivation here is to begin work on a version of autohost that will work well with a hypermedia library ( [hyped](https://github.com/leankit-labs/hyped) ). This is a breaking change because of several structural and naming changes to how resources get modeled.
 
+### prerelease 5
+Bug fix for regular expression urls in the resource action. Add feature to prefix regular expressions with url and api prefixes.
+
 ### prerelease 4
 Bug fix to prevent duplication of url and/or api prefixes when using a urlStrategy (as with hyped).
 
