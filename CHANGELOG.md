@@ -3,6 +3,7 @@ Primary motivation here is to begin work on a version of autohost that will work
 
 ### prerelease 8
  * Remove the _autohost API/UI
+ * Pass request context to checkPermissions call to enable contextual authorization
 
 ### prerelease 7
  * Add support for returning multiple resources from a single resource file
