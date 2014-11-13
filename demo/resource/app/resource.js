@@ -1,5 +1,5 @@
 module.exports = function() {
-	return {
+	return [ {
 		name: 'app',
 		resources: 'public',
 		actions: {
@@ -28,5 +28,5 @@ module.exports = function() {
 				}
 			}
 		}
-	};
+	} ];
 };

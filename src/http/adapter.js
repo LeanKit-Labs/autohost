@@ -15,7 +15,7 @@ var wrapper = {
 	stop: stop
 };
 
-function buildActionUrl( resourceName, actionName, action, resources ) {
+function buildActionUrl( resourceName, actionName, action, resource, resources ) {
 	var prefix = config.apiPrefix === undefined ? 'api' : config.apiPrefix;
 	if( _.isRegExp( action.url ) ) {
 		return regex.prefix( http.buildUrl( config.urlPrefix || '', prefix ), action.url );
@@ -25,8 +25,8 @@ function buildActionUrl( resourceName, actionName, action, resources ) {
 		return http.buildUrl( prefix, url );
 	} else {
 		var resourceIndex = action.url.indexOf( resourceName );
-		var resource = resourceIndex === 0 || resourceIndex === 1 ? '' : resourceName;
-		return http.buildUrl( prefix, resource, ( action.url || '' ) );
+		var resourcePrefix = resourceIndex === 0 || resourceIndex === 1 ? '' : resourceName;
+		return http.buildUrl( prefix, resource.urlPrefix || '', resourcePrefix, ( action.url || '' ) );
 	}
 }
 
@@ -84,7 +84,7 @@ function wireupResource( resource, basePath, resources ) {
 }
 
 function wireupAction( resource, actionName, action, meta, resources ) {
-	var url = buildActionUrl( resource.name, actionName, action, resources );
+	var url = buildActionUrl( resource.name, actionName, action, resource, resources );
 	var alias = buildActionAlias( resource.name, actionName );
 	meta.routes[ actionName ] = { method: action.method, url: url };
 	debug( 'Mapping resource \'%s\' action \'%s\' to %s %s', resource.name, actionName, action.method, url );

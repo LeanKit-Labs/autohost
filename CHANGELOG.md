@@ -1,6 +1,13 @@
 ## 0.3.0
 Primary motivation here is to begin work on a version of autohost that will work well with a hypermedia library ( [hyped](https://github.com/leankit-labs/hyped) ). This is a breaking change because of several structural and naming changes to how resources get modeled.
 
+### prerelease 8
+ * Remove the _autohost API/UI
+
+### prerelease 7
+ * Add support for returning multiple resources from a single resource file
+ * Add support for a resource-level URL prefix
+
 ### prerelease 6
 Bug fix causing regular expression URLs to get incorrectly prefixed with '/' when no api or url prefix was specified.
 

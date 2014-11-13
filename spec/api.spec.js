@@ -41,60 +41,8 @@ describe( 'when loading from a bad path', function() {
 			} );
 	} );
 
-	it( 'should still load _autohost resource actions', function() {
-		result._autohost.routes.should.eql( {
-			api: { method: 'get', url: undefined },
-			resources: { method: 'get', url: undefined },
-			actions: { method: 'get', url: undefined },
-			'change-password': { method: 'patch', url: undefined },
-			'connected-sockets': { method: 'get', url: undefined },
-			'create-token': { method: 'post', url: undefined },
-			'destroy-token': { method: 'delete', url: undefined },
-			'list-users': { method: 'get', url: undefined },
-			'list-roles': { method: 'get', url: undefined },
-			'list-user-roles': { method: 'get', url: undefined },
-			'list-action-roles': { method: 'get', url: undefined },
-			'list-tokens': { method: 'get', url: undefined },
-			'add-action-roles': { method: 'patch', url: undefined },
-			'remove-action-roles': { method: 'delete', url: undefined },
-			'add-user-roles': { method: 'patch', url: undefined },
-			'remove-user-roles': { method: 'delete', url: undefined },
-			'add-role': { method: 'post', url: undefined },
-			'remove-role': { method: 'delete', url: undefined },
-			'create-user': { method: 'post', url: undefined },
-			'enable-user': { method: 'put', url: undefined },
-			'disable-user': { method: 'delete', url: undefined },
-			metrics: { method: 'get', url: undefined }
-		} );
-	} );
-
-	it( 'should produce correctly formatted action list', function() {
-		api.actionList.should.eql( 
-		{ _autohost: [
-			'_autohost.api',
-			'_autohost.resources',
-			'_autohost.actions',
-			'_autohost.connected-sockets',
-			'_autohost.list-users',
-			'_autohost.list-roles',
-			'_autohost.list-user-roles',
-			'_autohost.list-action-roles',
-			'_autohost.add-action-roles',
-			'_autohost.remove-action-roles',
-			'_autohost.add-user-roles',
-			'_autohost.remove-user-roles',
-			'_autohost.add-role',
-			'_autohost.remove-role',
-			'_autohost.create-user',
-			'_autohost.change-password',
-			'_autohost.create-token',
-			'_autohost.destroy-token',
-			'_autohost.list-tokens',
-			'_autohost.enable-user',
-			'_autohost.disable-user',
-			'_autohost.metrics'
-			]
-		} );
+	it( 'should result in an empty list', function() {
+		should( result ).eql( {} );
 	} );
 
 	after( function() {
@@ -147,62 +95,15 @@ describe( 'when loading from a good path', function() {
 			c: { method: undefined, url: undefined },
 			d: { method: undefined, url: undefined }
 		} );
-
-		result._autohost.routes.should.eql( { 
-			api: { method: 'get', url: undefined },
-			resources: { method: 'get', url: undefined },
-			actions: { method: 'get', url: undefined },
-			'change-password': { method: 'patch', url: undefined },
-			'connected-sockets': { method: 'get', url: undefined },
-			'create-token': { method: 'post', url: undefined },
-			'destroy-token': { method: 'delete', url: undefined },
-			'list-users': { method: 'get', url: undefined },
-			'list-roles': { method: 'get', url: undefined },
-			'list-user-roles': { method: 'get', url: undefined },
-			'list-action-roles': { method: 'get', url: undefined },
-			'list-tokens': { method: 'get', url: undefined },
-			'add-action-roles': { method: 'patch', url: undefined },
-			'remove-action-roles': { method: 'delete', url: undefined },
-			'add-user-roles': { method: 'patch', url: undefined },
-			'remove-user-roles': { method: 'delete', url: undefined },
-			'add-role': { method: 'post', url: undefined },
-			'remove-role': { method: 'delete', url: undefined },
-			'create-user': { method: 'post', url: undefined },
-			'enable-user': { method: 'put', url: undefined },
-			'disable-user': { method: 'delete', url: undefined },
-			metrics: { method: 'get', url: undefined } 
-		} );
 	} );
 
 	it( 'should produce correctly formatted action list', function() {
 		api.actionList.should.eql( 
-		{ _autohost: [
-			'_autohost.api',
-			'_autohost.resources',
-			'_autohost.actions',
-			'_autohost.connected-sockets',
-			'_autohost.list-users',
-			'_autohost.list-roles',
-			'_autohost.list-user-roles',
-			'_autohost.list-action-roles',
-			'_autohost.add-action-roles',
-			'_autohost.remove-action-roles',
-			'_autohost.add-user-roles',
-			'_autohost.remove-user-roles',
-			'_autohost.add-role',
-			'_autohost.remove-role',
-			'_autohost.create-user',
-			'_autohost.change-password',
-			'_autohost.create-token',
-			'_autohost.destroy-token',
-			'_autohost.list-tokens',
-			'_autohost.enable-user',
-			'_autohost.disable-user',
-			'_autohost.metrics'
-			],
+		{ 
 			one: [ 'one.a', 'one.b' ],
 			two: [ 'two.hello', 'two.goodbye' ],
-			three: [ 'three.c', 'three.d' ]
+			three: [ 'three.c', 'three.d' ],
+			four: [ 'four.e', 'four.f' ],
 		} );
 	} );
 

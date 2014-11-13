@@ -27,6 +27,17 @@ function addAdapter( adapter ) { //jshint ignore:line
 	adapters.push( adapter );
 }
 
+function attachPath( target, filePath ) {
+	var dir = path.dirname( filePath );
+	if( _.isArray( target ) ) {
+		_.each( target, function( item ) {
+			item._path = dir;
+		} );
+	} else {
+		target._path = dir;
+	}
+}
+
 function clearAdapters() { //jshint ignore:line
 	adapters = [];
 }
@@ -36,6 +47,18 @@ function getActions( resource ) {
 	var list = wrapper.actionList[ resource.name ] = [];
 	_.each( resource.actions, function( action, actionName ) {
 		list.push( [ resource.name, actionName ].join( '.' ) );
+	} );
+}
+
+function deepMerge( target, source ) { // jshint ignore:line
+	_.each( source, function( val, key ) {
+		var original = target[ key ];
+		if( _.isObject( val ) ) {
+			if( original ) { deepMerge( original, val ); }
+			else { target[ key ] = val; }
+		} else {
+			 target[ key ] = ( original === undefined ) ? val : original;
+		}
 	} );
 }
 
@@ -63,16 +86,11 @@ function getResources( filePath ) {
 
 // loads internal resources, resources from config path and node module resources
 function loadAll( resourcePath ) {
-	var internal = require( './_autohost/resource.js' )( host, fount );
-	internal._path = path.resolve( __dirname, './_autohost' );
-	var loadActions = [
-		loadResources( resourcePath ),
-		when( internal )
-	];
+	var loadActions = [ loadResources( resourcePath ) ] || [];
 	if( config.modules ) {
 		_.each( config.modules, function( mod ) {
 			var modPath = require.resolve( mod );
-			loadActions.push( loadModule( modPath ) );	
+			loadActions.push( loadModule( modPath ) );
 		} );
 	}
 	return when.all( loadActions );
@@ -96,12 +114,12 @@ function loadModule( resourcePath ) { // jshint ignore:line
 					} );
 					argList.unshift( host );
 					var mod = modFn.apply( modFn, argList );
-					mod._path = resourcePath;
+					attachPath( mod, resourcePath );
 					return mod;
 				} );
 		} else {
 			var mod = modFn( host );
-			mod._path = resourcePath;
+			attachPath( mod, resourcePath );
 			return when( mod );
 		}
 	} catch ( err ) {
@@ -142,7 +160,13 @@ function processModule( mod ) { // jshint ignore:line
 
 function processResource( resource ) { //jshint ignore:line
 	var meta = _.map( adapters, function( adapter ) {
-		return adapter.resource( resource, resource._path, resources );
+		if( _.isArray( resource ) ) {
+			return _.reduce( resource, function( acc, x ) {
+				return deepMerge( x, adapter.resource( x, resource._path, resources ) );
+			}, {} );
+		} else {
+			return adapter.resource( resource, resource._path, resources );	
+		}
 	} );
 	var container = {};
 	container[ resource.name ] = _.reduce( meta, reduce, {} );
@@ -181,7 +205,7 @@ function start( resourcePath, auth ) { //jshint ignore:line
 			} else {
 				startAdapters();
 			}
-			return meta;
+			return meta || {};
 		} );
 }
 

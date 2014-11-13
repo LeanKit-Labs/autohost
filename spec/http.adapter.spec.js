@@ -214,3 +214,69 @@ describe( 'with http adapter and no api prefix', function() {
 
 	after( http.stop );
 } );
+
+describe( 'with http adapter and resource with urlPrefix', function() {
+	var httpAdapter;
+	var cleanup = function() {
+			userRoles( 'userman', [] );
+			actionRoles( 'test.call', [] );
+			actionRoles( 'test.forward', [] );
+			actionRoles( 'test.echo', [] );
+			actionRoles( 'test.regex', [] );
+		};
+
+	before( function() {
+		config.apiPrefix = '';
+		httpAdapter = httpAdapterFn( config, authProvider, http, requestor, metrics );
+		authProvider.tokens = { 'blorp': 'userman' };
+		authProvider.users = { 'userman': { name: 'userman', password: 'hi', roles: [] } };
+		httpAdapter.resource( {
+			name: 'prefixed',
+			urlPrefix: 'lol',
+			actions: {
+				'arrive': {
+					url: '/arrive/:id',
+					method: 'put',
+					handle: function( envelope ) {
+						envelope.reply( { data: "hello, " + envelope.data.id } );
+					}
+				},
+				'depart': {
+					url: '/depart/:id',
+					method: 'put',
+					handle: function( envelope ) {
+						envelope.reply( { data: "so long, " + envelope.data.id } );
+					}
+				}
+			}
+		} );
+		http.start();
+	} );
+
+	describe( 'when making a request to a prefixed action', function() {
+		var result;
+
+		before( function( done ) {
+			actionRoles( 'prefixed.arrive', [ 'guest' ] );
+			userRoles( 'userman', [ 'guest' ] );
+			requestor( {
+				url: 'http://localhost:88988/lol/prefixed/arrive/userman',
+				method: 'put',
+				headers: {
+					'Authorization': 'Bearer blorp'
+				}
+			}, function( err, resp ) {
+				result = new Buffer( resp.body, 'utf-8' ).toString();
+				done();
+			} );
+		} );
+
+		it( 'should return action response', function() {
+			result.should.equal( 'hello, userman' );
+		} );
+
+		after( cleanup );
+	} );
+
+	after( http.stop );
+} );

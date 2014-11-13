@@ -16,9 +16,10 @@ I created autohost so we could have a consistent, reliable and extendible way to
  * Resource-based: define transport-agnostic resources that interact via HTTP or WebSockets
  * Supports server-side websockets and socket.io
  * Supports multiple Passport strategies via a pluggable auth provider approach
- * UI dashboard to review resources' routes, topics and static paths
- * HTTP Auth API and dashboard for managing permissions
- * Detailed metrics around routes, topics, authentication and authorization
+
+> __Note__
+
+> The dashboard and related APIs are no longer included with autohost. They have been moved to a separate project: [autohost-admin](https://github.com/LeanKit-Labs/autohost-admin).
 
 ## Quick Start
 
@@ -34,10 +35,6 @@ host.init( {}, authProvider );
 
 	node index.js
 	
-Open your browser to: `http://localhost:8800/_autohost'
-
-This dashboard will create a tab for each resource autohost has loaded and display the topics, urls and paths that it has registered for each. You can see here that, since we haven't provided our own static files or resources, the only thing showing up is autohost's own HTTP API and static files that make up this dashboard.
-
 Before diving into how to add resources, take a look at the init call and its arguments to understand what's available.
 
 ### init( config, authProvider, [fount] )
@@ -75,7 +72,7 @@ There are already two available auth provider libraries available:
  * [autohost-riak-auth](https://github.com/LeanKit-Labs/autohost-riak-auth)
  * [autohost-nedb-auth](https://github.com/LeanKit-Labs/autohost-nedb-auth)
 
-You can NPM install either of these and easily drop them into your project to get going. Each library supports all optional features and can be managed from the auth dashboard built into autohost.
+You can NPM install either of these and easily drop them into your project to get going. Each library supports all optional features and can be managed from the [admin add-on](https://github.com/LeanKit-Labs/autohost-admin).
 
 	Note: the authProvider passed in can be an unresolved promise, autohost will handle it
 
@@ -86,7 +83,7 @@ Planned support for:
 [fount](https://github.com/LeanKit-Labs/fount) is a dependency injection library for Node. If your application is using fount, you can provide the instance at the end of the init call so that your resources will have access to the same fount instance from the `host.fount` property within the resource callback.
 
 ## Resources
-Resources are expected to be simple modules containing a factory method that return a resource definition. Autohost now supports dependency resolution by argument in these factory methods. All arguments after the first (`host`) will be checked against autohost's fount instance. This is especially useful when you need to take a dependency on a promise or asynchronous function - fount will only invoke your resource's factory once all dependnecies are available eliminating the need to handle these concerns with callbacks or promises in your resource's implementation. See the Asynchronous Module example under the Module section. 
+Resources are expected to be simple modules containing a factory method that return one or more resource definitions. Autohost now supports dependency resolution by argument in these factory methods. All arguments after the first (`host`) will be checked against autohost's fount instance. This is especially useful when you need to take a dependency on a promise or asynchronous function - fount will only invoke your resource's factory once all dependnecies are available eliminating the need to handle these concerns with callbacks or promises in your resource's implementation. See the Asynchronous Module example under the Module section. 
 
 ### Path conventions
 Autohost expects to find all your resources under one folder (`./resource` by default) and your shared static resources under one folder (`./public` by default). Each resource should have its own sub-folder and contain a `resource.js` file that contains a module defining the resource.
@@ -147,6 +144,7 @@ module.exports = function( host, myDependency1, myDependency2 ) {
 	return {
 		name: 'resource-name',
 		resources: '', // relative path to static assets for this resource
+		urlPrefix: '', // URL prefix for all actions in this resource
 		actions: { 
 			send: {
 				method: 'get', // http verb
@@ -382,24 +380,13 @@ host.init( {
 }, authProvider );
 ```
 
-### Auth API and Admin Dashboard (Under development)
-The auth dashboard only works with auth providers that implement the entire specification. If that's available, you can fully manage users, roles and actions from this. It is hosted at http://{your server}:{port}/_autohost/auth.html
-
-## UI Dashboard
-Simple navigate to /_autohost to review the current set of resources:
-![An Example AutoHost Application's Dashboard](http://i4.minus.com/jbnWId8h3hZcac.png)
-
 ## Metrics
-Autohost collects a good bit of metrics. It measures action activation as well as authorization and authentication calls so that you can get detailed information on where time is being spent in the stack at a high level. The metrics also include memory utlization as well as system memory and process load. You can see the raw JSON for the metrics at:
-
-	http://{host}:{port}/api/_autohost/metrics
+Autohost collects a good bit of metrics. It measures action activation as well as authorization and authentication calls so that you can get detailed information on where time is being spent in the stack at a high level. The metrics also include memory utlization as well as system memory and process load. You can access them from `host.metrics`.
 
 ## Metadata
 Autohost provides metadata to describe the routes and topic available via an OPTIONS to api:
 
 	OPTIONS http://{host}:{port}/api
-	
-	Note: you CANNOT change this route. It must be consistent so that autohost's dashboards can always reach this endpoint.
 	
 The metadata follows this format:
 
@@ -426,8 +413,7 @@ The metadata follows this format:
 }
 ```
 
-In the future, the intent is to provide more metadata like this in various contexts as well as provide clients (for Node and the browser) that can consume this information to create clients dynamically based on the data.
-
+While this is useful, we have developed [hyped](https://github.com/LeanKit-Labs/hyped),a hypermedia library that bolts onto autohost, and [halon](https://github.com/LeanKit-Labs/halon), a browser/Node hypermedia client for consuming APIs built with `hyped`.
 
 ## Debugging
 You can get a lot of visibility into what's happening in autohost in real-time by setting the DEBUG environment variable. If you _only_ want to see autohost debug entries, use autohost*.
@@ -457,8 +443,6 @@ There are a lot of places you can contribute to autohost. Here are just some ide
 
 ### Developers
  * A clustering feature that would handle setting up a cluster of N nodes
- * A way to visualize the metrics information in the app
- * Feature to enable auto-pushing metrics JSON up to socket clients on regular interval
 
 ### Op/Sec
 I would be interested in seeing if particular Passport strategies and how they're being wired in would be subject to any exploits. Knowing this in general would be great, but especially if I'm doing something ignorant with how it's all being handled and introducing new attack vectors, I'd like to find out what those are so they can be addressed.
