@@ -61,6 +61,7 @@ function createAuthMiddlewareStack() {
 // the original approach breaks engine-io
 function expressInit( req, res, next ) { // jshint ignore:line
     req.next = next;
+    req.context = {};
     // patching this according to how express does it
     /* jshint ignore:start */
     req.__proto__ = expreq;

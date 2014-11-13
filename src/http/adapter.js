@@ -45,9 +45,9 @@ function buildPath( pathSpec ) {
 	return hasLocalPrefix ? './' + pathSpec : pathSpec;
 }
 
-function checkPermissionFor( user, action ) {
+function checkPermissionFor( user, context, action ) {
 	debug( 'Checking %s\'s permissions for %s', ( user ? user.name : 'nouser' ), action );
-	return authStrategy.checkPermission( user, action )
+	return authStrategy.checkPermission( user, action, context )
 		.then( null, function( err ) {
 			debug( 'Error during check permissions: %s', err.stack );
 			return false;
@@ -91,13 +91,13 @@ function wireupAction( resource, actionName, action, meta, resources ) {
 	http.route( url, action.method, function( req, res ) {
 		req._resource = resource.name;
 		req._action = actionName;
-		req._checkPermission = authStrategy ? checkPermissionFor.bind( undefined, req.user ) : undefined;
+		req._checkPermission = authStrategy ? checkPermissionFor.bind( undefined, req.user, req.context ) : undefined;
 		var respond = function() {
 			var envelope = new HttpEnvelope( req, res );
 			action.handle.apply( resource, [ envelope ] );
 		};
 		if( authStrategy ) {
-			checkPermissionFor( req.user, alias )
+			checkPermissionFor( req.user, req.context, alias )
 				.then( function( pass ) {
 					if( pass ) {
 						debug( 'HTTP activation of action %s (%s %s) for %s granted', alias, action.method, url, req.user.name );

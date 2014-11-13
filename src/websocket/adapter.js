@@ -21,9 +21,9 @@ function buildActionTopic( resourceName, action ) {
 	return [ resourceName, action.topic ].join( '.' );
 }
 
-function checkPermissionFor( user, action ) {
+function checkPermissionFor( user, context, action ) {
 	debug( 'Checking %s\'s permissions for %s', ( user ? user.name : 'nouser' ), action );
-	return authStrategy.checkPermission( user.name, action )
+	return authStrategy.checkPermission( user.name, action, context )
 		.then( null, function(err) {
 			debug( 'Error during check permissions: %s', err.stack );
 			return false;
@@ -62,7 +62,7 @@ function wireupAction( resource, actionName, action, meta ) {
 			action.handle.apply( resource, [ envelope ] );
 		};
 		if( authStrategy ) {
-			checkPermissionFor( socket.user, alias )
+			checkPermissionFor( socket.user, context, alias )
 				.then( function( pass ) {
 					if( pass ) {
 						debug( 'WS activation of action %s for %s granted', alias, socket.user.name );

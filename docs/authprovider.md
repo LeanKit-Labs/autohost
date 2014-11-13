@@ -42,7 +42,7 @@ Both the socket and request objects (and therefore envelopes in your resource's 
 The follow methods are *required* by any auth provider library in order for autohost to function correctly. These functions will have a definite impact on the runtime performance of your service. Please consider the performance implications when building providers.
 
  * authenticate: function( req, res, next ) {} // called as middleware via Passport
- * checkPermission: function( user, action ) {} // return promised boolean to indicate if user can invoke action
+ * checkPermission: function( user, action, context ) {} // return promised boolean to indicate if user can invoke action
  * deserializeUser: function( user, done ) {} // deserialize user record from session store
  * getActionRoles: function( actionname ) {} // return a promised array of the action's roles
  * getUserRoles: function( username ) {} // return a promised array of the user's roles
@@ -70,7 +70,7 @@ function authenticate( req, res, next ) {
 }
 ```
 
-### checkPermission( user, action ) -> promise( boolean )
+### checkPermission( user, action, [context] ) -> promise( boolean )
 User and action can be either the name of the entity OR a cached representation with the roles already loaded.
 Should return true IF:
  * action's roles property is empty (no role is required to perform the action)
@@ -82,7 +82,7 @@ Should return false IF:
 
 ```javascript
 // inspects the arguments passed and determines whether or not to load the roles for either from a backing store
-function checkPermission( user, action ) {
+function checkPermission( user, action, context ) {
 	var actionName = action.roles ? action.name : action,
 		actionRoles = _.isEmpty( action.roles ) ? db.getActionRoles( actionName ) : action.roles,
 		userName = user.name ? user.name : user,
@@ -98,6 +98,15 @@ function userCan( userRoles, actionRoles ) {
 	return actionRoles.length == 0 || _.intersection( actionRoles, userRoles ).length > 0;
 }
 ```
+
+> Note
+
+> The context parameter gets set from the envelope.context (which is copied from express's req.context). This allows
+> you to build up contextual data via middleware in your application that an auth library can use to determine
+> when a request is contextually invalid.
+
+> Example: record level security - middleware could attach record level information to req.context that the
+> auth lib can then use to determine if the request is valid for that record.
 
 ### deserializeUser( user, done ) -> void
 The inverse of `serializeUser`. Called from passport in order to take a raw data format and get the user record. The done callback follows the typical Node ( error, result ) format.

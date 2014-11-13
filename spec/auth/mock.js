@@ -68,17 +68,21 @@ function authenticateQuery( token, done ) {
 	done( null, user );
 }
 
-function checkPermission( user, action ) {
+function checkPermission( user, action, context ) {
 	var userName = user.name ? user.name : user;
 	var userRoles = user.roles ? user.roles : getUserRoles( userName );
 	debug( 'checking user %s for action %s', userName, action );
-	return when.try( hasPermissions, userRoles, getActionRoles( action ) );
+	return when.try( hasPermissions, userRoles, getActionRoles( action ), context );
 }
 
-function hasPermissions( userRoles, actionRoles ) {
+function hasPermissions( userRoles, actionRoles, context ) {
 	debug( 'user roles: %s, action roles: %s', userRoles, actionRoles );
-	return _.isEmpty( actionRoles ) || 
-		( _.intersection( userRoles, actionRoles ).length > 0 );
+	if( context.noSoupForYou ) {
+		return false ;
+	} else {
+		return _.isEmpty( actionRoles ) || 
+			( _.intersection( userRoles, actionRoles ).length > 0 );
+	}
 }
 
 function getActionRoles( action ) {

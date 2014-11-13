@@ -432,6 +432,7 @@ autohost would not exist without the following libraries:
  * lodash 			2.4.1
 
 ## TO DO
+ * Add ability to define message middleware
  * Add support for clustering (multiple listening processes)
 
 ## Contributing
