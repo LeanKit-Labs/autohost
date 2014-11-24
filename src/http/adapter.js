@@ -46,7 +46,7 @@ function buildPath( pathSpec ) {
 }
 
 function checkPermissionFor( user, context, action ) {
-	debug( 'Checking %s\'s permissions for %s', ( user ? user.name : 'nouser' ), action );
+	debug( 'Checking %s\'s permissions for %s', getUserString( user ), action );
 	return authStrategy.checkPermission( user, action, context )
 		.then( null, function( err ) {
 			debug( 'Error during check permissions: %s', err.stack );
@@ -55,6 +55,10 @@ function checkPermissionFor( user, context, action ) {
 		.then( function( granted ) {
 			return granted;
 		} );
+}
+
+function getUserString( user ) {
+	return user.name ? user.name : JSON.stringify( user );
 }
 
 function hasPrefix( url ) {
@@ -100,10 +104,10 @@ function wireupAction( resource, actionName, action, meta, resources ) {
 			checkPermissionFor( req.user, req.context, alias )
 				.then( function( pass ) {
 					if( pass ) {
-						debug( 'HTTP activation of action %s (%s %s) for %s granted', alias, action.method, url, req.user.name );
+						debug( 'HTTP activation of action %s (%s %s) for %s granted', alias, action.method, url, getUserString( req.user ) );
 						respond();
 					} else {
-						debug( 'User %s was denied HTTP activation of action %s (%s %s)', req.user.name, alias, action.method, url );
+						debug( 'User %s was denied HTTP activation of action %s (%s %s)', getUserString( req.user ), alias, action.method, url );
 						res.status( 403 ).send( "User lacks sufficient permissions" );
 					}
 				} );

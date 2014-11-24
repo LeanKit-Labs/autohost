@@ -69,14 +69,16 @@ function authenticateQuery( token, done ) {
 }
 
 function checkPermission( user, action, context ) {
-	var userName = user.name ? user.name : user;
-	var userRoles = user.roles ? user.roles : getUserRoles( userName );
-	debug( 'checking user %s for action %s', userName, action );
+	var userRoles = !_.isEmpty( user.roles ) ? user.roles : getUserRoles( user );
+	debug( 'checking user %s for action %s', getUserString( user ), action );
 	return when.try( hasPermissions, userRoles, getActionRoles( action ), context );
 }
 
+function getUserString( user ) {
+	return user.name ? user.name : JSON.stringify( user );
+}
+
 function hasPermissions( userRoles, actionRoles, context ) {
-	debug( 'user roles: %s, action roles: %s', userRoles, actionRoles );
 	if( context.noSoupForYou ) {
 		return false ;
 	} else {
@@ -92,8 +94,9 @@ function getActionRoles( action ) {
 }
 
 function getUserRoles( user ) {
+	var userName = user.name ? user.name : user;
 	return when.promise( function( resolve ) {
-		var tmp = wrapper.users[ user ];
+		var tmp = wrapper.users[ userName ];
 		resolve( tmp ? tmp.roles : [] );
 	} );
 }

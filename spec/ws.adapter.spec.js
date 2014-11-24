@@ -14,7 +14,11 @@ var actionRoles = function( action, roles ) {
 		authProvider.actions[ action ] = { roles: roles };
 	};
 var userRoles = function( user, roles ) {
-		authProvider.users[ user ].roles = roles;
+		if( authProvider.users[ user ] ) {
+			authProvider.users[ user ].roles = roles;
+		} else {
+			authProvider.users[ user ] = { roles: roles };
+		}		
 	};
 
 describe( 'with socket adapter', function() {

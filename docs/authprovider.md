@@ -45,7 +45,7 @@ The follow methods are *required* by any auth provider library in order for auto
  * checkPermission: function( user, action, context ) {} // return promised boolean to indicate if user can invoke action
  * deserializeUser: function( user, done ) {} // deserialize user record from session store
  * getActionRoles: function( actionname ) {} // return a promised array of the action's roles
- * getUserRoles: function( username ) {} // return a promised array of the user's roles
+ * getUserRoles: function( user ) {} // return a promised array of the user's roles
  * hasUsers: function() {} // return a promised boolean to indicate if any users exist in the system
  * initPassport: function( passport ) {} // initialize passport here - autohost passes in its instance
  * serializeUser: function( user, done ) {} // serialize user record for session store
@@ -85,8 +85,7 @@ Should return false IF:
 function checkPermission( user, action, context ) {
 	var actionName = action.roles ? action.name : action,
 		actionRoles = _.isEmpty( action.roles ) ? db.getActionRoles( actionName ) : action.roles,
-		userName = user.name ? user.name : user,
-		userRoles = _.isEmpty( user.roles ) ? db.getUserRoles( userName ) : user.roles;
+		userRoles = _.isEmpty( user.roles ) ? db.getUserRoles( user ) : user.roles;
 	if( user.roles && user.disabled ) {
 		userRoles = [];
 	}
@@ -118,8 +117,8 @@ function deserializeUser( user, done ) { done( null, JSON.parse( user ) ); };
 ### getActionRoles( actionname ) -> promise( string array )
 This takes the name of an action and returns a promise that should resolve to the list of roles for the action.
 
-### getUserRoles( username ) -> promise( string array )
-This takes the name of a user and returns a promise that should resolve to the list of roles for the user.
+### getUserRoles( user ) -> promise( string array )
+This takes the user and returns a promise that should resolve to the list of roles for the user.
 
 ### hasUsers() -> promise( boolean )
 Autohost will actually skip authentication middleware if no users exist in the database and assign the user record { name: 'anonymous', roles: [] } to all requests and sockets. This is to prevent weird situations where new services under development lock you out.

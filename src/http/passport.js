@@ -35,7 +35,7 @@ function addPassport( http ) {
 function authConditionally( req, res, next ) { // jshint ignore:line
 	// if previous middleware has said to skip auth OR
 	// a user was attached from a session, skip authenticating
-	if( req.skipAuth || ( req.user && req.user.name ) ) {
+	if( req.skipAuth || req.user ) {
 		next();
 	} else {
 		metrics.timer( authenticationTimer ).start();
@@ -65,16 +65,16 @@ function getRoles( req, res, next ) { // jshint ignore:line
 		next();
 	} else {
 		metrics.timer( authorizationTimer ).start();
-		authProvider.getUserRoles( req.user.name )
+		authProvider.getUserRoles( req.user )
 			.then( null, function( err ) {
 				metrics.counter( authorizationErrorCount ).incr();
 				metrics.meter( authorizationErrorRate ).record();
 				metrics.timer( authorizationTimer ).record();
-				debug( 'Failed to get roles for %s with %s', userName, err.stack );
+				debug( 'Failed to get roles for %s with %s', getUserString( user ), err.stack );
 				res.status( 500 ).send( 'Could not determine user permissions' );
 			} )
 			.then( function( roles ) {
-				debug( 'Got roles [ %s ] for %s', roles, req.user.name );
+				debug( 'Got roles [ %s ] for %s', roles, req.user );
 				req.user.roles = roles;
 				metrics.timer( authorizationTimer ).record();
 				next();
@@ -82,8 +82,8 @@ function getRoles( req, res, next ) { // jshint ignore:line
 	}
 }
 
-function getSocketRoles( userName ) {
-	if( userName === 'anonymous' ) {
+function getSocketRoles( user ) {
+	if( user.name === 'anonymous' ) {
 		return when( [ 'anonymous' ] );
 	} else {
 		metrics.timer( authorizationTimer ).start();
@@ -92,15 +92,19 @@ function getSocketRoles( userName ) {
 				metrics.counter( authorizationErrorCount ).incr();
 				metrics.meter( authorizationErrorRate ).record();
 				metrics.timer( authorizationTimer ).record();
-				debug( 'Failed to get roles for %s with %s', userName, err.stack );
+				debug( 'Failed to get roles for %s with %s', getUserString( user ), err.stack );
 				return [];
 			} )
 			.then( function( roles ) {
-				debug( 'Got roles [ %s ] for %s', roles, userName );
+				debug( 'Got roles [ %s ] for %s', roles, getUserString( user ) );
 				metrics.timer( authorizationTimer ).record();
 				return roles;
 			} );
 	}
+}
+
+function getUserString( user ) {
+	return user.name ? user.name : JSON.stringify( user );
 }
 
 function resetUserCount() {

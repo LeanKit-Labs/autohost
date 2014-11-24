@@ -22,8 +22,8 @@ function buildActionTopic( resourceName, action ) {
 }
 
 function checkPermissionFor( user, context, action ) {
-	debug( 'Checking %s\'s permissions for %s', ( user ? user.name : 'nouser' ), action );
-	return authStrategy.checkPermission( user.name, action, context )
+	debug( 'Checking %s\'s permissions for %s', getUserString( user ), action );
+	return authStrategy.checkPermission( user, action, context )
 		.then( null, function(err) {
 			debug( 'Error during check permissions: %s', err.stack );
 			return false;
@@ -31,6 +31,10 @@ function checkPermissionFor( user, context, action ) {
 		.then( function( granted ) {
 			return granted;
 		} );
+}
+
+function getUserString( user ) {
+	return user.name ? user.name : JSON.stringify( user );
 }
 
 function start() {
@@ -65,10 +69,10 @@ function wireupAction( resource, actionName, action, meta ) {
 			checkPermissionFor( socket.user, context, alias )
 				.then( function( pass ) {
 					if( pass ) {
-						debug( 'WS activation of action %s for %s granted', alias, socket.user.name );
+						debug( 'WS activation of action %s for %s granted', alias, getUserString( socket.user ) );
 						respond();
 					} else {
-						debug( 'User %s was denied WS activation of action %s', socket.user.name, alias );
+						debug( 'User %s was denied WS activation of action %s', getUserString( socket.user ), alias );
 						socket.publish( data.replyTo || topic, 'User lacks sufficient permission' );
 					}
 				} );

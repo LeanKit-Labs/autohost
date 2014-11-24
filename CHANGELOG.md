@@ -1,6 +1,12 @@
 ## 0.3.0
 Primary motivation here is to begin work on a version of autohost that will work well with a hypermedia library ( [hyped](https://github.com/leankit-labs/hyped) ). This is a breaking change because of several structural and naming changes to how resources get modeled.
 
+### prerelease 10
+Pass user object to auth libs vs. user.name.
+
+### prerelease 9
+Fix edge case causing passport middleware to re-authenticate users already in the session if the user object didn't have a `name` property.
+
 ### prerelease 8
  * Remove the _autohost API/UI
  * Pass request context to checkPermissions call to enable contextual authorization
