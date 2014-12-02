@@ -1,6 +1,10 @@
 ## 0.3.0
 Primary motivation here is to begin work on a version of autohost that will work well with a hypermedia library ( [hyped](https://github.com/leankit-labs/hyped) ). This is a breaking change because of several structural and naming changes to how resources get modeled.
 
+### prerelease 11
+ * Added opt-in feature that pre-parses path variables for access within middelware. This could be terrible.
+ * Pass req.context to auth provider getUserRoles when calling from passport middleware.
+
 ### prerelease 10
 Pass user object to auth libs vs. user.name.
 

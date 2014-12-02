@@ -13,7 +13,9 @@ function applyPrefix( prefix, pattern ) {
 		return pattern;
 	} else {
 		if( original.slice( 0, 1 ) === '^' ) {
-			return getRegex( '^' + prefix + '/' + original.slice( 1, original.length ) );
+			var trimmed = original.slice( 1, original.length );
+			var separator = trimmed.indexOf( '\/' ) === 1 ? '' : '/';
+			return getRegex( '^' + prefix + separator + trimmed );
 		} else {
 			return getRegex( '^' + prefix + '/.*' + original );
 		}

@@ -65,7 +65,7 @@ function getRoles( req, res, next ) { // jshint ignore:line
 		next();
 	} else {
 		metrics.timer( authorizationTimer ).start();
-		authProvider.getUserRoles( req.user )
+		authProvider.getUserRoles( req.user, req.context )
 			.then( null, function( err ) {
 				metrics.counter( authorizationErrorCount ).incr();
 				metrics.meter( authorizationErrorRate ).record();
@@ -87,7 +87,7 @@ function getSocketRoles( user ) {
 		return when( [ 'anonymous' ] );
 	} else {
 		metrics.timer( authorizationTimer ).start();
-		return authProvider.getUserRoles( userName )
+		return authProvider.getUserRoles( user, {} )
 			.then( null, function( err ) {
 				metrics.counter( authorizationErrorCount ).incr();
 				metrics.meter( authorizationErrorRate ).record();

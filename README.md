@@ -60,6 +60,7 @@ The object literal follows the format:
 	noBody: false, // disables body parsing
 	noCrossOrigin: false, // disables cross origin
 	noOptions: false, // disables automatic options middleware, use this when providing your own
+	parseAhead: false, // parses path parameters before application middleware
 	urlStrategy: undefined // a function that generates the URL per resource action
 	anonymous: [] // add paths or url patterns that bypass authentication and authorization
 }
@@ -304,6 +305,14 @@ You have a public HTTP endpoint that directs traffic to your primary application
 While you could simple prefix all of your absolute URLs in static resources with `/special' (in this example), this will cause your application to be unusable without a reverse proxy sitting in front of it since the browser would be making requests to a route that doesn't exist and nothing is there to intercept and strip away the `/special` path prefix. This makes integration testing and local development unecessarily painful.
 
 The solution is to use `urlPrefix` set to 'special' and to either write all your URLs in static resources with the prefix (meh) OR use a build step that will find absolute paths in your static files and prefix them for you. Autohost will automatically apply this prefix to all routes in your service so that requests from the proxy align with the routes defined in your application consistently. This results in an application that remains usable outside of the reverse proxy and can even be built and deployed with different path prefixes (or no prefixes).
+
+### parseAhead
+Normally, middleware can't have access to path variables that aren't defined as part of its mount point. This is because the sequential routing table doesn't know what path will eventually be resolved when it's processing general purpose middleware (e.g. mounted at `/`). Setting `parseAhead` to true in your configuration will add special middleware that does two things:
+ 
+ * add a `preparams` property to the request with parameters from "future" matching routes 
+ * redefines the `req.param` function to check `preparams` before falling back to default
+
+The upside is that you can write general purpose middleware that can access path variables instead of having to write the same kind of middleware for a lot of different paths and then worry about keeping paths synchronized. The downside is that there is obviously a performance penalty for traversing the route stack like this.
 
 ## Web Socket Transport
 Autohost supports two socket libraries - socket.io for browser clients and websocket-node for programmatic/server clients.

@@ -69,9 +69,8 @@ function authenticateQuery( token, done ) {
 }
 
 function checkPermission( user, action, context ) {
-	var userRoles = !_.isEmpty( user.roles ) ? user.roles : getUserRoles( user );
 	debug( 'checking user %s for action %s', getUserString( user ), action );
-	return when.try( hasPermissions, userRoles, getActionRoles( action ), context );
+	return when.try( hasPermissions, getUserRoles( user ), getActionRoles( action ), context );
 }
 
 function getUserString( user ) {
@@ -97,6 +96,7 @@ function getUserRoles( user ) {
 	var userName = user.name ? user.name : user;
 	return when.promise( function( resolve ) {
 		var tmp = wrapper.users[ userName ];
+		debug( 'Getting user roles for %s: %s', getUserString( user ), JSON.stringify( tmp ) );
 		resolve( tmp ? tmp.roles : [] );
 	} );
 }

@@ -69,7 +69,7 @@ describe( 'with socket adapter', function() {
 		}, { topics: {} } );
 		http.start();
 		socket.start( passport );
-		ioClient = io( 'http://localhost:88988', { query: 'token=blorp' } );
+		ioClient = io( 'http://localhost:88988' );
 		ioClient.once( 'reconnect', check );
 		ioClient.once( 'connect', check );
 		ioClient.io.open();
