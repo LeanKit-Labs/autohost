@@ -90,7 +90,6 @@ describe( 'when pattern contains leading forward slash after ^', function() {
 
 	before( function() {
 		var pattern = regex.prefix( prefix, match );
-		console.log( pattern );
 		url1Match = pattern.test( url1 );
 		url2Match = pattern.test( url2 );
 		url3Match = pattern.test( url3 );
@@ -120,7 +119,6 @@ describe( 'when pattern contains leading forward slash without ^', function() {
 
 	before( function() {
 		var pattern = regex.prefix( prefix, match );
-		console.log( pattern );
 		url1Match = pattern.test( url1 );
 		url2Match = pattern.test( url2 );
 		url3Match = pattern.test( url3 );

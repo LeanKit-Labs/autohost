@@ -61,6 +61,7 @@ The object literal follows the format:
 	noCrossOrigin: false, // disables cross origin
 	noOptions: false, // disables automatic options middleware, use this when providing your own
 	parseAhead: false, // parses path parameters before application middleware
+	handleRouteErrors: false, // wrap routes in try/catch
 	urlStrategy: undefined // a function that generates the URL per resource action
 	anonymous: [] // add paths or url patterns that bypass authentication and authorization
 }
@@ -255,7 +256,11 @@ Envelopes are an abstraction around the incoming message or request. They are in
 ```
 
 ### reply( envelope )
-Sends a reply back to the requestor via HTTP or web socket. Response envelope is expected to always have a data property containing the body/reply. HTTP responses can included a statusCode property (otherwise a 200 is assumed).
+Sends a reply back to the requestor via HTTP or web socket. Response envelope is expected to always have a data property containing the body/reply. HTTP responses can included the following properties
+
+ * `statusCode`: defaults to 200
+ * `headers`: a hash of headers to set on the response
+ * `cookies`: a hash of cookies to set on the response. The value is an object with a `value` and `options` property.
 
 ```javascript
 	envelope.reply( { data: { something: 'interesting' }, statusCode: 200 } );
@@ -263,6 +268,8 @@ Sends a reply back to the requestor via HTTP or web socket. Response envelope is
 	// Socket.io will have a payload of { something: 'interesting' } published to the replyTo property OR the original topic
 	// Websockets will get a message of { topic: replyTo|topic, data: { something: 'interesting' } } 
 ```
+
+> The options property for a cookie can have the following properties: `domain`, `path`, `maxAge`, `expires`, `httpOnly`, `secure`, `signed`
 
 ### replyWithFile( contentType, fileName, fileStream )
 Sends a file as a response.

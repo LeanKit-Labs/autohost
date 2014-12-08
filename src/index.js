@@ -1,6 +1,6 @@
 var path = require( 'path' );
 var metrics = require( 'cluster-metrics' );
-var request = require( 'request' ).defaults( { jar: true } );
+var request = require( 'request' );
 var when = require( 'when' );
 var passportFn = require( './http/passport.js' );
 var httpFn = require( './http/http.js' );
@@ -22,7 +22,7 @@ var wrapper = {
 		metrics: metrics,
 		request: request,
 		meta: undefined,
-		http: undefined,
+		http: httpFn( request, middleware, metrics ),
 		socket: undefined,
 		session: middlewareLib.sessionLib,
 		on: onEvent
@@ -56,14 +56,13 @@ function onEvent( topic, handle ) {
 }
 
 function setup( authProvider ) { //jshint ignore:line
-	var config = wrapper.config,
-		metrics = wrapper.metrics;
+	var config = wrapper.config;
+	var metrics = wrapper.metrics;
 
 	if( authProvider ) {
 		passport = passportFn( config, authProvider, metrics );
 	}
 
-	wrapper.http = httpFn( config, request, passport, middleware, metrics );
 	httpAdapter = httpAdapterFn( config, authProvider, wrapper.http, request, metrics );
 	api.addAdapter( httpAdapter );
 

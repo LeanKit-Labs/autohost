@@ -31,7 +31,7 @@ describe( 'HTTP Module', function() {
 		authProvider = require( './auth/mock.js' )( config );
 		passport = require( '../src/http/passport.js' )( config, authProvider, metrics );
 		middleware = require( '../src/http/middleware.js' )( config, metrics );
-		http = require( '../src/http/http.js' )( config, requestor, passport, middleware, metrics );
+		http = require( '../src/http/http.js' )( requestor, middleware, metrics );
 
 		authProvider.users = {};
 		passport.resetUserCheck();
@@ -41,7 +41,6 @@ describe( 'HTTP Module', function() {
 				capturedParams.push( req.param( 'one' ) );
 				capturedParams.push( req.preparams.two );
 			}
-			console.log( capturedParams );
 			middlewareHit.push( 1 );
 			next();
 		} );
@@ -58,7 +57,7 @@ describe( 'HTTP Module', function() {
 			request = req;
 			res.status( statusCode ).send( response );
 		} );
-		http.start();
+		http.start( config, passport );
 	} );
 
 	describe( 'when getting a static file', function() {
@@ -66,7 +65,7 @@ describe( 'HTTP Module', function() {
 
 		before( function( done ) {
 			requestor.get( {
-				url: 'http://localhost:88988/files/txt/hello.txt' 
+				url: 'http://localhost:88988/files/txt/hello.txt'
 			}, function( err, resp ) {
 				result = resp.body;
 				done();
@@ -206,7 +205,7 @@ describe( 'HTTP Routing Precedence', function() {
 			static: './spec/public'
 		};
 		middleware = require( '../src/http/middleware.js' )( config, metrics );
-		http = require( '../src/http/http.js' )( specialConfig, requestor, undefined, middleware, metrics );
+		http = require( '../src/http/http.js' )(requestor, middleware, metrics );
 		http.middleware( '/thing', function( req, res, next ) {
 			next();
 		} );
@@ -214,7 +213,7 @@ describe( 'HTTP Routing Precedence', function() {
 			request = req;
 			res.status( statusCode ).send( response );
 		} );
-		http.start();
+		http.start( specialConfig );
 	} );
 
 	describe( 'when getting a static file', function() {

@@ -1,6 +1,14 @@
 ## 0.3.0
 Primary motivation here is to begin work on a version of autohost that will work well with a hypermedia library ( [hyped](https://github.com/leankit-labs/hyped) ). This is a breaking change because of several structural and naming changes to how resources get modeled.
 
+### prerelease 12
+ * Do not set defaults on AutoHost's request instance
+ * Make try/catch opt-in for route handles
+ * Return 500 error when handle throws exception and using error handling for routes
+ * Allow definition of routes before calling init
+ * Support header setting on envelope reply
+ * Support cookies on envelope reply
+
 ### prerelease 11
  * Added opt-in feature that pre-parses path variables for access within middelware. This could be terrible.
  * Pass req.context to auth provider getUserRoles when calling from passport middleware.

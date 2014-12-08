@@ -67,7 +67,7 @@ function hasPrefix( url ) {
 }
 
 function start() {
-	http.start( authStrategy );
+	http.start( config, authStrategy );
 }
 
 function stop() {

@@ -9,7 +9,7 @@ var config = {
 var authProvider = require( './auth/mock.js' )( config );
 var passport = require( '../src/http/passport.js' )( config, authProvider, metrics );
 var middleware = require( '../src/http/middleware.js' )( config, metrics );
-var http = require( '../src/http/http.js' )( config, requestor, passport, middleware, metrics );
+var http = require( '../src/http/http.js' )( requestor, middleware, metrics );
 var httpAdapter = require( '../src/http/adapter.js' )( config, authProvider, http, requestor, metrics );
 var actionRoles = function( action, roles ) {
 		authProvider.actions[ action ] = { roles: roles };
@@ -19,6 +19,7 @@ var userRoles = function( user, roles ) {
 	};
 
 describe( 'with http adapter', function() {
+	var cookieExpiresAt = new Date( Date.now() + 60000 );
 	var cleanup = function() {
 			userRoles( 'userman', [] );
 			actionRoles( 'test.call', [] );
@@ -33,7 +34,18 @@ describe( 'with http adapter', function() {
 			method: 'get',
 			url: '/test/call/:one/:two',
 			handle: function( env ) {
-				env.reply( { data: 'ta-da!' } );
+				env.reply( { 
+					data: 'ta-da!', 
+					headers: { 'test-header': 'look a header value!' },
+					cookies: { 'an-cookies': {
+						value: 'chocolate chip',
+						options: {
+							expires: cookieExpiresAt,
+							path: '/api',
+							domain: 'herpdederp.com'
+						}
+					} }
+				} );
 			}
 		}, { routes: {} } );
 		httpAdapter.action( { name: 'test' }, 'forward', {
@@ -56,7 +68,7 @@ describe( 'with http adapter', function() {
 			req.context.noSoupForYou = req.query.deny;
 			next();
 		} );
-		http.start();
+		http.start( config, passport );
 	} );
 
 	describe( 'when making a request with inadequate permissions', function() {
@@ -86,6 +98,7 @@ describe( 'with http adapter', function() {
 
 	describe( 'when making a request with adequate permissions', function() {
 		var result;
+		var headers;
 
 		before( function( done ) {
 			actionRoles( 'test.call', [ 'guest' ] );
@@ -96,6 +109,7 @@ describe( 'with http adapter', function() {
 					'Authorization': 'Bearer blorp'
 				}
 			}, function( err, resp ) {
+				headers = resp.headers;
 				result = new Buffer( resp.body, 'utf-8' ).toString();
 				done();
 			} );
@@ -103,6 +117,14 @@ describe( 'with http adapter', function() {
 
 		it( 'should return action response', function() {
 			result.should.equal( 'ta-da!' );
+		} );
+
+		it( 'should return expected headrs', function() {
+			headers[ 'test-header' ].should.eql( 'look a header value!' );
+		} );
+
+		it( 'should return expected cookies', function() {
+			headers[ 'set-cookie' ].should.eql( [ 'an-cookies=chocolate%20chip; Domain=herpdederp.com; Path=/api; Expires=' + cookieExpiresAt.toUTCString() ] );
 		} );
 
 		after( cleanup );

@@ -9,7 +9,7 @@ var debug = require( 'debug' )( 'autohost:http-transport' );
 var Router = express.Router;
 var expreq = express.request; //jshint ignore:line
 var expres = express.response; //jshint ignore:line
-var middleware, routes, paths, request, config, metrics, middlewareLib;
+var middleware, userMiddleware, routes, paths, request, config, metrics, middlewareLib;
 
 var wrapper;
 
@@ -41,6 +41,9 @@ function createMiddlewareStack() {
 	_.each( middleware, function( m ) {
 		m( router );
 	} );
+	_.each( userMiddleware, function( m ) {
+		m( router );
+	} );
 	return router;
 }
 
@@ -54,6 +57,9 @@ function createAuthMiddlewareStack() {
 			router.use( m.path, m.fn );
 		} );
 	}
+	_.each( userMiddleware, function( m ) {
+		m( router );
+	} );
 	return router;
 }
 
@@ -77,34 +83,11 @@ function initialize() {
 
 	wrapper.static( '/', public );
 
-	// apply user-supplied middleware
 	_.each( middleware, function( m ) { m( wrapper.app ); } );
+	// apply user-supplied middleware
+	_.each( userMiddleware, function( m ) { m( wrapper.app ); } );
 	_.each( routes, function( r ) { r(); } );
 	_.each( paths, function( p ) { p(); } );
-}
-
-// intercept and apply prefix to url if one exists
-function prefix( fn ) {
-	return function() {
-		var args = Array.prototype.slice.call( arguments );
-		if( config.urlPrefix ) {
-			var url = args.shift();
-			var prefixIndex = url.indexOf( config.urlPrefix );
-			var prefix = prefixIndex === 0 ? '' : config.urlPrefix;
-			args.unshift( buildUrl( prefix, url ) );
-		}
-		fn.apply( null, args );
-	};
-}
-
-// Internal query-parsing middleware from express
-// (not exposed, so copied here)
-function queryParser( req, res, next ) { // jshint ignore:line
-	if ( !req.query ) {
-		var val = parseUrl( req ).query;
-		req.query = queryparse( val );
-	}
-	next();
 }
 
 // this might be the worst thing to ever happen to anything ever
@@ -135,6 +118,17 @@ function parseAhead( router, req, done ){
   }
 }
 
+// apply prefix to url if one exists
+function prefix( url ) {
+	if( config.urlPrefix ) {
+		var prefixIndex = url.indexOf( config.urlPrefix );
+		var prefix = prefixIndex === 0 ? '' : config.urlPrefix;
+		return buildUrl( prefix, url );
+	} else {
+		return url;
+	}
+}
+
 function preprocessPathVariables( req, res, next ) {
 	parseAhead( wrapper.app._router, req, function( params ) {
 		var original = req.param;
@@ -146,39 +140,95 @@ function preprocessPathVariables( req, res, next ) {
 	} );
 }
 
+// Internal query-parsing middleware from express
+// (not exposed, so copied here)
+function queryParser( req, res, next ) { // jshint ignore:line
+	if ( !req.query ) {
+		var val = parseUrl( req ).query;
+		req.query = queryparse( val );
+	}
+	next();
+}
+
 function registerMiddleware( filter, callback ) {
-	middleware.push( function( target ) {
+	var fn = function( router ) {
 		debug( 'MIDDLEWARE: %s mounted at %s', ( callback.name || 'anonymous' ), filter );
-		target.use( filter, callback );
-	} );
+		router.use( filter, callback );
+	};
+	if( wrapper.app ) {
+		fn( wrapper.app );
+	}
+	middleware.push( fn );
+}
+
+function registerUserMiddleware( filter, callback ) {
+	var fn = function( router ) {
+		debug( 'MIDDLEWARE: %s mounted at %s', ( callback.name || 'anonymous' ), filter );
+		router.use( filter, callback );
+	};
+	if( wrapper.app ) {
+		fn( wrapper.app );
+	}
+	userMiddleware.push( fn );
 }
 
 function registerRoute( url, verb, callback ) {
 	verb = verb.toLowerCase();
 	verb = verb === 'all' || verb === 'any' ? 'all' : verb;
 	var errors = [ url, verb, 'errors' ].join( '.' );
-	routes.push( function() {
+	var fn = function() {
+		url = prefix( url );
 		debug( 'ROUTE: %s %s -> %s', verb, url, ( callback.name || 'anonymous' ) );
 		wrapper.app[ verb ]( url, function( req, res ) {
-			try {
+			if( config && config.handleRouteErrors ) {
+				try {
+					callback( req, res );
+				} catch ( err ) {
+					metrics.meter( errors ).record();
+					debug( 'ERROR! route: %s %s failed with %s', verb, url, err.stack );
+					res.status( 500 ).send( 'An error occurred at route ' + verb + ' ' + url + '.' );
+				}
+			} else {
 				callback( req, res );
-			} catch ( err ) {
-				metrics.meter( errors ).record();
-				debug( 'ERROR! route: %s %s failed with %s', verb, url, err.stack );
-			}
+			}			
 		} );
-	} );
+	};
+	if( wrapper.app ) {
+		fn( wrapper.app );
+	}
+	routes.push( fn );
 }
 
 function registerStaticPath( url, filePath ) { // jshint ignore:line
-	paths.push( function() {
+	var fn = function() {
+		url = prefix( url );
 		var target = path.resolve( filePath );
 		debug( 'STATIC: %s -> %s', url, target );
 		wrapper.app.use( url, express.static( target ) );
-	} );
+	};
+	paths.push( fn );
+	if( wrapper.app ) {
+		fn();
+	}
 }
 
-function start() {
+function start( cfg, pass ) {
+	config = cfg;
+	wrapper.passport = pass;
+	if( cfg.parseAhead ) {
+		registerMiddleware( '/', preprocessPathVariables );
+	}
+	// if using an auth strategy, move cookie and session middleware before passport middleware
+	// to take advantage of sessions/cookies and avoid authenticating on every request
+	if( pass ) {
+		middlewareLib.useCookies( registerMiddleware );
+		middlewareLib.useSession( registerMiddleware );
+		wrapper.passport.wireupPassport( wrapper );
+	}
+	// prime middleware with defaults
+	middlewareLib.attach( registerMiddleware, pass !== undefined );
+
+	wrapper.app = express();
 	initialize();
 	wrapper.server = http.createServer( wrapper.app );
 	wrapper.server.listen( config.port || 8800 );
@@ -196,41 +246,24 @@ wrapper = {
 	buildUrl: buildUrl,
 	getMiddleware: createMiddlewareStack,
 	getAuthMiddleware: createAuthMiddlewareStack,
-	middleware: registerMiddleware,
-	route: prefix( registerRoute ),
+	middleware: registerUserMiddleware,
+	route: registerRoute,
 	start: start,
-	static: prefix( registerStaticPath ),
+	static: registerStaticPath,
 	server: undefined,
 	app: undefined,
 	passport: undefined,
 	stop: stop
 };
 
-module.exports = function( cfg, req, pass, mw, metric ) {
+module.exports = function( req, mw, metric ) {
 	middleware = [];
+	userMiddleware = [];
 	routes = [];
 	paths = [];
-	config = cfg;
 	metrics = metric;
 	request = req;
-	wrapper.passport = pass;
-	wrapper.app = express();
 	middlewareLib = mw;
 
-	// if using an auth strategy, move cookie and session middleware before passport middleware
-	// to take advantage of sessions/cookies and avoid authenticating on every request
-	if( pass ) {
-		middlewareLib.useCookies( registerMiddleware );
-		middlewareLib.useSession( registerMiddleware );
-		wrapper.passport.wireupPassport( wrapper );
-	}
-
-	if( cfg.parseAhead ) {
-		middleware.push( function( router ) {
-			router.use( preprocessPathVariables );
-		} );
-	}
-	// prime middleware with defaults
-	middlewareLib.attach( registerMiddleware, pass !== undefined );
 	return wrapper;
 };
