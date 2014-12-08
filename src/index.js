@@ -1,6 +1,6 @@
 var path = require( 'path' );
 var metrics = require( 'cluster-metrics' );
-var request = require( 'request' ).defaults( { jar: true } );
+var request = require( 'request' );
 var when = require( 'when' );
 var passportFn = require( './http/passport.js' );
 var httpFn = require( './http/http.js' );
