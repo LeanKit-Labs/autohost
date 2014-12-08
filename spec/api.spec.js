@@ -9,8 +9,8 @@ var getAdapter = function() {
 		resource: function( resource ) {
 			this.resources.push( resource );
 			var meta = { routes: {} };
-			_.map( resource.actions, function( action ) {
-				meta.routes[ action.alias ] = { verb: action.verb, url: action.url };
+			_.map( resource.actions, function( action, actionName ) {
+				meta.routes[ actionName ] = { method: action.method, url: undefined };
 			} );
 			return meta;
 		},
@@ -41,61 +41,8 @@ describe( 'when loading from a bad path', function() {
 			} );
 	} );
 
-	it( 'should still load _autohost resource actions', function() {
-		result._autohost.routes.should.eql( { 
-			api: { verb: 'get', url: undefined },
-			resources: { verb: 'get', url: undefined },
-			actions: { verb: 'get', url: undefined },
-			'change-password': { verb: 'patch', url: undefined },
-			'connected-sockets': { verb: 'get', url: undefined },
-			'create-token': { verb: 'post', url: undefined },
-			'destroy-token': { verb: 'delete', url: undefined },
-			'list-users': { verb: 'get', url: undefined },
-			'list-roles': { verb: 'get', url: undefined },
-			'list-user-roles': { verb: 'get', url: undefined },
-			'list-action-roles': { verb: 'get', url: undefined },
-			'list-tokens': { verb: 'get', url: undefined },
-			'add-action-roles': { verb: 'patch', url: undefined },
-			'remove-action-roles': { verb: 'delete', url: undefined },
-			'add-user-roles': { verb: 'patch', url: undefined },
-			'remove-user-roles': { verb: 'delete', url: undefined },
-			'add-role': { verb: 'post', url: undefined },
-			'remove-role': { verb: 'delete', url: undefined },
-			'create-user': { verb: 'post', url: undefined },
-
-			'enable-user': { verb: 'put', url: undefined },
-			'disable-user': { verb: 'delete', url: undefined },
-			metrics: { verb: 'get', url: undefined } 
-		} );
-	} );
-
-	it( 'should produce correctly formatted action list', function() {
-		api.actionList.should.eql( 
-		{ _autohost: [
-			'_autohost.api',
-			'_autohost.resources',
-			'_autohost.actions',
-			'_autohost.connected-sockets',
-			'_autohost.list-users',
-			'_autohost.list-roles',
-			'_autohost.list-user-roles',
-			'_autohost.list-action-roles',
-			'_autohost.add-action-roles',
-			'_autohost.remove-action-roles',
-			'_autohost.add-user-roles',
-			'_autohost.remove-user-roles',
-			'_autohost.add-role',
-			'_autohost.remove-role',
-			'_autohost.create-user',
-			'_autohost.change-password',
-			'_autohost.create-token',
-			'_autohost.destroy-token',
-			'_autohost.list-tokens',
-			'_autohost.enable-user',
-			'_autohost.disable-user',
-			'_autohost.metrics'
-			]
-		} );
+	it( 'should result in an empty list', function() {
+		should( result ).eql( {} );
 	} );
 
 	after( function() {
@@ -106,6 +53,7 @@ describe( 'when loading from a bad path', function() {
 describe( 'when loading from a good path', function() {
 	var result,
 		api,
+		err,
 		host = { actions: undefined, fount: fount },
 		adapter = getAdapter();
 
@@ -118,7 +66,8 @@ describe( 'when loading from a good path', function() {
 		api = require( '../src/api.js' )( host, { modules: [ '../spec/misc/anresource.js' ] } );
 		api.addAdapter( adapter );
 		api.start( './spec/resource' )
-			.then( null, function( /* err */ ) {
+			.then( null, function( error ) {
+				err = error;
 				return [];
 			} )
 			.then( function( list ) {
@@ -127,77 +76,34 @@ describe( 'when loading from a good path', function() {
 			} );
 	} );
 
+	it( 'should not result in an error', function() {
+		should( err ).not.exist; // jshint ignore:line
+	} );
+
 	it( 'should load all resources and actions', function() {
 		result.one.routes.should.eql( {
-			a: { verb: undefined, url: undefined },
-			b: { verb: undefined, url: undefined }
+			a: { method: undefined, url: undefined },
+			b: { method: undefined, url: undefined }
 		} );
 
 		result.two.routes.should.eql( {
-			hello: { verb: undefined, url: undefined },
-			goodbye: { verb: undefined, url: undefined }
+			hello: { method: undefined, url: undefined },
+			goodbye: { method: undefined, url: undefined }
 		} );
 
 		result.three.routes.should.eql( {
-			c: { verb: undefined, url: undefined },
-			d: { verb: undefined, url: undefined }
-		} );
-
-		result._autohost.routes.should.eql( { 
-			api: { verb: 'get', url: undefined },
-			resources: { verb: 'get', url: undefined },
-			actions: { verb: 'get', url: undefined },
-			'change-password': { verb: 'patch', url: undefined },
-			'connected-sockets': { verb: 'get', url: undefined },
-			'create-token': { verb: 'post', url: undefined },
-			'destroy-token': { verb: 'delete', url: undefined },
-			'list-users': { verb: 'get', url: undefined },
-			'list-roles': { verb: 'get', url: undefined },
-			'list-user-roles': { verb: 'get', url: undefined },
-			'list-action-roles': { verb: 'get', url: undefined },
-			'list-tokens': { verb: 'get', url: undefined },
-			'add-action-roles': { verb: 'patch', url: undefined },
-			'remove-action-roles': { verb: 'delete', url: undefined },
-			'add-user-roles': { verb: 'patch', url: undefined },
-			'remove-user-roles': { verb: 'delete', url: undefined },
-			'add-role': { verb: 'post', url: undefined },
-			'remove-role': { verb: 'delete', url: undefined },
-			'create-user': { verb: 'post', url: undefined },
-			'enable-user': { verb: 'put', url: undefined },
-			'disable-user': { verb: 'delete', url: undefined },
-			metrics: { verb: 'get', url: undefined } 
+			c: { method: undefined, url: undefined },
+			d: { method: undefined, url: undefined }
 		} );
 	} );
 
 	it( 'should produce correctly formatted action list', function() {
 		api.actionList.should.eql( 
-		{ _autohost: [
-			'_autohost.api',
-			'_autohost.resources',
-			'_autohost.actions',
-			'_autohost.connected-sockets',
-			'_autohost.list-users',
-			'_autohost.list-roles',
-			'_autohost.list-user-roles',
-			'_autohost.list-action-roles',
-			'_autohost.add-action-roles',
-			'_autohost.remove-action-roles',
-			'_autohost.add-user-roles',
-			'_autohost.remove-user-roles',
-			'_autohost.add-role',
-			'_autohost.remove-role',
-			'_autohost.create-user',
-			'_autohost.change-password',
-			'_autohost.create-token',
-			'_autohost.destroy-token',
-			'_autohost.list-tokens',
-			'_autohost.enable-user',
-			'_autohost.disable-user',
-			'_autohost.metrics'
-			],
+		{ 
 			one: [ 'one.a', 'one.b' ],
 			two: [ 'two.hello', 'two.goodbye' ],
-			three: [ 'three.c', 'three.d' ]
+			three: [ 'three.c', 'three.d' ],
+			four: [ 'four.e', 'four.f' ],
 		} );
 	} );
 

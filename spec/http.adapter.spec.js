@@ -23,29 +23,39 @@ describe( 'with http adapter', function() {
 			userRoles( 'userman', [] );
 			actionRoles( 'test.call', [] );
 			actionRoles( 'test.forward', [] );
+			actionRoles( 'test.echo', [] );
 		};
 
 	before( function() {
 		authProvider.tokens = { 'blorp': 'userman' };
 		authProvider.users = { 'userman': { name: 'userman', password: 'hi', roles: [] } };
-		httpAdapter.action( { name: 'test' }, {
-			alias: 'call',
-			verb: 'get',
-			path: '/call/:one/:two',
+		httpAdapter.action( { name: 'test' }, 'call', {
+			method: 'get',
+			url: '/test/call/:one/:two',
 			handle: function( env ) {
 				env.reply( { data: 'ta-da!' } );
 			}
 		}, { routes: {} } );
-		httpAdapter.action( { name: 'test' }, {
-			alias: 'forward',
-			verb: 'get',
-			path: '/forward/:one/:two',
+		httpAdapter.action( { name: 'test' }, 'forward', {
+			method: 'get',
+			url: '/test/forward/:one/:two',
 			handle: function( env ) {
 				env.forwardTo( {
 					url: 'http://userman:herp@localhost:88988/api/test/call/10/20'
 				} );
 			}
 		}, { routes: {} } );
+		httpAdapter.action( { name: 'test' }, 'echo', {
+			method: 'get',
+			url: /.*\/echo/,
+			handle: function( env ) {
+				env.reply( { data: 'echo-echo-echo-echo-echo-o-o-o-o-o-o-oooooo' } );
+			}
+		}, { routes: {} } );
+		http.middleware( "/", function( req, res, next ) {
+			req.context.noSoupForYou = req.query.deny;
+			next();
+		} );
 		http.start();
 	} );
 
@@ -93,6 +103,59 @@ describe( 'with http adapter', function() {
 
 		it( 'should return action response', function() {
 			result.should.equal( 'ta-da!' );
+		} );
+
+		after( cleanup );
+	} );
+
+	describe( 'when making a request with adequate permissions and request context', function() {
+		var result;
+
+		before( function( done ) {
+			actionRoles( 'test.call', [ 'guest' ] );
+			userRoles( 'userman', [ 'guest' ] );
+			requestor.get( {
+				url: 'http://localhost:88988/api/test/call/10/20?deny=true',
+				headers: {
+					'Authorization': 'Bearer blorp'
+				}
+			}, function( err, resp ) {
+				result = resp;
+				done();
+			} );
+		} );
+
+		it( 'should tell user to take a hike', function() {
+			result.body.should.equal( 'User lacks sufficient permissions' );
+		} );
+
+		it( 'should return 403', function() {
+			result.statusCode.should.equal( 403 );
+		} );
+
+		after( cleanup );
+	} );
+	
+	describe( 'when making a request to a pattern route with adequate permissions', function() {
+		var result;
+
+		before( function( done ) {
+			actionRoles( 'test.call', [ 'guest' ] );
+			userRoles( 'userman', [ 'guest' ] );
+			requestor.get( {
+				url: 'http://localhost:88988/api/test/echo/10/20',
+				headers: {
+					'Authorization': 'Bearer blorp'
+				}
+			}, function( err, resp ) {
+				result = resp;
+				result = new Buffer( resp.body, 'utf-8' ).toString();
+				done();
+			} );
+		} );
+
+		it( 'should return action response', function() {
+			result.should.equal( 'echo-echo-echo-echo-echo-o-o-o-o-o-o-oooooo' );
 		} );
 
 		after( cleanup );

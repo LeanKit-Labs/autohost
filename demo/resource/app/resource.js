@@ -1,35 +1,32 @@
 module.exports = function() {
-	return {
+	return [ {
 		name: 'app',
 		resources: 'public',
-		actions: [
-			{
-				alias: 'echo',
-				verb: 'post',
+		actions: {
+			echo: {
+				method: 'post',
 				topic: 'echo',
-				path: '/echo',
+				url: '/echo',
 				handle: function( envelope ) {
 					console.log( 'got', envelope.data );
 					envelope.reply( { data: envelope.data } );
 				}
 			},
-			{
-				alias: 'get-session',
-				verb: 'get',
-				path: '/session',
+			'get-session': {
+				method: 'get',
+				url: '/session',
 				handle: function( envelope ) {
 					envelope.reply( { data: envelope.session } );
 				}
 			},
-			{
-				alias: 'add-session',
-				verb: 'put',
-				path: '/session',
+			'add-session': {
+				method: 'put',
+				url: '/session',
 				handle: function( envelope ) {
 					envelope.session[ envelope.data.key ] = envelope.data.value;
 					envelope.reply( { data: 'COOL BEANS!' } );
 				}
 			}
-		]
-	};
+		}
+	} ];
 };

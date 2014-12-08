@@ -42,10 +42,10 @@ Both the socket and request objects (and therefore envelopes in your resource's 
 The follow methods are *required* by any auth provider library in order for autohost to function correctly. These functions will have a definite impact on the runtime performance of your service. Please consider the performance implications when building providers.
 
  * authenticate: function( req, res, next ) {} // called as middleware via Passport
- * checkPermission: function( user, action ) {} // return promised boolean to indicate if user can invoke action
+ * checkPermission: function( user, action, context ) {} // return promised boolean to indicate if user can invoke action
  * deserializeUser: function( user, done ) {} // deserialize user record from session store
  * getActionRoles: function( actionname ) {} // return a promised array of the action's roles
- * getUserRoles: function( username ) {} // return a promised array of the user's roles
+ * getUserRoles: function( user ) {} // return a promised array of the user's roles
  * hasUsers: function() {} // return a promised boolean to indicate if any users exist in the system
  * initPassport: function( passport ) {} // initialize passport here - autohost passes in its instance
  * serializeUser: function( user, done ) {} // serialize user record for session store
@@ -70,7 +70,7 @@ function authenticate( req, res, next ) {
 }
 ```
 
-### checkPermission( user, action ) -> promise( boolean )
+### checkPermission( user, action, [context] ) -> promise( boolean )
 User and action can be either the name of the entity OR a cached representation with the roles already loaded.
 Should return true IF:
  * action's roles property is empty (no role is required to perform the action)
@@ -82,11 +82,10 @@ Should return false IF:
 
 ```javascript
 // inspects the arguments passed and determines whether or not to load the roles for either from a backing store
-function checkPermission( user, action ) {
+function checkPermission( user, action, context ) {
 	var actionName = action.roles ? action.name : action,
 		actionRoles = _.isEmpty( action.roles ) ? db.getActionRoles( actionName ) : action.roles,
-		userName = user.name ? user.name : user,
-		userRoles = _.isEmpty( user.roles ) ? db.getUserRoles( userName ) : user.roles;
+		userRoles = _.isEmpty( user.roles ) ? db.getUserRoles( user ) : user.roles;
 	if( user.roles && user.disabled ) {
 		userRoles = [];
 	}
@@ -99,6 +98,15 @@ function userCan( userRoles, actionRoles ) {
 }
 ```
 
+> Note
+
+> The context parameter gets set from the envelope.context (which is copied from express's req.context). This allows
+> you to build up contextual data via middleware in your application that an auth library can use to determine
+> when a request is contextually invalid.
+
+> Example: record level security - middleware could attach record level information to req.context that the
+> auth lib can then use to determine if the request is valid for that record.
+
 ### deserializeUser( user, done ) -> void
 The inverse of `serializeUser`. Called from passport in order to take a raw data format and get the user record. The done callback follows the typical Node ( error, result ) format.
 
@@ -109,8 +117,8 @@ function deserializeUser( user, done ) { done( null, JSON.parse( user ) ); };
 ### getActionRoles( actionname ) -> promise( string array )
 This takes the name of an action and returns a promise that should resolve to the list of roles for the action.
 
-### getUserRoles( username ) -> promise( string array )
-This takes the name of a user and returns a promise that should resolve to the list of roles for the user.
+### getUserRoles( user ) -> promise( string array )
+This takes the user and returns a promise that should resolve to the list of roles for the user.
 
 ### hasUsers() -> promise( boolean )
 Autohost will actually skip authentication middleware if no users exist in the database and assign the user record { name: 'anonymous', roles: [] } to all requests and sockets. This is to prevent weird situations where new services under development lock you out.

@@ -9,18 +9,16 @@ var config = {
 		socketio: true,
 		websocket: true
 	};
-// var authProvider = require( './auth/mock.js' )( config );
-// var passport = require( '../src/http/passport.js' )( config, authProvider, metrics );
-// var middleware = require( '../src/http/middleware.js' )( config, metrics );
-// var http = require( '../src/http/http.js' )( config, requestor, passport, middleware, metrics );
-// var socket = require( '../src/websocket/socket.js' )( config, http, middleware );
-// var socketAdapter = require( '../src/websocket/adapter.js' )( config, authProvider, socket, metrics );
 var authProvider, passport, middleware, http, socket, socketAdapter;
 var actionRoles = function( action, roles ) {
 		authProvider.actions[ action ] = { roles: roles };
 	};
 var userRoles = function( user, roles ) {
-		authProvider.users[ user ].roles = roles;
+		if( authProvider.users[ user ] ) {
+			authProvider.users[ user ].roles = roles;
+		} else {
+			authProvider.users[ user ] = { roles: roles };
+		}		
 	};
 
 describe( 'with socket adapter', function() {
@@ -62,9 +60,8 @@ describe( 'with socket adapter', function() {
 			};
 			next();
 		} );
-		socketAdapter.action( { name: 'test' }, {
-			alias: 'call',
-			verb: 'get',
+		socketAdapter.action( { name: 'test' }, 'call', {
+			method: 'get',
 			topic: 'call',
 			handle: function( env ) {
 				env.reply( { data: { youSed: env.data.msg } } );
@@ -72,7 +69,7 @@ describe( 'with socket adapter', function() {
 		}, { topics: {} } );
 		http.start();
 		socket.start( passport );
-		ioClient = io( 'http://localhost:88988', { query: 'token=blorp' } );
+		ioClient = io( 'http://localhost:88988' );
 		ioClient.once( 'reconnect', check );
 		ioClient.once( 'connect', check );
 		ioClient.io.open();
@@ -97,7 +94,6 @@ describe( 'with socket adapter', function() {
 			'http://localhost:88988/websocket',
 			'echo-protocol',
 			'console',
-			// { 'Authorization': 'Basic dXNlcm1hbjpoaQ==' }
 			{ 'Authorization': 'Bearer blorp' }
 		);
 		wsClient.on( 'connect', function( cs ) {

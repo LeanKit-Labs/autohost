@@ -1,0 +1,53 @@
+## 0.3.0
+Primary motivation here is to begin work on a version of autohost that will work well with a hypermedia library ( [hyped](https://github.com/leankit-labs/hyped) ). This is a breaking change because of several structural and naming changes to how resources get modeled.
+
+### prerelease 11
+ * Added opt-in feature that pre-parses path variables for access within middelware. This could be terrible.
+ * Pass req.context to auth provider getUserRoles when calling from passport middleware.
+
+### prerelease 10
+Pass user object to auth libs vs. user.name.
+
+### prerelease 9
+Fix edge case causing passport middleware to re-authenticate users already in the session if the user object didn't have a `name` property.
+
+### prerelease 8
+ * Remove the _autohost API/UI
+ * Pass request context to checkPermissions call to enable contextual authorization
+
+### prerelease 7
+ * Add support for returning multiple resources from a single resource file
+ * Add support for a resource-level URL prefix
+
+### prerelease 6
+Bug fix causing regular expression URLs to get incorrectly prefixed with '/' when no api or url prefix was specified.
+
+### prerelease 5
+Bug fix for regular expression urls in the resource action. Add feature to prefix regular expressions with url and api prefixes.
+
+### prerelease 4
+Bug fix to prevent duplication of url and/or api prefixes when using a urlStrategy (as with hyped).
+
+### prerelease 3
+This prerelease changes the timing of how autohost loads resources and when they're passed on to adapters. This was done because of how hyped needs to have all resources available when constructing urls for child resources: the parent resource must be available in order to get its self url.
+
+These changes allow hyped style period delimited path variables to be used in the resource definition while handing off a camel-case version of the variable to express (since it doesn't grok period delimited path variables).
+
+ * Add ability to supply url generation strategy (for use with hyped)
+ * Refactor resource loading so that all resources are loaded before being passed on to the adapters
+
+### prerelease 2
+
+Eliminate "feature" that prefixes action URLs with resource name - ultimately a bit of a dead end...
+
+### prerelease 1
+
+* Redesign of resource format
+* Addition of extension points
+* Init now returns a promise with a list of loaded resources
+* Add ability to disable built-in options middleware
+
+
+
+## 0.2.0
+Rewritten from scratch to address several design flaws and lack of testability in the library. New design focuses on a general approach to resource handling and then passing off loaded resources to various transport adapters which then determine how to route incoming requests/messages to the correct resource/action.

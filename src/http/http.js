@@ -2,13 +2,13 @@ var path = require( 'path' );
 var _ = require( 'lodash' );
 var parseUrl = require( 'parseurl' );
 var qs = require( 'qs' );
+var queryparse = qs.parse;
 var express = require( 'express' );
 var http = require( 'http' );
 var debug = require( 'debug' )( 'autohost:http-transport' );
 var Router = express.Router;
 var expreq = express.request; //jshint ignore:line
 var expres = express.response; //jshint ignore:line
-var queryparse = qs.parse;
 var middleware, routes, paths, request, config, metrics, middlewareLib;
 
 var wrapper;
@@ -30,7 +30,7 @@ function buildUrl() {
 		}
 		idx ++;
 	}
-	return '/' + cleaned.join( '/' );
+	return cleaned.length ? '/' + cleaned.join( '/' ) : '';
 }
 
 function createMiddlewareStack() {
@@ -45,7 +45,7 @@ function createMiddlewareStack() {
 }
 
 function createAuthMiddlewareStack() {
-	var router = new Router().use( expressInit );
+	var router = new Router().use( expressInit ).use( queryParser );
 	_.each( middleware, function( m ) {
 		m( router );
 	} );
@@ -61,6 +61,7 @@ function createAuthMiddlewareStack() {
 // the original approach breaks engine-io
 function expressInit( req, res, next ) { // jshint ignore:line
     req.next = next;
+    req.context = {};
     // patching this according to how express does it
     /* jshint ignore:start */
     req.__proto__ = expreq;
@@ -70,8 +71,8 @@ function expressInit( req, res, next ) { // jshint ignore:line
 }
 
 function initialize() {
-	var cwd = process.cwd(),
-		public = path.resolve( cwd, ( config.static || './public' ) );
+	var cwd = process.cwd();
+	var public = path.resolve( cwd, ( config.static || './public' ) );
 	config.tmp = path.resolve( cwd, ( config.temp || './tmp' ) );
 
 	wrapper.static( '/', public );
@@ -88,7 +89,9 @@ function prefix( fn ) {
 		var args = Array.prototype.slice.call( arguments );
 		if( config.urlPrefix ) {
 			var url = args.shift();
-			args.unshift( buildUrl( config.urlPrefix, url ) );
+			var prefixIndex = url.indexOf( config.urlPrefix );
+			var prefix = prefixIndex === 0 ? '' : config.urlPrefix;
+			args.unshift( buildUrl( prefix, url ) );
 		}
 		fn.apply( null, args );
 	};
@@ -102,6 +105,45 @@ function queryParser( req, res, next ) { // jshint ignore:line
 		req.query = queryparse( val );
 	}
 	next();
+}
+
+// this might be the worst thing to ever happen to anything ever
+// this is adapted directly from express layer.match
+function parseAhead( router, req, done ){
+  var idx = 0;
+  var stack = router.stack;
+  var params = {};
+  var method = req.method ? req.method.toLowerCase() : undefined;
+  next();
+
+  function next() {
+	var layer = stack[idx++];
+	if (!layer) {
+		// strip dangling query params
+		params = _.transform( params, function( acc, v, k ) { 
+			acc[ k ] = v.split( '?' )[ 0 ]; return acc; 
+		}, {} );
+		return done( params );
+	}
+
+	if (layer.method && layer.method !== method) {
+		return next();
+	}
+  	layer.match( req.originalUrl );
+  	params = _.merge( params, layer.params );
+  	next();
+  }
+}
+
+function preprocessPathVariables( req, res, next ) {
+	parseAhead( wrapper.app._router, req, function( params ) {
+		var original = req.param;
+		req.preparams = params;
+		req.param = function( name, dflt ) {
+			return params[ name ] || original( name, dflt ); 
+		};
+		next();
+	} );
 }
 
 function registerMiddleware( filter, callback ) {
@@ -174,13 +216,19 @@ module.exports = function( cfg, req, pass, mw, metric ) {
 	wrapper.passport = pass;
 	wrapper.app = express();
 	middlewareLib = mw;
-	
+
 	// if using an auth strategy, move cookie and session middleware before passport middleware
 	// to take advantage of sessions/cookies and avoid authenticating on every request
 	if( pass ) {
 		middlewareLib.useCookies( registerMiddleware );
 		middlewareLib.useSession( registerMiddleware );
 		wrapper.passport.wireupPassport( wrapper );
+	}
+
+	if( cfg.parseAhead ) {
+		middleware.push( function( router ) {
+			router.use( preprocessPathVariables );
+		} );
 	}
 	// prime middleware with defaults
 	middlewareLib.attach( registerMiddleware, pass !== undefined );
