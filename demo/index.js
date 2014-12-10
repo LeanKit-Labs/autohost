@@ -20,7 +20,7 @@ try {
 		sessionId: 'myapp.sid',
 		sessionSecret: 'youdontevenknow',
 		sessionStore: store,
-	}, 
+	},
 	authProvider );
 	
 	

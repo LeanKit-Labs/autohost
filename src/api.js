@@ -200,10 +200,10 @@ function start( resourcePath, auth ) { //jshint ignore:line
 			if( auth ) {
 				auth.updateActions( wrapper.actionList )
 					.then( function() {
-						startAdapters();
+						startAdapters( auth );
 					} );
 			} else {
-				startAdapters();
+				startAdapters( auth );
 			}
 			return meta || {};
 		} );
@@ -215,9 +215,9 @@ function stop() {
 	} );
 }
 
-function startAdapters() { //jshint ignore:line
+function startAdapters( auth ) { //jshint ignore:line
 	_.each( adapters, function( adapter ) {
-		adapter.start();
+		adapter.start( config, auth );
 	} );
 }
 

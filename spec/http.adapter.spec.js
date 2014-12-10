@@ -8,7 +8,8 @@ var config = {
 	};
 var authProvider = require( './auth/mock.js' )( config );
 var passport = require( '../src/http/passport.js' )( config, authProvider, metrics );
-var middleware = require( '../src/http/middleware.js' )( config, metrics );
+var middleware = require( '../src/http/middleware.js' )( metrics );
+middleware.configure( config );
 var http = require( '../src/http/http.js' )( requestor, middleware, metrics );
 var httpAdapter = require( '../src/http/adapter.js' )( config, authProvider, http, requestor, metrics );
 var actionRoles = function( action, roles ) {

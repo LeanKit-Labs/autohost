@@ -18,7 +18,8 @@ describe( 'with websocket and bad credentials', function() {
 	before( function( done ) {
 		authProvider = require( '../auth/mock.js' )( config );
 		passport = require( '../../src/http/passport.js' )( config, authProvider, metrics );
-		middleware = require( '../../src/http/middleware.js' )( config, metrics );
+		middleware = require( '../../src/http/middleware.js' )( metrics );
+		middleware.configure( config );
 		http = require( '../../src/http/http.js' )( requestor, middleware, metrics );
 		socket = require( '../../src/websocket/socket.js' )( config, http, middleware );
 

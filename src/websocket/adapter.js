@@ -1,12 +1,12 @@
-var config,
-	authStrategy,
-	socket,
-	metrics,
-	SocketEnvelope;
-
+var config;
+var authStrategy;
+var socket;
+var metrics;
+var SocketEnvelope;
 var _ = require( 'lodash' );
 var debug = require( 'debug' )( 'autohost:websocket-adapter' );
 var wrapper = {
+	name: 'http',
 	action: wireupAction,
 	resource: wireupResource,
 	start: start,

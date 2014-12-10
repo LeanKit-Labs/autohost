@@ -2,13 +2,16 @@ var path = require( 'path' );
 var _ = require( 'lodash' );
 var regex = require( './regex.js' );
 var debug = require( 'debug' )( 'autohost:http-adapter' );
+var passportFn = require( './passport.js' );
 var HttpEnvelope;
 var http;
 var config;
 var metrics;
 var authStrategy;
+var passport;
 
 var wrapper = {
+	name: 'http',
 	action: wireupAction,
 	resource: wireupResource,
 	start: start,
@@ -67,7 +70,7 @@ function hasPrefix( url ) {
 }
 
 function start() {
-	http.start( config, authStrategy );
+	http.start( config, passport );
 }
 
 function stop() {
@@ -120,6 +123,7 @@ function wireupAction( resource, actionName, action, meta, resources ) {
 module.exports = function( cfg, auth, httpLib, req, meter ) {
 	config = cfg;
 	authStrategy = auth;
+	passport = passportFn( cfg, auth, meter );
 	http = httpLib;
 	metrics = meter;
 	HttpEnvelope = require( './httpEnvelope.js' )( req );

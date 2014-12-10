@@ -2,17 +2,17 @@ var path = require( 'path' );
 var metrics = require( 'cluster-metrics' );
 var request = require( 'request' );
 var when = require( 'when' );
-var passportFn = require( './http/passport.js' );
 var httpFn = require( './http/http.js' );
 var httpAdapterFn = require( './http/adapter.js' );
 var socketFn = require( './websocket/socket.js' );
 var socketAdapterFn = require( './websocket/adapter.js' );
-var middlewareLib = require( '../src/http/middleware.js' );
+var middlewareLib = require( './http/middleware.js' );
 var postal = require( 'postal' );
 var eventChannel = postal.channel( 'events' );
 var internalFount = require( 'fount' );
-var passport, httpAdapter, socketAdapter, middleware;
+var httpAdapter, socketAdapter;
 var initialized, api;
+var middleware = middlewareLib( metrics );
 var wrapper = {
 	 	actions: undefined,
 	 	auth: undefined,
@@ -37,7 +37,7 @@ function initialize( cfg, authProvider, fount ) { //jshint ignore:line
 	} else {
 		wrapper.config = cfg;
 		wrapper.stop = api.stop;
-		middleware = middlewareLib( cfg, metrics );
+		middleware.configure( cfg );
 		if( when.isPromiseLike( authProvider ) ) {
 			return authProvider
 				.then( function( result ) {
@@ -58,10 +58,6 @@ function onEvent( topic, handle ) {
 function setup( authProvider ) { //jshint ignore:line
 	var config = wrapper.config;
 	var metrics = wrapper.metrics;
-
-	if( authProvider ) {
-		passport = passportFn( config, authProvider, metrics );
-	}
 
 	httpAdapter = httpAdapterFn( config, authProvider, wrapper.http, request, metrics );
 	api.addAdapter( httpAdapter );

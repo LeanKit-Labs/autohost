@@ -30,7 +30,8 @@ describe( 'HTTP Module', function() {
 	before( function() {
 		authProvider = require( './auth/mock.js' )( config );
 		passport = require( '../src/http/passport.js' )( config, authProvider, metrics );
-		middleware = require( '../src/http/middleware.js' )( config, metrics );
+		middleware = require( '../src/http/middleware.js' )( metrics );
+		middleware.configure( config );
 		http = require( '../src/http/http.js' )( requestor, middleware, metrics );
 
 		authProvider.users = {};
@@ -204,7 +205,8 @@ describe( 'HTTP Routing Precedence', function() {
 			port: port,
 			static: './spec/public'
 		};
-		middleware = require( '../src/http/middleware.js' )( config, metrics );
+		middleware = require( '../src/http/middleware.js' )( metrics );
+		middleware.configure( config );
 		http = require( '../src/http/http.js' )(requestor, middleware, metrics );
 		http.middleware( '/thing', function( req, res, next ) {
 			next();
