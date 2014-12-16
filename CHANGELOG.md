@@ -1,6 +1,13 @@
 ## 0.3.0
 Primary motivation here is to begin work on a version of autohost that will work well with a hypermedia library ( [hyped](https://github.com/leankit-labs/hyped) ). This is a breaking change because of several structural and naming changes to how resources get modeled.
 
+### prerelease 14
+ * Bug fix - auth middleware shouldn't get added to sockets twice
+ * Bug fix - user middleware should always come after auth middleware
+ * Simplify passport and http module interaction
+ * Fix broken socket.io authentication in ws.adapter.spec
+ * Add istanbul to gulpfile
+
 ### prerelease 13
 Bug fixes. Bug fixes everywhere:
  * Middleware wasn't correctly supporting 'eager' route definition

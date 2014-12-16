@@ -54,13 +54,6 @@ describe( 'with socket adapter', function() {
 			},
 			io = require( 'socket.io-client' ),
 			WebSocketClient = require('websocket').client;
-
-		http.middleware( '/', function( req, res, next ) {
-			req.user = {
-				roles: userRoles
-			};
-			next();
-		} );
 		socketAdapter.action( { name: 'test' }, 'call', {
 			method: 'get',
 			topic: 'call',
@@ -70,7 +63,7 @@ describe( 'with socket adapter', function() {
 		}, { topics: {} } );
 		http.start( config, passport );
 		socket.start( passport );
-		ioClient = io( 'http://localhost:88988' );
+		ioClient = io( 'http://localhost:88988?token=blorp' );
 		ioClient.once( 'reconnect', check );
 		ioClient.once( 'connect', check );
 		ioClient.io.open();

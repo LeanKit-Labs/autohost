@@ -52,11 +52,6 @@ function createAuthMiddlewareStack() {
 	_.each( middleware, function( m ) {
 		m( router );
 	} );
-	if( wrapper.passport ) {
-		_.each( wrapper.passport.getMiddleware( '/' ), function( m ) {
-			router.use( m.path, m.fn );
-		} );
-	}
 	_.each( userMiddleware, function( m ) {
 		m( router );
 	} );
@@ -223,7 +218,9 @@ function start( cfg, pass ) {
 	if( pass ) {
 		middlewareLib.useCookies( registerMiddleware );
 		middlewareLib.useSession( registerMiddleware );
-		wrapper.passport.wireupPassport( wrapper );
+		_.each( wrapper.passport.getMiddleware( '/' ), function( m ) {
+			registerMiddleware( m.path, m.fn );
+		} );
 	}
 	// prime middleware with defaults
 	middlewareLib.attach( registerMiddleware, pass !== undefined );

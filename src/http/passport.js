@@ -14,24 +14,6 @@ var authProvider;
 var anonPaths;
 var metrics;
 
-function addPassport( http ) {
-
-	http.middleware( '/', passportInitialize );
-	http.middleware( '/', passportSession );
-	
-	_.each( anonPaths, function( pattern ) {
-		http.middleware( pattern, skipAuthentication );
-	} );
-	
-	http.middleware( '/', whenNoUsers );
-	http.middleware( '/', authConditionally );
-	http.middleware( '/', getRoles );
-
-	passport.serializeUser( authProvider.serializeUser );
-	passport.deserializeUser( authProvider.deserializeUser );
-	debug( 'passport configured' );
-}
-
 function authConditionally( req, res, next ) { // jshint ignore:line
 	// if previous middleware has said to skip auth OR
 	// a user was attached from a session, skip authenticating
@@ -147,6 +129,8 @@ module.exports = function( config, authPlugin, meter ) {
 	metrics = meter;
 	authProvider = authPlugin;
 	authProvider.initPassport( passport );
+	passport.serializeUser( authProvider.serializeUser );
+	passport.deserializeUser( authProvider.deserializeUser );
 	if( config.anonymous ) {
 		anonPaths = _.isArray( config.anonymous ) ? config.anonymous : [ config.anonymous ];
 	} else {
@@ -157,7 +141,6 @@ module.exports = function( config, authPlugin, meter ) {
 		getMiddleware: getAuthMiddleware,
 		getSocketRoles: getSocketRoles,
 		hasUsers: userCountCheck,
-		resetUserCheck: resetUserCount,
-		wireupPassport: addPassport
+		resetUserCheck: resetUserCount
 	};
 };

@@ -1,6 +1,6 @@
 {
   "name": "autohost",
-  "version": "0.3.0-13",
+  "version": "0.3.0-14",
   "description": "Resource driven, transport agnostic host",
   "main": "src/index.js",
   "dependencies": {
@@ -29,8 +29,10 @@
     "autohost-riak-auth": "~0.1.0",
     "connect-redis": "^2.1.0",
     "gulp": "^3.8.6",
+    "gulp-istanbul": "^0.5.0",
     "gulp-mocha": "^0.5.2",
     "gulp-mocha-phantomjs": "^0.4.0",
+    "open": "0.0.5",
     "passport-http": "^0.2.2",
     "passport-http-bearer": "^1.0.1",
     "passport-strategy": "^1.0.0",
