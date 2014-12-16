@@ -9,11 +9,6 @@ var config = {
 		socketio: true,
 		websocket: true
 	};
-// var authProvider = require( '../auth/mock.js' )( config );
-// var passport = require( '../../src/http/passport.js' )( config, authProvider, metrics );
-// var middleware = require( '../../src/http/middleware.js' )( config, metrics );
-// var http = require( '../../src/http/http.js' )( config, requestor, passport, middleware, metrics );
-// var socket = require( '../../src/websocket/socket.js' )( config, http, middleware );
 
 var authProvider, passport, middleware, http, socket;
 
@@ -24,13 +19,14 @@ describe( 'with failed socket.io credentials', function() {
 	before( function( done ) {
 		authProvider = require( '../auth/mock.js' )( config );
 		passport = require( '../../src/http/passport.js' )( config, authProvider, metrics );
-		middleware = require( '../../src/http/middleware.js' )( config, metrics );
-		http = require( '../../src/http/http.js' )( config, requestor, passport, middleware, metrics );
+		middleware = require( '../../src/http/middleware.js' )( metrics );
+		middleware.configure( config );
+		http = require( '../../src/http/http.js' )( requestor, middleware, metrics );
 		socket = require( '../../src/websocket/socket.js' )( config, http, middleware );
 
 		authProvider.users[ 'test' ] = { user: 'torpald' };
 
-		http.start();
+		http.start( config, passport );
 		socket.start( passport );
 		var io = require( 'socket.io-client' );
 		client = io( 'http://localhost:88988', { query: 'token=blorp' } );

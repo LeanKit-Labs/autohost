@@ -9,18 +9,16 @@ var config = {
 		socketio: true,
 		websocket: true
 	};
-// var authProvider = require( './auth/mock.js' )( config );
-// var passport = require( '../src/http/passport.js' )( config, authProvider, metrics );
-// var middleware = require( '../src/http/middleware.js' )( config, metrics );
-// var http = require( '../src/http/http.js' )( config, requestor, passport, middleware, metrics );
-// var socket = require( '../src/websocket/socket.js' )( config, http, middleware );
-// var socketAdapter = require( '../src/websocket/adapter.js' )( config, authProvider, socket, metrics );
 var authProvider, passport, middleware, http, socket, socketAdapter;
 var actionRoles = function( action, roles ) {
 		authProvider.actions[ action ] = { roles: roles };
 	};
 var userRoles = function( user, roles ) {
-		authProvider.users[ user ].roles = roles;
+		if( authProvider.users[ user ] ) {
+			authProvider.users[ user ].roles = roles;
+		} else {
+			authProvider.users[ user ] = { roles: roles };
+		}		
 	};
 
 describe( 'with socket adapter', function() {
@@ -36,8 +34,9 @@ describe( 'with socket adapter', function() {
 	before( function( done ) {
 		authProvider = require( './auth/mock.js' )( config );
 		passport = require( '../src/http/passport.js' )( config, authProvider, metrics );
-		middleware = require( '../src/http/middleware.js' )( config, metrics );
-		http = require( '../src/http/http.js' )( config, requestor, passport, middleware, metrics );
+		middleware = require( '../src/http/middleware.js' )( metrics );
+		middleware.configure( config );
+		http = require( '../src/http/http.js' )( requestor, middleware, metrics );
 		socket = require( '../src/websocket/socket.js' )( config, http, middleware );
 		socketAdapter = require( '../src/websocket/adapter.js' )( config, authProvider, socket, metrics );
 
@@ -55,24 +54,16 @@ describe( 'with socket adapter', function() {
 			},
 			io = require( 'socket.io-client' ),
 			WebSocketClient = require('websocket').client;
-
-		http.middleware( '/', function( req, res, next ) {
-			req.user = {
-				roles: userRoles
-			};
-			next();
-		} );
-		socketAdapter.action( { name: 'test' }, {
-			alias: 'call',
-			verb: 'get',
+		socketAdapter.action( { name: 'test' }, 'call', {
+			method: 'get',
 			topic: 'call',
 			handle: function( env ) {
 				env.reply( { data: { youSed: env.data.msg } } );
 			}
 		}, { topics: {} } );
-		http.start();
+		http.start( config, passport );
 		socket.start( passport );
-		ioClient = io( 'http://localhost:88988', { query: 'token=blorp' } );
+		ioClient = io( 'http://localhost:88988?token=blorp' );
 		ioClient.once( 'reconnect', check );
 		ioClient.once( 'connect', check );
 		ioClient.io.open();
@@ -97,7 +88,6 @@ describe( 'with socket adapter', function() {
 			'http://localhost:88988/websocket',
 			'echo-protocol',
 			'console',
-			// { 'Authorization': 'Basic dXNlcm1hbjpoaQ==' }
 			{ 'Authorization': 'Bearer blorp' }
 		);
 		wsClient.on( 'connect', function( cs ) {

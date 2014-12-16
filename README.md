@@ -16,9 +16,10 @@ I created autohost so we could have a consistent, reliable and extendible way to
  * Resource-based: define transport-agnostic resources that interact via HTTP or WebSockets
  * Supports server-side websockets and socket.io
  * Supports multiple Passport strategies via a pluggable auth provider approach
- * UI dashboard to review resources' routes, topics and static paths
- * HTTP Auth API and dashboard for managing permissions
- * Detailed metrics around routes, topics, authentication and authorization
+
+> __Note__
+
+> The dashboard and related APIs are no longer included with autohost. They have been moved to a separate project: [autohost-admin](https://github.com/LeanKit-Labs/autohost-admin).
 
 ## Quick Start
 
@@ -34,10 +35,6 @@ host.init( {}, authProvider );
 
 	node index.js
 	
-Open your browser to: `http://localhost:8800/_autohost'
-
-This dashboard will create a tab for each resource autohost has loaded and display the topics, urls and paths that it has registered for each. You can see here that, since we haven't provided our own static files or resources, the only thing showing up is autohost's own HTTP API and static files that make up this dashboard.
-
 Before diving into how to add resources, take a look at the init call and its arguments to understand what's available.
 
 ### init( config, authProvider, [fount] )
@@ -62,6 +59,10 @@ The object literal follows the format:
 	noCookie: false, // disables cookies
 	noBody: false, // disables body parsing
 	noCrossOrigin: false, // disables cross origin
+	noOptions: false, // disables automatic options middleware, use this when providing your own
+	parseAhead: false, // parses path parameters before application middleware
+	handleRouteErrors: false, // wrap routes in try/catch
+	urlStrategy: undefined // a function that generates the URL per resource action
 	anonymous: [] // add paths or url patterns that bypass authentication and authorization
 }
 ```
@@ -73,7 +74,7 @@ There are already two available auth provider libraries available:
  * [autohost-riak-auth](https://github.com/LeanKit-Labs/autohost-riak-auth)
  * [autohost-nedb-auth](https://github.com/LeanKit-Labs/autohost-nedb-auth)
 
-You can NPM install either of these and easily drop them into your project to get going. Each library supports all optional features and can be managed from the auth dashboard built into autohost.
+You can NPM install either of these and easily drop them into your project to get going. Each library supports all optional features and can be managed from the [admin add-on](https://github.com/LeanKit-Labs/autohost-admin).
 
 	Note: the authProvider passed in can be an unresolved promise, autohost will handle it
 
@@ -84,7 +85,7 @@ Planned support for:
 [fount](https://github.com/LeanKit-Labs/fount) is a dependency injection library for Node. If your application is using fount, you can provide the instance at the end of the init call so that your resources will have access to the same fount instance from the `host.fount` property within the resource callback.
 
 ## Resources
-Resources are expected to be simple modules containing a factory method that return a resource definition. Autohost now supports dependency resolution by argument in these factory methods. All arguments after the first (`host`) will be checked against autohost's fount instance. This is especially useful when you need to take a dependency on a promise or asynchronous function - fount will only invoke your resource's factory once all dependnecies are available eliminating the need to handle these concerns with callbacks or promises in your resource's implementation. See the Asynchronous Module example under the Module section. 
+Resources are expected to be simple modules containing a factory method that return one or more resource definitions. Autohost now supports dependency resolution by argument in these factory methods. All arguments after the first (`host`) will be checked against autohost's fount instance. This is especially useful when you need to take a dependency on a promise or asynchronous function - fount will only invoke your resource's factory once all dependnecies are available eliminating the need to handle these concerns with callbacks or promises in your resource's implementation. See the Asynchronous Module example under the Module section. 
 
 ### Path conventions
 Autohost expects to find all your resources under one folder (`./resource` by default) and your shared static resources under one folder (`./public` by default). Each resource should have its own sub-folder and contain a `resource.js` file that contains a module defining the resource.
@@ -112,17 +113,16 @@ module.exports = function( host ) {
 	return {
 		name: 'resource-name',
 		resources: '', // relative path to static assets for this resource
-		actions: [ 
-			{
-				alias: 'send', // not presently utilized
-				verb: 'get', // http verb
+		actions:  {
+			send: {
+				method: 'get', // http verb
+				url: '', // url pattern appended to the resource name
 				topic: 'send', // topic segment appended the resource name
-				path: '', // url pattern appended to the resource name
 				handle: function( envelope ) {
 					// see section on envelope for more detail			
 				}
 			}
-		]
+		}
 	};
 };
 ```
@@ -146,12 +146,12 @@ module.exports = function( host, myDependency1, myDependency2 ) {
 	return {
 		name: 'resource-name',
 		resources: '', // relative path to static assets for this resource
-		actions: [ 
-			{
-				alias: 'send', // not presently utilized
-				verb: 'get', // http verb
+		urlPrefix: '', // URL prefix for all actions in this resource
+		actions: { 
+			send: {
+				method: 'get', // http verb
+				url: '', // url pattern appended to the resource name
 				topic: 'send', // topic segment appended the resource name
-				path: '', // url pattern appended to the resource name
 				handle: function( envelope ) {
 					// see section on envelope for more detail			
 				}
@@ -168,27 +168,30 @@ The resource name is pre-pended to the action's alias to create a globally uniqu
 	
 	topic: {resource-name}.{action-topic|action-alias}
 
+
+	Note: If you are defining resources for use with [hyped](https://github.com/leankit-labs/hyped) - you will need to provide the resource in the url property. Autohost will not add the resource name as a prefix if it's already present.
+
 ### resources
 You can host nested static files under a resource using this property. The directory and its contents found at the path will be hosted after the resource name in the URL.
 
 To enable this, simply add the module names as an array in the `modules` property of the configuration hash passed to init.
 
 ## Actions
-The list of actions are the operations exposed on a resource on the available transports.
+The hash of actions are the operations exposed on a resource on the available transports.
 
-### alias
-An alias is the 'friendly' name for the action. To create a globally unique action name, autohost pre-pends the resource name to the alias: `resource-name.action-alias`.
+### [key]
+They key of the action in the hash acts as the 'friendly' name for the action. To create a globally unique action name, autohost pre-pends the resource name to the alias: `resource-name.action-alias`.
 
-### verb
+### method
 Controls the HTTP method an action will be bound to.
 
 ### topic
 This property controls what is appended to the resource name in order to create a socket topic. The topic is what a socket client would publish a message to in order to activate an action.
 
-### path
-The path property overrides the URL assigned to this action. You can put path variables in this following the express convention of a leading `:`
+### url - string pattern
+The `url` property provides the URL assigned to this action. You can put path variables in this following the express convention of a leading `:`
 
-	path: '/thing/:arg1/:arg2'
+	url: '/thing/:arg1/:arg2'
 	
 Path variables are accessible on the envelope's `params` property. If a path variable does NOT collide with a property on the request body, the path variable is written to the `envelope.data` hash as well:
 
@@ -196,8 +199,20 @@ Path variables are accessible on the envelope's `params` property. If a path var
 	envelope.data.arg1 === envelope.params.arg1;
 ```
 
+### url - regular expression
+The `url` can also be defined as a regular expression that will be evaluated against incoming URLs. Both `apiPrefix` and `urlPrefix` will be pre-pended to the regular expression automatically - do not include them in the expression provided.
+
 #### query parameters
 Query parameters behave exactly like path variables. They are available on the `params` property of the envelope and copied to the `envelope.data` hash if they wouldn't collide with an existing property.
+
+#### custom url strategy
+Autohost allows you to provide a function during configuration that will determine the url assigned to an action. The function should take the form:
+
+```javascript
+function myStrategy( resourceName, actionName, action, resourceList ) { ... }
+```
+
+The string returned will be the URL used to route requests to this action. Proceed with extreme caution.
 
 ### handle
 The handle is a callback that will be invoked if the caller has adequate permissions. Read the section on envelopes to understand how to communicate results back to the caller.
@@ -241,7 +256,11 @@ Envelopes are an abstraction around the incoming message or request. They are in
 ```
 
 ### reply( envelope )
-Sends a reply back to the requestor via HTTP or web socket. Response envelope is expected to always have a data property containing the body/reply. HTTP responses can included a statusCode property (otherwise a 200 is assumed).
+Sends a reply back to the requestor via HTTP or web socket. Response envelope is expected to always have a data property containing the body/reply. HTTP responses can included the following properties
+
+ * `statusCode`: defaults to 200
+ * `headers`: a hash of headers to set on the response
+ * `cookies`: a hash of cookies to set on the response. The value is an object with a `value` and `options` property.
 
 ```javascript
 	envelope.reply( { data: { something: 'interesting' }, statusCode: 200 } );
@@ -249,6 +268,8 @@ Sends a reply back to the requestor via HTTP or web socket. Response envelope is
 	// Socket.io will have a payload of { something: 'interesting' } published to the replyTo property OR the original topic
 	// Websockets will get a message of { topic: replyTo|topic, data: { something: 'interesting' } } 
 ```
+
+> The options property for a cookie can have the following properties: `domain`, `path`, `maxAge`, `expires`, `httpOnly`, `secure`, `signed`
 
 ### replyWithFile( contentType, fileName, fileStream )
 Sends a file as a response.
@@ -291,6 +312,14 @@ You have a public HTTP endpoint that directs traffic to your primary application
 While you could simple prefix all of your absolute URLs in static resources with `/special' (in this example), this will cause your application to be unusable without a reverse proxy sitting in front of it since the browser would be making requests to a route that doesn't exist and nothing is there to intercept and strip away the `/special` path prefix. This makes integration testing and local development unecessarily painful.
 
 The solution is to use `urlPrefix` set to 'special' and to either write all your URLs in static resources with the prefix (meh) OR use a build step that will find absolute paths in your static files and prefix them for you. Autohost will automatically apply this prefix to all routes in your service so that requests from the proxy align with the routes defined in your application consistently. This results in an application that remains usable outside of the reverse proxy and can even be built and deployed with different path prefixes (or no prefixes).
+
+### parseAhead
+Normally, middleware can't have access to path variables that aren't defined as part of its mount point. This is because the sequential routing table doesn't know what path will eventually be resolved when it's processing general purpose middleware (e.g. mounted at `/`). Setting `parseAhead` to true in your configuration will add special middleware that does two things:
+ 
+ * add a `preparams` property to the request with parameters from "future" matching routes 
+ * redefines the `req.param` function to check `preparams` before falling back to default
+
+The upside is that you can write general purpose middleware that can access path variables instead of having to write the same kind of middleware for a lot of different paths and then worry about keeping paths synchronized. The downside is that there is obviously a performance penalty for traversing the route stack like this.
 
 ## Web Socket Transport
 Autohost supports two socket libraries - socket.io for browser clients and websocket-node for programmatic/server clients.
@@ -367,24 +396,13 @@ host.init( {
 }, authProvider );
 ```
 
-### Auth API and Admin Dashboard (Under development)
-The auth dashboard only works with auth providers that implement the entire specification. If that's available, you can fully manage users, roles and actions from this. It is hosted at http://{your server}:{port}/_autohost/auth.html
-
-## UI Dashboard
-Simple navigate to /_autohost to review the current set of resources:
-![An Example AutoHost Application's Dashboard](http://i4.minus.com/jbnWId8h3hZcac.png)
-
 ## Metrics
-Autohost collects a good bit of metrics. It measures action activation as well as authorization and authentication calls so that you can get detailed information on where time is being spent in the stack at a high level. The metrics also include memory utlization as well as system memory and process load. You can see the raw JSON for the metrics at:
-
-	http://{host}:{port}/api/_autohost/metrics
+Autohost collects a good bit of metrics. It measures action activation as well as authorization and authentication calls so that you can get detailed information on where time is being spent in the stack at a high level. The metrics also include memory utlization as well as system memory and process load. You can access them from `host.metrics`.
 
 ## Metadata
 Autohost provides metadata to describe the routes and topic available via an OPTIONS to api:
 
 	OPTIONS http://{host}:{port}/api
-	
-	Note: you CANNOT change this route. It must be consistent so that autohost's dashboards can always reach this endpoint.
 	
 The metadata follows this format:
 
@@ -411,8 +429,7 @@ The metadata follows this format:
 }
 ```
 
-In the future, the intent is to provide more metadata like this in various contexts as well as provide clients (for Node and the browser) that can consume this information to create clients dynamically based on the data.
-
+While this is useful, we have developed [hyped](https://github.com/LeanKit-Labs/hyped),a hypermedia library that bolts onto autohost, and [halon](https://github.com/LeanKit-Labs/halon), a browser/Node hypermedia client for consuming APIs built with `hyped`.
 
 ## Debugging
 You can get a lot of visibility into what's happening in autohost in real-time by setting the DEBUG environment variable. If you _only_ want to see autohost debug entries, use autohost*.
@@ -431,6 +448,7 @@ autohost would not exist without the following libraries:
  * lodash 			2.4.1
 
 ## TO DO
+ * Add ability to define message middleware
  * Add support for clustering (multiple listening processes)
 
 ## Contributing
@@ -442,8 +460,6 @@ There are a lot of places you can contribute to autohost. Here are just some ide
 
 ### Developers
  * A clustering feature that would handle setting up a cluster of N nodes
- * A way to visualize the metrics information in the app
- * Feature to enable auto-pushing metrics JSON up to socket clients on regular interval
 
 ### Op/Sec
 I would be interested in seeing if particular Passport strategies and how they're being wired in would be subject to any exploits. Knowing this in general would be great, but especially if I'm doing something ignorant with how it's all being handled and introducing new attack vectors, I'd like to find out what those are so they can be addressed.

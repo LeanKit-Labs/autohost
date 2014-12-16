@@ -28,8 +28,9 @@ describe( 'with http module', function() {
 	before( function() {
 		authProvider = require( './auth/mock.js' )( config );
 		passport = require( '../src/http/passport.js' )( config, authProvider, metrics );
-		middleware = require( '../src/http/middleware.js' )( config, metrics );
-		http = require( '../src/http/http.js' )( config, requestor, passport, middleware, metrics );
+		middleware = require( '../src/http/middleware.js' )( metrics );
+		middleware.configure( config );
+		http = require( '../src/http/http.js' )( requestor, middleware, metrics );
 
 		authProvider.users = {};
 		passport.resetUserCheck();
@@ -51,7 +52,7 @@ describe( 'with http module', function() {
 			request = req;
 			res.status( statusCode ).send( response );
 		} );
-		http.start();
+		http.start( config, passport );
 	} );
 
 	describe( 'when getting a static file', function() {

@@ -2,16 +2,15 @@ module.exports = function() {
 	return {
 		name: 'anon',
 		resources: 'public',
-		actions: [
-			{
-				verb: 'get',
+		actions: {
+			login: {
+				method: 'get',
 				topic: 'login',
-				alias: 'login',
-				path: '/auth',
+				url: '/auth',
 				handle: function( envelope ) {
 					envelope.reply( { data: 'Everything is awesome, ' + JSON.stringify( envelope.user ) } );
 				}
 			}
-		]
+		}
 	};
 };

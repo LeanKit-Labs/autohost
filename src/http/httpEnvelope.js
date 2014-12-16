@@ -1,4 +1,5 @@
 var request;
+var _ = require( 'lodash' );
 
 function HttpEnvelope( req, res ) {
 	this.transport = 'http';
@@ -26,6 +27,12 @@ function HttpEnvelope( req, res ) {
 			this.params[ key ] = val;
 		}.bind(this));
 	}.bind(this));
+
+	if( req.extendHttp ) {
+		_.each( req.extendHttp, function( val, key ) {
+			this[ key ] = val;
+		}.bind( this ) );
+	}
 }
 
 HttpEnvelope.prototype.forwardTo = function( options ) {
@@ -42,6 +49,16 @@ HttpEnvelope.prototype.redirect = function( statusCode, url ) {
 
 HttpEnvelope.prototype.reply = function( envelope ) {
 	var code = envelope.statusCode || 200;
+	if( envelope.headers ) {
+		_.each( envelope.headers, function( v, k ) {
+			this._original.res.set( k, v );
+		}.bind( this ) );
+	}
+	if( envelope.cookies ) {
+		_.each( envelope.cookies, function( v, k ) {
+			this._original.res.cookie( k, v.value, v.options );
+		}.bind( this ) );
+	}
 	this._original.res.status( code ).send( envelope.data );
 };
 

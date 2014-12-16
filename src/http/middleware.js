@@ -4,6 +4,7 @@ var sessionLib = require( 'express-session' );
 var multer = require( 'multer' );
 var wrapper = {
 		attach: applyMiddelware,
+		configure: configure,
 		useCookies: applyCookieMiddleware,
 		useSession: applySessionMiddleware
 	};
@@ -56,6 +57,18 @@ function crossOrigin( req, res, next ) { // jshint ignore: line
 	next();
 }
 
+function configure( cfg ) {
+	config = cfg;
+	cfg.sessionStore = cfg.sessionStore || new sessionLib.MemoryStore();
+	session = sessionLib( { 
+		name: config.sessionId || 'ah.sid',
+		secret: config.sessionSecret || 'authostthing',
+		saveUninitialized: true,
+		resave: true,
+		store: cfg.sessionStore
+	} );
+}
+
 function requestMetrics( req, res, next ) { // jshint ignore: line
 	req.context = {};
 	res.setMaxListeners( 0 );
@@ -67,18 +80,9 @@ function requestMetrics( req, res, next ) { // jshint ignore: line
 	next();
 }
 
-module.exports = function( cfg, meter ) {
-	config = cfg;
+module.exports = function( meter ) {
 	metrics = meter;
 	cookieParser = cookies();
-	cfg.sessionStore = cfg.sessionStore || new sessionLib.MemoryStore();
-	session = sessionLib( { 
-		name: config.sessionId || 'ah.sid',
-		secret: config.sessionSecret || 'authostthing',
-		saveUninitialized: true,
-		resave: true,
-		store: cfg.sessionStore
-	} );
 	return wrapper;
 };
 

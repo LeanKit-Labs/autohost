@@ -18,11 +18,12 @@ describe( 'with socketio and no users', function() {
 	var client;
 
 	before( function( done ) {
-		middleware = require( '../../src/http/middleware.js' )( config, metrics );
-		http = require( '../../src/http/http.js' )( config, requestor, undefined, middleware, metrics );
+		middleware = require( '../../src/http/middleware.js' )( metrics );
+		middleware.configure( config );
+		http = require( '../../src/http/http.js' )( requestor, middleware, metrics );
 		socket = require( '../../src/websocket/socket.js' )( config, http );
 
-		http.start();
+		http.start( config );
 		socket.start();
 		var onConnect = function() {
 			onConnect = function() {};

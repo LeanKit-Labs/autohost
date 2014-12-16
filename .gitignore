@@ -2,5 +2,8 @@ node_modules/
 .idea/
 .DS_Store
 *npm-debug.log
-data
+data/
 tmp
+.grapplehound.json
+.nonstop.json
+coverage/

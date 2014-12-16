@@ -19,13 +19,14 @@ describe( 'with websocket and valid credentials', function() {
 	before( function( done ) {
 		authProvider = require( '../auth/mock.js' )( config );
 		passport = require( '../../src/http/passport.js' )( config, authProvider, metrics );
-		middleware = require( '../../src/http/middleware.js' )( config, metrics );
-		http = require( '../../src/http/http.js' )( config, requestor, passport, middleware, metrics );
+		middleware = require( '../../src/http/middleware.js' )( metrics );
+		middleware.configure( config );
+		http = require( '../../src/http/http.js' )( requestor, middleware, metrics );
 		socket = require( '../../src/websocket/socket.js' )( config, http, middleware );
 
 		authProvider.users.admin = { name: 'admin', password: 'admin' };
 
-		http.start();
+		http.start( config, passport );
 		socket.start( passport );
 		
 		client = new WebSocketClient();

@@ -14,28 +14,10 @@ var authProvider;
 var anonPaths;
 var metrics;
 
-function addPassport( http ) {
-
-	http.middleware( '/', passportInitialize );
-	http.middleware( '/', passportSession );
-	
-	_.each( anonPaths, function( pattern ) {
-		http.middleware( pattern, skipAuthentication );
-	} );
-	
-	http.middleware( '/', whenNoUsers );
-	http.middleware( '/', authConditionally );
-	http.middleware( '/', getRoles );
-
-	passport.serializeUser( authProvider.serializeUser );
-	passport.deserializeUser( authProvider.deserializeUser );
-	debug( 'passport configured' );
-}
-
 function authConditionally( req, res, next ) { // jshint ignore:line
 	// if previous middleware has said to skip auth OR
 	// a user was attached from a session, skip authenticating
-	if( req.skipAuth || ( req.user && req.user.name ) ) {
+	if( req.skipAuth || req.user ) {
 		next();
 	} else {
 		metrics.timer( authenticationTimer ).start();
@@ -65,16 +47,16 @@ function getRoles( req, res, next ) { // jshint ignore:line
 		next();
 	} else {
 		metrics.timer( authorizationTimer ).start();
-		authProvider.getUserRoles( req.user.name )
+		authProvider.getUserRoles( req.user, req.context )
 			.then( null, function( err ) {
 				metrics.counter( authorizationErrorCount ).incr();
 				metrics.meter( authorizationErrorRate ).record();
 				metrics.timer( authorizationTimer ).record();
-				debug( 'Failed to get roles for %s with %s', userName, err.stack );
+				debug( 'Failed to get roles for %s with %s', getUserString( user ), err.stack );
 				res.status( 500 ).send( 'Could not determine user permissions' );
 			} )
 			.then( function( roles ) {
-				debug( 'Got roles [ %s ] for %s', roles, req.user.name );
+				debug( 'Got roles [ %s ] for %s', roles, req.user );
 				req.user.roles = roles;
 				metrics.timer( authorizationTimer ).record();
 				next();
@@ -82,25 +64,29 @@ function getRoles( req, res, next ) { // jshint ignore:line
 	}
 }
 
-function getSocketRoles( userName ) {
-	if( userName === 'anonymous' ) {
+function getSocketRoles( user ) {
+	if( user.name === 'anonymous' ) {
 		return when( [ 'anonymous' ] );
 	} else {
 		metrics.timer( authorizationTimer ).start();
-		return authProvider.getUserRoles( userName )
+		return authProvider.getUserRoles( user, {} )
 			.then( null, function( err ) {
 				metrics.counter( authorizationErrorCount ).incr();
 				metrics.meter( authorizationErrorRate ).record();
 				metrics.timer( authorizationTimer ).record();
-				debug( 'Failed to get roles for %s with %s', userName, err.stack );
+				debug( 'Failed to get roles for %s with %s', getUserString( user ), err.stack );
 				return [];
 			} )
 			.then( function( roles ) {
-				debug( 'Got roles [ %s ] for %s', roles, userName );
+				debug( 'Got roles [ %s ] for %s', roles, getUserString( user ) );
 				metrics.timer( authorizationTimer ).record();
 				return roles;
 			} );
 	}
+}
+
+function getUserString( user ) {
+	return user.name ? user.name : JSON.stringify( user );
 }
 
 function resetUserCount() {
@@ -143,6 +129,8 @@ module.exports = function( config, authPlugin, meter ) {
 	metrics = meter;
 	authProvider = authPlugin;
 	authProvider.initPassport( passport );
+	passport.serializeUser( authProvider.serializeUser );
+	passport.deserializeUser( authProvider.deserializeUser );
 	if( config.anonymous ) {
 		anonPaths = _.isArray( config.anonymous ) ? config.anonymous : [ config.anonymous ];
 	} else {
@@ -153,7 +141,6 @@ module.exports = function( config, authPlugin, meter ) {
 		getMiddleware: getAuthMiddleware,
 		getSocketRoles: getSocketRoles,
 		hasUsers: userCountCheck,
-		resetUserCheck: resetUserCount,
-		wireupPassport: addPassport
+		resetUserCheck: resetUserCount
 	};
 };

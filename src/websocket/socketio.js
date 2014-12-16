@@ -13,9 +13,9 @@ function acceptSocket( socket ) {
 	var handshake = socket.handshake;
 
 	// grab user from request
-	socket.user = {
-		id: handshake.id || handshake.user || 'anonymous',
-		name: handshake.user || 'anonymous' 
+	socket.user = handshake.user || {
+		id: 'anonymous',
+		name: 'anonymous'
 	};
 	
 	// copy session from request
@@ -32,7 +32,7 @@ function acceptSocket( socket ) {
 
 	// attach roles to user on socket
 	if( authStrategy ) {
-		authStrategy.getSocketRoles( socket.user.name )
+		authStrategy.getSocketRoles( socket.user )
 			.then( function( roles ) {
 				socket.user.roles = roles;
 			} );

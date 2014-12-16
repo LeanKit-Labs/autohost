@@ -89,8 +89,7 @@ function createUser( username, password ) {
 function checkPermission( user, action ) {
 	var actionName = action.roles ? action.name : action,
 		actionRoles = _.isEmpty( action.roles ) ? actions.getRoles( actionName ) : action.roles,
-		userName = user.name ? user.name : user,
-		userRoles = _.isEmpty( user.roles ) ? users.getRoles( userName ) : user.roles;
+		userRoles = _.isEmpty( user.roles ) ? users.getRoles( user ) : user.roles;
 	if( user.roles && user.disabled ) {
 		userRoles = [];
 	}

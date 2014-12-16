@@ -18,11 +18,11 @@ function acceptSocketRequest( request ) {
 	var protocol = request.requestedProtocols[ 0 ];
 	var socket = request.accept( protocol, request.origin );
 	
-	// grab user from request
-	socket.user = {
-		id: request.user.name,
-		name: request.user.name 
+	socket.user = request.user || {
+		id: 'anonymous',
+		name: 'anonymous'
 	};
+	
 
 	// grab session and cookies parsed from middleware
 	socket.session = request.session;
@@ -30,7 +30,7 @@ function acceptSocketRequest( request ) {
 
 	// attach roles to user on socket
 	if( authStrategy ) {
-		authStrategy.getSocketRoles( socket.user.name )
+		authStrategy.getSocketRoles( socket.user )
 			.then( function( roles ) {
 				socket.user.roles = roles;
 			} );

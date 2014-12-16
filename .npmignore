@@ -1,3 +1,7 @@
 demo/
+data/
 tmp/
 node_modules/
+.grapplehound.json
+.nonstop.json
+coverage/

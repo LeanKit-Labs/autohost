@@ -68,17 +68,22 @@ function authenticateQuery( token, done ) {
 	done( null, user );
 }
 
-function checkPermission( user, action ) {
-	var userName = user.name ? user.name : user;
-	var userRoles = user.roles ? user.roles : getUserRoles( userName );
-	debug( 'checking user %s for action %s', userName, action );
-	return when.try( hasPermissions, userRoles, getActionRoles( action ) );
+function checkPermission( user, action, context ) {
+	debug( 'checking user %s for action %s', getUserString( user ), action );
+	return when.try( hasPermissions, getUserRoles( user ), getActionRoles( action ), context );
 }
 
-function hasPermissions( userRoles, actionRoles ) {
-	debug( 'user roles: %s, action roles: %s', userRoles, actionRoles );
-	return _.isEmpty( actionRoles ) || 
-		( _.intersection( userRoles, actionRoles ).length > 0 );
+function getUserString( user ) {
+	return user.name ? user.name : JSON.stringify( user );
+}
+
+function hasPermissions( userRoles, actionRoles, context ) {
+	if( context.noSoupForYou ) {
+		return false ;
+	} else {
+		return _.isEmpty( actionRoles ) || 
+			( _.intersection( userRoles, actionRoles ).length > 0 );
+	}
 }
 
 function getActionRoles( action ) {
@@ -88,8 +93,10 @@ function getActionRoles( action ) {
 }
 
 function getUserRoles( user ) {
+	var userName = user.name ? user.name : user;
 	return when.promise( function( resolve ) {
-		var tmp = wrapper.users[ user ];
+		var tmp = wrapper.users[ userName ];
+		debug( 'Getting user roles for %s: %s', getUserString( user ), JSON.stringify( tmp ) );
 		resolve( tmp ? tmp.roles : [] );
 	} );
 }
