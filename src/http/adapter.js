@@ -123,7 +123,9 @@ function wireupAction( resource, actionName, action, meta, resources ) {
 module.exports = function( cfg, auth, httpLib, req, meter ) {
 	config = cfg;
 	authStrategy = auth;
-	passport = passportFn( cfg, auth, meter );
+	if( auth ) {
+		passport = passportFn( cfg, auth, meter );
+	}
 	http = httpLib;
 	metrics = meter;
 	HttpEnvelope = require( './httpEnvelope.js' )( req );

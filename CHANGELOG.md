@@ -1,6 +1,9 @@
 ## 0.3.0
 Primary motivation here is to begin work on a version of autohost that will work well with a hypermedia library ( [hyped](https://github.com/leankit-labs/hyped) ). This is a breaking change because of several structural and naming changes to how resources get modeled.
 
+### prerelease 15
+Bug fix - passport should not attempt to initialize when no auth provider is passed to init.
+
 ### prerelease 14
  * Bug fix - auth middleware shouldn't get added to sockets twice
  * Bug fix - user middleware should always come after auth middleware
