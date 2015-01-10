@@ -14,21 +14,21 @@ function HttpEnvelope( req, res ) {
 	this.session = req.session;
 	this.responseStream = res;
 	this._original = {
-		req: req,
-		res: res
-	};
+			req: req,
+			res: res
+		};
 
-	[req.params, req.query].forEach(function(source){
-		Object.keys(source).forEach(function(key){
+	[ req.params, req.query ].forEach( function( source ) {
+		Object.keys( source ).forEach( function( key ) {
 			var val = source[ key ];
-			if( !this.data[ key ] ) {
+			if ( !this.data[ key ] ) {
 				this.data[ key ] = val;
 			}
 			this.params[ key ] = val;
-		}.bind(this));
-	}.bind(this));
+		}.bind( this ) );
+	}.bind( this ) );
 
-	if( req.extendHttp ) {
+	if ( req.extendHttp ) {
 		_.each( req.extendHttp, function( val, key ) {
 			this[ key ] = val;
 		}.bind( this ) );
@@ -40,7 +40,7 @@ HttpEnvelope.prototype.forwardTo = function( options ) {
 };
 
 HttpEnvelope.prototype.redirect = function( statusCode, url ) {
-	if(url === undefined){
+	if ( url === undefined ) {
 		url = statusCode;
 		statusCode = 302;
 	}
@@ -49,12 +49,12 @@ HttpEnvelope.prototype.redirect = function( statusCode, url ) {
 
 HttpEnvelope.prototype.reply = function( envelope ) {
 	var code = envelope.statusCode || 200;
-	if( envelope.headers ) {
+	if ( envelope.headers ) {
 		_.each( envelope.headers, function( v, k ) {
 			this._original.res.set( k, v );
 		}.bind( this ) );
 	}
-	if( envelope.cookies ) {
+	if ( envelope.cookies ) {
 		_.each( envelope.cookies, function( v, k ) {
 			this._original.res.cookie( k, v.value, v.options );
 		}.bind( this ) );

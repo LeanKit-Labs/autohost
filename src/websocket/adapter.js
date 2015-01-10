@@ -6,12 +6,12 @@ var SocketEnvelope;
 var _ = require( 'lodash' );
 var debug = require( 'debug' )( 'autohost:websocket-adapter' );
 var wrapper = {
-	name: 'http',
-	action: wireupAction,
-	resource: wireupResource,
-	start: start,
-	stop: stop
-};
+		name: 'http',
+		action: wireupAction,
+		resource: wireupResource,
+		start: start,
+		stop: stop
+	};
 
 function buildActionAlias( resourceName, actionName ) {
 	return [ resourceName, actionName ].join( '.' );
@@ -24,7 +24,7 @@ function buildActionTopic( resourceName, action ) {
 function checkPermissionFor( user, context, action ) {
 	debug( 'Checking %s\'s permissions for %s', getUserString( user ), action );
 	return authStrategy.checkPermission( user, action, context )
-		.then( null, function(err) {
+		.then( null, function( err ) {
 			debug( 'Error during check permissions: %s', err.stack );
 			return false;
 		} )
@@ -33,27 +33,27 @@ function checkPermissionFor( user, context, action ) {
 		} );
 }
 
-function getUserString( user ) {
+function getUserString( user ) { // jshint ignore:line
 	return user.name ? user.name : JSON.stringify( user );
 }
 
-function start() {
+function start() { // jshint ignore:line
 	socket.start( authStrategy );
 }
 
-function stop() {
+function stop() { // jshint ignore:line
 	socket.stop();
 }
 
-function wireupResource( resource ) {
+function wireupResource( resource ) { // jshint ignore:line
 	var meta = { topics: {} };
 	_.each( resource.actions, function( action, actionName ) {
-		wireupAction( resource, actionName, action, meta );
-	} );
+			wireupAction( resource, actionName, action, meta );
+		} );
 	return meta;
 }
 
-function wireupAction( resource, actionName, action, meta ) {
+function wireupAction( resource, actionName, action, meta ) { // jshint ignore:line
 	var topic = buildActionTopic( resource.name, action );
 	var alias = buildActionAlias( resource.name, actionName );
 
@@ -65,10 +65,10 @@ function wireupAction( resource, actionName, action, meta ) {
 			var envelope = new SocketEnvelope( topic, message, socket );
 			action.handle.apply( resource, [ envelope ] );
 		};
-		if( authStrategy ) {
-			checkPermissionFor( socket.user, context, alias )
+		if ( authStrategy ) {
+			checkPermissionFor( socket.user, {}, alias )
 				.then( function( pass ) {
-					if( pass ) {
+					if ( pass ) {
 						debug( 'WS activation of action %s for %s granted', alias, getUserString( socket.user ) );
 						respond();
 					} else {

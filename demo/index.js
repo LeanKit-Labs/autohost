@@ -1,12 +1,12 @@
 var host = require( '../src/index.js' );
 var authProvider = require( 'autohost-nedb-auth' )( {} );
-
-var redis = require( 'redis' ).createClient(); // assumes a locally running redis server
-var RedisStore = require( 'connect-redis' )( host.session );
-var store = new RedisStore( {
-		client: redis,
-		prefix: 'ah:'
-	} );
+var hyped = require( 'hyped' )();
+// var redis = require( 'redis' ).createClient(); // assumes a locally running redis server
+// var RedisStore = require( 'connect-redis' )( host.session );
+// var store = new RedisStore( {
+// 		client: redis,
+// 		prefix: 'ah:'
+// 	} );
 
 try {
 	host.init( {
@@ -19,14 +19,17 @@ try {
 		anonymous: [ '/$', '/js', '/css' ],
 		sessionId: 'myapp.sid',
 		sessionSecret: 'youdontevenknow',
-		sessionStore: store,
+		noOptions: true,
+		urlStrategy: hyped.urlStrategy
+		// sessionStore: store,
 	},
-	authProvider );
-	
-	
+	authProvider )
+	.then( hyped.addResources );
+	hyped.setupMiddleware( host );
+
 	// }, require( 'autohost-nedb-auth' )( {} ) );
 	// }, require( 'autohost-riak-auth' )(
-	// 	{ appName: 'ahdemo', 
+	// 	{ appName: 'ahdemo',
 	// 		riak: { nodes: [
 	// 			{ host: 'ubuntu' }
 	// 		] }

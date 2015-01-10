@@ -3,7 +3,7 @@ var util = require( 'util' );
 
 util.inherits( SocketStream, Writable );
 
-function SocketStream( replyTo, socket ) {
+function SocketStream( replyTo, socket ) { // jshint ignore:line
 	Writable.call( this, { decodeStrings: false, objectMode: true } );
 	this._socket = socket;
 	this._index = 0;
@@ -12,18 +12,18 @@ function SocketStream( replyTo, socket ) {
 
 SocketStream.prototype._write = function( chunk, encoding, callback ) {
 	var envelope = {
-		index: this._index ++
+		index: this._index++
 	};
-	if( !chunk ) {
+	if ( !chunk ) {
 		envelope.end = true;
 	} else {
 		envelope.data = chunk;
 	}
 	this._socket.publish( this._replyTo, envelope );
-	if( callback ) {
+	if ( callback ) {
 		callback();
 	}
-	if( envelope.end ) {
+	if ( envelope.end ) {
 		this.emit( 'finish' );
 	}
 	return true;

@@ -1,6 +1,10 @@
 ## 0.3.0
 Primary motivation here is to begin work on a version of autohost that will work well with a hypermedia library ( [hyped](https://github.com/leankit-labs/hyped) ). This is a breaking change because of several structural and naming changes to how resources get modeled.
 
+### prerelease 16
+ * Bug fix - public path was getting registered before middleware causing static resources under public to get served regardless of authorization.
+ * Formatting (esformatter and then manual clean up)
+
 ### prerelease 15
 Bug fix - passport should not attempt to initialize when no auth provider is passed to init.
 

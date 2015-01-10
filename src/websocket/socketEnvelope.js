@@ -11,9 +11,9 @@ function SocketEnvelope( topic, message, socket ) {
 	this.responseStream = new SocketStream( this.replyTo, socket );
 	this.session = socket.session;
 	this._original = {
-		message: message,
-		socket: socket
-	};
+			message: message,
+			socket: socket
+		};
 }
 
 SocketEnvelope.prototype.forwardTo = function( /* options */ ) {
@@ -21,7 +21,7 @@ SocketEnvelope.prototype.forwardTo = function( /* options */ ) {
 };
 
 SocketEnvelope.prototype.reply = function( envelope ) {
-	if( this._original.message.data ) {
+	if ( this._original.message.data ) {
 		this._original.socket.publish( this.replyTo, envelope );
 	} else {
 		this._original.socket.publish( this.replyTo, envelope.data );
