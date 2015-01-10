@@ -1,10 +1,11 @@
-var should = require( 'should' );  //jshint ignore:line
-var requestor = require( 'request' ).defaults( { jar: true } );
+var should = require( 'should' ); //jshint ignore:line
+var requestor = require( 'request' ).defaults( { jar: false } );
 var metrics = require( 'cluster-metrics' );
+var path = require( 'path' );
 var port = 88988;
 var config = {
 		port: port,
-		anonymous: [ '/api/forward' ]
+		anonymous: [ '/api/test/forward' ]
 	};
 var authProvider = require( './auth/mock.js' )( config );
 var passport = require( '../src/http/passport.js' )( config, authProvider, metrics );
@@ -22,11 +23,11 @@ var userRoles = function( user, roles ) {
 describe( 'with http adapter', function() {
 	var cookieExpiresAt = new Date( Date.now() + 60000 );
 	var cleanup = function() {
-			userRoles( 'userman', [] );
-			actionRoles( 'test.call', [] );
-			actionRoles( 'test.forward', [] );
-			actionRoles( 'test.echo', [] );
-		};
+		userRoles( 'userman', [] );
+		actionRoles( 'test.call', [] );
+		actionRoles( 'test.forward', [] );
+		actionRoles( 'test.echo', [] );
+	};
 
 	before( function() {
 		authProvider.tokens = { 'blorp': 'userman' };
@@ -35,17 +36,17 @@ describe( 'with http adapter', function() {
 			method: 'get',
 			url: '/test/call/:one/:two',
 			handle: function( env ) {
-				env.reply( { 
-					data: 'ta-da!', 
+				env.reply( {
+					data: 'ta-da!',
 					headers: { 'test-header': 'look a header value!' },
 					cookies: { 'an-cookies': {
-						value: 'chocolate chip',
-						options: {
-							expires: cookieExpiresAt,
-							path: '/api',
-							domain: 'herpdederp.com'
-						}
-					} }
+							value: 'chocolate chip',
+							options: {
+								expires: cookieExpiresAt,
+								path: '/api',
+								domain: 'herpdederp.com'
+							}
+						} }
 				} );
 			}
 		}, { routes: {} } );
@@ -54,7 +55,7 @@ describe( 'with http adapter', function() {
 			url: '/test/forward/:one/:two',
 			handle: function( env ) {
 				env.forwardTo( {
-					url: 'http://userman:herp@localhost:88988/api/test/call/10/20'
+					url: 'http://userman:hi@localhost:88988/api/test/call/10/20'
 				} );
 			}
 		}, { routes: {} } );
@@ -65,6 +66,7 @@ describe( 'with http adapter', function() {
 				env.reply( { data: 'echo-echo-echo-echo-echo-o-o-o-o-o-o-oooooo' } );
 			}
 		}, { routes: {} } );
+		http.static( '/files', path.join( __dirname, './public' ) );
 		http.middleware( "/", function( req, res, next ) {
 			req.context.noSoupForYou = req.query.deny;
 			next();
@@ -79,11 +81,11 @@ describe( 'with http adapter', function() {
 			actionRoles( 'test.call', [ 'admin' ] );
 			userRoles( 'userman', [ 'guest' ] );
 			requestor.get( {
-				url: 'http://userman:hi@localhost:88988/api/test/call/10/20'
-			}, function( err, resp ) {
-				result = resp;
-				done();
-			} );
+					url: 'http://userman:hi@localhost:88988/api/test/call/10/20'
+				}, function( err, resp ) {
+					result = resp;
+					done();
+				} );
 		} );
 
 		it( 'should tell user to take a hike', function() {
@@ -92,6 +94,31 @@ describe( 'with http adapter', function() {
 
 		it( 'should return 403', function() {
 			result.statusCode.should.equal( 403 );
+		} );
+
+		after( cleanup );
+	} );
+
+	describe( 'when getting a static file with invalid credentials', function() {
+		var result;
+
+		before( function( done ) {
+			actionRoles( 'test.call', [ 'admin' ] );
+			userRoles( 'userman', [ 'guest' ] );
+			requestor.get( {
+					url: 'http://localhost:88988/files/txt/hello.txt'
+				}, function( err, resp ) {
+					result = resp;
+					done();
+				} );
+		} );
+
+		it( 'should reject as unauthorized', function() {
+			result.body.should.equal( 'Unauthorized' );
+		} );
+
+		it( 'should return 401', function() {
+			result.statusCode.should.equal( 401 );
 		} );
 
 		after( cleanup );
@@ -105,15 +132,15 @@ describe( 'with http adapter', function() {
 			actionRoles( 'test.call', [ 'guest' ] );
 			userRoles( 'userman', [ 'guest' ] );
 			requestor.get( {
-				url: 'http://localhost:88988/api/test/call/10/20',
-				headers: {
-					'Authorization': 'Bearer blorp'
-				}
-			}, function( err, resp ) {
-				headers = resp.headers;
-				result = new Buffer( resp.body, 'utf-8' ).toString();
-				done();
-			} );
+					url: 'http://localhost:88988/api/test/call/10/20',
+					headers: {
+						'Authorization': 'Bearer blorp'
+					}
+				}, function( err, resp ) {
+					headers = resp.headers;
+					result = new Buffer( resp.body, 'utf-8' ).toString();
+					done();
+				} );
 		} );
 
 		it( 'should return action response', function() {
@@ -125,7 +152,7 @@ describe( 'with http adapter', function() {
 		} );
 
 		it( 'should return expected cookies', function() {
-			headers[ 'set-cookie' ].should.eql( [ 'an-cookies=chocolate%20chip; Domain=herpdederp.com; Path=/api; Expires=' + cookieExpiresAt.toUTCString() ] );
+			headers[ 'set-cookie' ][ 0 ].should.eql( 'an-cookies=chocolate%20chip; Domain=herpdederp.com; Path=/api; Expires=' + cookieExpiresAt.toUTCString() );
 		} );
 
 		after( cleanup );
@@ -138,14 +165,14 @@ describe( 'with http adapter', function() {
 			actionRoles( 'test.call', [ 'guest' ] );
 			userRoles( 'userman', [ 'guest' ] );
 			requestor.get( {
-				url: 'http://localhost:88988/api/test/call/10/20?deny=true',
-				headers: {
-					'Authorization': 'Bearer blorp'
-				}
-			}, function( err, resp ) {
-				result = resp;
-				done();
-			} );
+					url: 'http://localhost:88988/api/test/call/10/20?deny=true',
+					headers: {
+						'Authorization': 'Bearer blorp'
+					}
+				}, function( err, resp ) {
+					result = resp;
+					done();
+				} );
 		} );
 
 		it( 'should tell user to take a hike', function() {
@@ -158,7 +185,7 @@ describe( 'with http adapter', function() {
 
 		after( cleanup );
 	} );
-	
+
 	describe( 'when making a request to a pattern route with adequate permissions', function() {
 		var result;
 
@@ -166,15 +193,15 @@ describe( 'with http adapter', function() {
 			actionRoles( 'test.call', [ 'guest' ] );
 			userRoles( 'userman', [ 'guest' ] );
 			requestor.get( {
-				url: 'http://localhost:88988/api/test/echo/10/20',
-				headers: {
-					'Authorization': 'Bearer blorp'
-				}
-			}, function( err, resp ) {
-				result = resp;
-				result = new Buffer( resp.body, 'utf-8' ).toString();
-				done();
-			} );
+					url: 'http://localhost:88988/api/test/echo/10/20',
+					headers: {
+						'Authorization': 'Bearer blorp'
+					}
+				}, function( err, resp ) {
+					result = resp;
+					result = new Buffer( resp.body, 'utf-8' ).toString();
+					done();
+				} );
 		} );
 
 		it( 'should return action response', function() {
@@ -191,11 +218,11 @@ describe( 'with http adapter', function() {
 			actionRoles( 'test.call', [ 'guest' ] );
 			userRoles( 'userman', [ 'guest' ] );
 			requestor.get( {
-				url: 'http://localhost:88988/api/test/forward/10/20'
-			}, function( err, resp ) {
-				result = new Buffer( resp.body, 'utf-8' ).toString();
-				done();
-			} );
+					url: 'http://localhost:88988/api/test/forward/10/20'
+				}, function( err, resp ) {
+					result = new Buffer( resp.body, 'utf-8' ).toString();
+					done();
+				} );
 		} );
 
 		it( 'should return action response', function() {

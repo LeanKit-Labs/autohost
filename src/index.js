@@ -14,31 +14,31 @@ var httpAdapter, socketAdapter;
 var initialized, api;
 var middleware = middlewareLib( metrics );
 var wrapper = {
-	 	actions: undefined,
-	 	auth: undefined,
-		config: undefined,
-		fount: internalFount,
-		init: initialize,
-		metrics: metrics,
-		request: request,
-		meta: undefined,
-		http: httpFn( request, middleware, metrics ),
-		socket: undefined,
-		session: middlewareLib.sessionLib,
-		on: onEvent
-	};
+	actions: undefined,
+	auth: undefined,
+	config: undefined,
+	fount: internalFount,
+	init: initialize,
+	metrics: metrics,
+	request: request,
+	meta: undefined,
+	http: httpFn( request, middleware, metrics ),
+	socket: undefined,
+	session: middlewareLib.sessionLib,
+	on: onEvent
+};
 
 function initialize( cfg, authProvider, fount ) { //jshint ignore:line
 	api = require( './api.js' )( wrapper, cfg );
 	wrapper.fount = fount || internalFount;
-	if( initialized ) {
+	if ( initialized ) {
 		api.startAdapters();
 		return when( api.resources );
 	} else {
 		wrapper.config = cfg;
 		wrapper.stop = api.stop;
 		middleware.configure( cfg );
-		if( when.isPromiseLike( authProvider ) ) {
+		if ( when.isPromiseLike( authProvider ) ) {
 			return authProvider
 				.then( function( result ) {
 					wrapper.auth = result;
@@ -63,9 +63,9 @@ function setup( authProvider ) { //jshint ignore:line
 	api.addAdapter( httpAdapter );
 
 	// API metadata
-	if( !config.noOptions ) {
+	if ( !config.noOptions ) {
 		wrapper.http.middleware( '/api', function( req, res, next ) {
-			if( req.method === 'OPTIONS' || req.method === 'options' ) {
+			if ( req.method === 'OPTIONS' || req.method === 'options' ) {
 				res.status( 200 ).send( wrapper.meta );
 			} else {
 				next();

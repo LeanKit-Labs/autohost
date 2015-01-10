@@ -19,79 +19,79 @@ var wrapper = {
 
 wrapper.clients.lookup = {};
 
-function addClient( socket ) {
+function addClient( socket ) { // jshint ignore:line
 	wrapper.clients.push( socket );
 	eventChannel.publish( 'socket.client.connected', { socket: socket } );
 }
 
-function socketIdentified( id, socket ) {
+function socketIdentified( id, socket ) { // jshint ignore:line
 	wrapper.clients.lookup[ id ] = socket;
 	eventChannel.publish( 'socket.client.identified', { id: id, socket: socket } );
 }
 
-function notifyClients( message, data ) {
+function notifyClients( message, data ) { // jshint ignore:line
 	debug( 'Notifying %d clients: %s %s', wrapper.clients.length, message, JSON.stringify( data ) );
 	_.each( wrapper.clients, function( client ) {
-		client.publish( message, data );
-	} );
+			client.publish( message, data );
+		} );
 }
 
-function onTopic( topic, handle ) {
+function onTopic( topic, handle ) { // jshint ignore:line
 	debug( 'TOPIC: %s -> %s', topic, ( handle.name || 'anonymous' ) );
 	wrapper.topics[ topic ] = handle;
-	if( socketIO ) {
+	if ( socketIO ) {
 		socketIO.on( topic, handle );
 	}
 }
 
-function removeClient( socket ) {
+function removeClient( socket ) { // jshint ignore:line
 	var index = wrapper.clients.indexOf( socket );
-	if( index >= 0 ) {
+	if ( index >= 0 ) {
 		wrapper.clients.splice( index, 1 );
 	}
-	if( socket.id ) {
+	if ( socket.id ) {
 		delete wrapper.clients.lookup[ socket.id ];
 	}
 	eventChannel.publish( 'socket.client.closed', { id: socket.id, socket: socket } );
 }
 
-function sendToClient( id, message, data ) {
+function sendToClient( id, message, data ) { // jshint ignore:line
 	debug( 'Sending to clients %s: %s %s', id, message, JSON.stringify( data ) );
 	var socket = wrapper.clients.lookup[ id ];
-	if( !socket ) {
+	if ( !socket ) {
 		socket = wrapper.clients.find( clients, function( client ) {
 			return client.user.id === id || client.user.name === id;
 		} );
 	}
-	if( socket ) {
+	if ( socket ) {
 		socket.publish( message, data );
 		return true;
-	} 
+	}
 	return false;
 }
 
-function start() {
-	if( config.socketio || config.socketIO || config.socketIo ) {
+function start() { // jshint ignore:line
+	if ( config.socketio || config.socketIO || config.socketIo ) {
 		socketIO = require( './socketio.js' )( config, wrapper, http.passport );
 		socketIO.config( http );
 	}
-	if( config.websocket || config.websockets ) {
+	if ( config.websocket || config.websockets ) {
 		websocket = require( './websocket' )( config, wrapper, http.passport );
 		websocket.config( http );
 	}
 }
 
-function stop() {
+function stop() { // jshint ignore:line
 	_.each( wrapper.clients, function( socket ) {
-		if( socket ) {
-			socket.removeAllListeners();
-			socket.close();
-		}
-	} );
-	if( socketIO ) {
+			if ( socket ) {
+				socket.removeAllListeners();
+				socket.close();
+			}
+		} );
+	if ( socketIO ) {
 		socketIO.stop();
 	}
-	if( websocket ) {
+	if ( websocket ) {
 		websocket.stop();
 	}
 }

@@ -1,8 +1,8 @@
-var authStrategy,
-	registry,
-	socketServer,
-	middleware,
-	config;
+var authStrategy;
+var registry;
+var socketServer;
+var middleware;
+var config;
 var _ = require( 'lodash' );
 var WS = require ( 'websocket' ).server;
 var ServerResponse = require( 'http' ).ServerResponse;
@@ -17,19 +17,19 @@ function acceptSocketRequest( request ) {
 
 	var protocol = request.requestedProtocols[ 0 ];
 	var socket = request.accept( protocol, request.origin );
-	
+
 	socket.user = request.user || {
-		id: 'anonymous',
-		name: 'anonymous'
-	};
-	
+			id: 'anonymous',
+			name: 'anonymous'
+		};
+
 
 	// grab session and cookies parsed from middleware
 	socket.session = request.session;
 	socket.cookies = request.cookies;
 
 	// attach roles to user on socket
-	if( authStrategy ) {
+	if ( authStrategy ) {
 		authStrategy.getSocketRoles( socket.user )
 			.then( function( roles ) {
 				socket.user.roles = roles;
@@ -41,7 +41,7 @@ function acceptSocketRequest( request ) {
 
 	// reprocess generic message with topic sent
 	socket.on( 'message', function( message ) {
-		if( message.type === 'utf8' ) {
+		if ( message.type === 'utf8' ) {
 			var json = JSON.parse( message.utf8Data );
 			this.emit( json.topic, json.data, socket );
 		}
@@ -50,7 +50,7 @@ function acceptSocketRequest( request ) {
 	// normalize socket publishing interface
 	socket.publish = function( topic, message ) {
 		var payload = JSON.stringify( { topic: topic, data: message } );
-		this.sendUTF(payload);
+		this.sendUTF( payload );
 	};
 
 	var originalClose = socket.close;
@@ -58,7 +58,7 @@ function acceptSocketRequest( request ) {
 		debug( 'Closing websocket client (user: %s)', JSON.stringify( socket.user ) );
 		socket.removeAllListeners();
 		originalClose();
-		registry.remove( socket ); 
+		registry.remove( socket );
 	};
 
 	// if client identifies itself, register id
@@ -72,39 +72,41 @@ function acceptSocketRequest( request ) {
 
 	// subscribe to registered topics
 	_.each( registry.topics, function( callback, topic ) {
-		if( callback ) {
-			socket.on( topic, function( data, socket ) { callback( data, socket ); } );
+		if ( callback ) {
+			socket.on( topic, function( data, socket ) {
+				callback( data, socket );
+			} );
 		}
 	} );
 
 	socket.publish( 'server.connected', { user: socket.user } );
 	socket.on( 'close', function() {
 		debug( 'websocket client disconnected (user: %s)', JSON.stringify( socket.user ) );
-		registry.remove( socket ); 
+		registry.remove( socket );
 	} );
 	debug( 'Finished processing websocket connection attempt' );
 }
 
 function configureWebsocket( http ) {
-	if( config.websockets || config.websocket ) {
+	if ( config.websockets || config.websocket ) {
 		middleware = authStrategy ? http.getAuthMiddleware() : http.getMiddleware();
-		socketServer = new WS( { 
-			httpServer: http.server,
-			autoAcceptConnections: false 
-		} );
+		socketServer = new WS( {
+				httpServer: http.server,
+				autoAcceptConnections: false
+			} );
 		socketServer.on( 'request', handleWebSocketRequest );
 	}
 }
 
-function handleWebSocketRequest( request ) {
+function handleWebSocketRequest( request ) { // jshint ignore:line
 	// if this doesn't end in websocket, we should ignore the request, it isn't for this lib
-	if( !/websocket[\/]?$/.test( request.resourceURL.path ) ) {
+	if ( !/websocket[\/]?$/.test( request.resourceURL.path ) ) {
 		debug( 'Websocket connection attempt (%s) does not match allowed URL /websocket', request.resourceURL.path );
 		return;
 	}
 
 	// check origin
-	if( !allowOrigin( request.origin ) ) {
+	if ( !allowOrigin( request.origin ) ) {
 		debug( 'Websocket origin (%s) does not match allowed origin %s', request.origin, config.origin );
 		request.reject();
 		return;
@@ -112,10 +114,10 @@ function handleWebSocketRequest( request ) {
 
 	var response = new ServerResponse( request.httpRequest );
 	response.assignSocket( request.socket );
-	if( authStrategy ) {
+	if ( authStrategy ) {
 		middleware
 			.handle( request.httpRequest, response, function( err ) {
-				if( err || !request.httpRequest.user ) {
+				if ( err || !request.httpRequest.user ) {
 					debug( 'Websocket connection rejected: authentication required' );
 					request.reject( 401, 'Authentication Required', { 'WWW-Authenticate': 'Basic' } );
 				} else {
@@ -127,10 +129,10 @@ function handleWebSocketRequest( request ) {
 			} );
 	} else {
 		request.user = {
-			id: 'anonymous',
-			name: 'anonymous',
-			roles: []
-		};
+				id: 'anonymous',
+				name: 'anonymous',
+				roles: []
+			};
 		acceptSocketRequest( request );
 	}
 }
@@ -144,7 +146,7 @@ module.exports = function( cfg, reg, auth ) {
 	authStrategy = auth;
 	registry = reg;
 	return {
-		config: configureWebsocket,
-		stop: stop
-	};
+			config: configureWebsocket,
+			stop: stop
+		};
 };

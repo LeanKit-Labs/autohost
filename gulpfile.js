@@ -14,7 +14,7 @@ function cover( done ) {
 
 function runSpecs() { // jshint ignore : line
 	return gulp.src( [ './spec/*.spec.js' ], { read: false } )
-				.pipe( mocha( { reporter: 'spec' } ) );
+		.pipe( mocha( { reporter: 'spec' } ) );
 }
 
 function writeReport( cb, openBrowser, tests ) {
@@ -24,7 +24,7 @@ function writeReport( cb, openBrowser, tests ) {
 		} )
 		.pipe( istanbul.writeReports() )
 		.on( 'end', function() {
-			if( openBrowser ) {
+			if ( openBrowser ) {
 				open( './coverage/lcov-report/index.html' );
 			}
 			cb();
@@ -53,12 +53,26 @@ gulp.task( 'test', function() {
 		.on( 'error', process.exit.bind( process, 1 ) );
 } );
 
+var esformatter = require( 'gulp-esformatter' );
+
+gulp.task( 'format', [ 'format:source', 'format:specs' ] );
+
+gulp.task( 'format:source', function() {
+	return gulp.src( './src/**/*' )
+		.pipe( esformatter() )
+		.pipe( gulp.dest( 'src' ) );
+} );
+
+gulp.task( 'format:specs', function() {
+	// return gulp.src( specFilePaths )
+	// 	.pipe( esformatter() )
+	// 	.pipe( gulp.dest( "client/spec" ) );
+} );
+
 gulp.task( 'test-watch', function() {
 	gulp.watch( [ './src/**/*', './spec/*.spec.js' ], [ 'continuous-test' ] );
 } );
 
-gulp.task( 'default', [ 'continuous-coverage', 'coverage-watch' ], function() {
-} );
+gulp.task( 'default', [ 'continuous-coverage', 'coverage-watch' ], function() {} );
 
-gulp.task( 'specs', [ 'continuous-test', 'test-watch' ], function() {
-} );
+gulp.task( 'specs', [ 'continuous-test', 'test-watch' ], function() {} );

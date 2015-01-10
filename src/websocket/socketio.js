@@ -14,24 +14,24 @@ function acceptSocket( socket ) {
 
 	// grab user from request
 	socket.user = handshake.user || {
-		id: 'anonymous',
-		name: 'anonymous'
-	};
-	
+			id: 'anonymous',
+			name: 'anonymous'
+		};
+
 	// copy session from request
 	socket.session = handshake.session;
 
 	// copy cookies from request from middleware
 	socket.cookies = {};
-	if( handshake.headers.cookie ) {
+	if ( handshake.headers.cookie ) {
 		_.each( handshake.headers.cookie.split( ';' ), function( cookie ) {
-			var crumbs = cookie.split( '=' );
-			socket.cookies[ crumbs[ 0 ].trim() ] = crumbs[ 1 ].trim();
-		} );
+				var crumbs = cookie.split( '=' );
+				socket.cookies[ crumbs[ 0 ].trim() ] = crumbs[ 1 ].trim();
+			} );
 	}
 
 	// attach roles to user on socket
-	if( authStrategy ) {
+	if ( authStrategy ) {
 		authStrategy.getSocketRoles( socket.user )
 			.then( function( roles ) {
 				socket.user.roles = roles;
@@ -51,7 +51,7 @@ function acceptSocket( socket ) {
 		debug( 'Closing socket.io client (user: %s)', JSON.stringify( socket.user ) );
 		socket.removeAllListeners();
 		socket.disconnect( true );
-		registry.remove( socket ); 
+		registry.remove( socket );
 	};
 
 	// if client identifies itself, register id
@@ -66,24 +66,24 @@ function acceptSocket( socket ) {
 
 	// subscribe to registered topics
 	_.each( registry.topics, function( callback, topic ) {
-		if( callback ) {
-			socket.on( topic, function( data ) {
-				callback( data, socket ); 
-			} );
-		}
-	} );
+			if ( callback ) {
+				socket.on( topic, function( data ) {
+					callback( data, socket );
+				} );
+			}
+		} );
 
 	socket.publish( 'server.connected', { user: socket.user } );
 	socket.on( 'disconnect', function() {
 		debug( 'socket.io client disconnected (user: %s)', JSON.stringify( socket.user ) );
 		socket.removeAllListeners();
-		registry.remove( socket ); 
+		registry.remove( socket );
 	} );
 }
 
 function authSocketIO( req, allow ) {
 	var allowed;
-	if( authStrategy ) {
+	if ( authStrategy ) {
 		middleware
 			.use( '/', function( hreq, hres, next ) {
 				debug( 'Setting socket.io connection user to %s', hreq.user );
@@ -91,7 +91,7 @@ function authSocketIO( req, allow ) {
 				next();
 			} )
 			.handle( req, req.res, function( err ) {
-				if( err ) {
+				if ( err ) {
 					debug( 'Error in authenticating socket.io connection %s', err.stack );
 					allow( err );
 				} else {
@@ -113,8 +113,10 @@ function configureSocketIO( http ) {
 
 function handle( topic, callback ) {
 	_.each( registry.clients, function( client ) {
-		client.on( topic, function( data ) { callback( data, client ); } );
-	} );
+			client.on( topic, function( data ) {
+				callback( data, client );
+			} );
+		} );
 }
 
 function stop() {
@@ -127,8 +129,8 @@ module.exports = function( cfg, reg, auth ) {
 	authStrategy = auth;
 	registry = reg;
 	return {
-		config: configureSocketIO,
-		on: handle,
-		stop: stop
-	};
+			config: configureSocketIO,
+			on: handle,
+			stop: stop
+		};
 };
