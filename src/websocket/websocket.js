@@ -19,9 +19,9 @@ function acceptSocketRequest( request ) {
 	var socket = request.accept( protocol, request.origin );
 
 	socket.user = request.user || {
-			id: 'anonymous',
-			name: 'anonymous'
-		};
+		id: 'anonymous',
+		name: 'anonymous'
+	};
 
 
 	// grab session and cookies parsed from middleware
@@ -61,6 +61,9 @@ function acceptSocketRequest( request ) {
 		registry.remove( socket );
 	};
 
+	// add a way to end session
+	socket.logout = request.logout || request.httpRequest.logout;
+
 	// if client identifies itself, register id
 	socket.on( 'client.identity', function( data, socket ) {
 		socket.id = data.id;
@@ -91,11 +94,21 @@ function configureWebsocket( http ) {
 	if ( config.websockets || config.websocket ) {
 		middleware = authStrategy ? http.getAuthMiddleware() : http.getMiddleware();
 		socketServer = new WS( {
-				httpServer: http.server,
-				autoAcceptConnections: false
-			} );
+			httpServer: http.server,
+			autoAcceptConnections: false
+		} );
 		socketServer.on( 'request', handleWebSocketRequest );
 	}
+}
+
+function handle( topic, callback ) {
+	_.each( registry.clients, function( client ) {
+		if ( client.type !== 'socketio' ) {
+			client.on( topic, function( data ) {
+				callback( data, client );
+			} );
+		}
+	} );
 }
 
 function handleWebSocketRequest( request ) { // jshint ignore:line
@@ -129,10 +142,10 @@ function handleWebSocketRequest( request ) { // jshint ignore:line
 			} );
 	} else {
 		request.user = {
-				id: 'anonymous',
-				name: 'anonymous',
-				roles: []
-			};
+			id: 'anonymous',
+			name: 'anonymous',
+			roles: []
+		};
 		acceptSocketRequest( request );
 	}
 }
@@ -146,7 +159,8 @@ module.exports = function( cfg, reg, auth ) {
 	authStrategy = auth;
 	registry = reg;
 	return {
-			config: configureWebsocket,
-			stop: stop
-		};
+		config: configureWebsocket,
+		on: handle,
+		stop: stop
+	};
 };

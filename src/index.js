@@ -14,19 +14,19 @@ var httpAdapter, socketAdapter;
 var initialized, api;
 var middleware = middlewareLib( metrics );
 var wrapper = {
-	actions: undefined,
-	auth: undefined,
-	config: undefined,
-	fount: internalFount,
-	init: initialize,
-	metrics: metrics,
-	request: request,
-	meta: undefined,
-	http: httpFn( request, middleware, metrics ),
-	socket: undefined,
-	session: middlewareLib.sessionLib,
-	on: onEvent
-};
+		actions: undefined,
+		auth: undefined,
+		config: undefined,
+		fount: internalFount,
+		init: initialize,
+		metrics: metrics,
+		request: request,
+		meta: undefined,
+		http: httpFn( request, middleware, metrics ),
+		socket: undefined,
+		session: middlewareLib.sessionLib,
+		on: onEvent
+	};
 
 function initialize( cfg, authProvider, fount ) { //jshint ignore:line
 	api = require( './api.js' )( wrapper, cfg );

@@ -79,8 +79,9 @@ function stop() { // jshint ignore:line
 
 function wireupResource( resource, basePath, resources ) { // jshint ignore:line
 	var meta = { routes: {} };
-	if ( resource.resources && resource.resources !== '' ) {
-		var directory = buildPath( [ basePath, resource.resources ] );
+	var static = resource.static || resource.resources;
+	if ( static && static !== '' ) {
+		var directory = buildPath( [ basePath, static ] );
 		http.static( '/' + resource.name, directory );
 		meta.path = { url: '/' + resource.name, directory: directory };
 	}
@@ -93,6 +94,7 @@ function wireupResource( resource, basePath, resources ) { // jshint ignore:line
 function wireupAction( resource, actionName, action, meta, resources ) { // jshint ignore:line
 	var url = buildActionUrl( resource.name, actionName, action, resource, resources );
 	var alias = buildActionAlias( resource.name, actionName );
+	var errors = [ action.url, action.method, 'errors' ].join( '.' );
 	meta.routes[ actionName ] = { method: action.method, url: url };
 	debug( 'Mapping resource \'%s\' action \'%s\' to %s %s', resource.name, actionName, action.method, url );
 	http.route( url, action.method, function( req, res ) {
@@ -101,10 +103,20 @@ function wireupAction( resource, actionName, action, meta, resources ) { // jshi
 		req._checkPermission = authStrategy ? checkPermissionFor.bind( undefined, req.user, req.context ) : undefined;
 		var respond = function() {
 			var envelope = new HttpEnvelope( req, res );
-			action.handle.apply( resource, [ envelope ] );
+			if ( config && config.handleRouteErrors ) {
+				try {
+					action.handle.apply( resource, [ envelope ] );
+				} catch (err) {
+					metrics.meter( errors ).record();
+					debug( 'ERROR! route: %s %s failed with %s', action.method.toUpperCase(), action.url, err.stack );
+					res.status( 500 ).send( 'Server error at ' + action.method.toUpperCase() + ' ' + action.url );
+				}
+			} else {
+				action.handle.apply( resource, [ envelope ] );
+			}
 		};
 		if ( authStrategy ) {
-			checkPermissionFor( req.user, req.context, alias )
+			var promise = checkPermissionFor( req.user, req.context, alias )
 				.then( function( pass ) {
 					if ( pass ) {
 						debug( 'HTTP activation of action %s (%s %s) for %s granted', alias, action.method, url, getUserString( req.user ) );
@@ -114,6 +126,14 @@ function wireupAction( resource, actionName, action, meta, resources ) { // jshi
 						res.status( 403 ).send( 'User lacks sufficient permissions' );
 					}
 				} );
+		// if ( config && config.handleRouteErrors ) {
+		// 	promise
+		// 		.then( null, function( err ) {
+		// 			metrics.meter( errors ).record();
+		// 			debug( 'ERROR! route: %s %s failed with %s', action.method.toUpperCase(), action.url, err.stack );
+		// 			res.status( 500 ).send( 'Server error at ' + action.method.toUpperCase() + ' ' + action.url );
+		// 		} );
+		// }
 		} else {
 			respond();
 		}
@@ -125,6 +145,7 @@ module.exports = function( cfg, auth, httpLib, req, meter ) {
 	authStrategy = auth;
 	if ( auth ) {
 		passport = passportFn( cfg, auth, meter );
+		wrapper.passport = passport;
 	}
 	http = httpLib;
 	metrics = meter;

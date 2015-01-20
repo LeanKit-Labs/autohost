@@ -6,12 +6,14 @@ var queryparse = qs.parse;
 var express = require( 'express' );
 var http = require( 'http' );
 var debug = require( 'debug' )( 'autohost:http-transport' );
+var regex = require( './regex.js' );
 var Router = express.Router;
 var expreq = express.request; //jshint ignore:line
 var expres = express.response; //jshint ignore:line
 var middleware, userMiddleware, routes, paths, request, config, metrics, middlewareLib;
 
 var wrapper;
+reset();
 
 function buildUrl() {
 	var idx = 0,
@@ -123,9 +125,13 @@ function parseAhead( router, req, done ) {
 // apply prefix to url if one exists
 function prefix( url ) {
 	if ( config.urlPrefix ) {
-		var prefixIndex = url.indexOf( config.urlPrefix );
-		var appliedPrefix = prefixIndex === 0 ? '' : config.urlPrefix;
-		return buildUrl( appliedPrefix, url );
+		if ( _.isRegExp( url ) ) {
+			return regex.prefix( config.urlPrefix, url );
+		} else {
+			var prefixIndex = url.indexOf( config.urlPrefix );
+			var appliedPrefix = prefixIndex === 0 ? '' : config.urlPrefix;
+			return buildUrl( appliedPrefix, url );
+		}
 	} else {
 		return url;
 	}
@@ -174,21 +180,21 @@ function registerUserMiddleware( filter, callback ) {
 	userMiddleware.push( fn );
 }
 
-function registerRoute( url, verb, callback ) {
-	verb = verb.toLowerCase();
-	verb = verb === 'all' || verb === 'any' ? 'all' : verb;
-	var errors = [ url, verb, 'errors' ].join( '.' );
+function registerRoute( url, method, callback ) {
+	method = method.toLowerCase();
+	method = method === 'all' || method === 'any' ? 'all' : method;
+	var errors = [ url, method, 'errors' ].join( '.' );
 	var fn = function() {
 		url = prefix( url );
-		debug( 'ROUTE: %s %s -> %s', verb, url, ( callback.name || 'anonymous' ) );
-		wrapper.app[ verb ]( url, function( req, res ) {
+		debug( 'ROUTE: %s %s -> %s', method, url, ( callback.name || 'anonymous' ) );
+		wrapper.app[ method ]( url, function( req, res ) {
 			if ( config && config.handleRouteErrors ) {
 				try {
 					callback( req, res );
 				} catch (err) {
 					metrics.meter( errors ).record();
-					debug( 'ERROR! route: %s %s failed with %s', verb, url, err.stack );
-					res.status( 500 ).send( 'An error occurred at route ' + verb + ' ' + url + '.' );
+					debug( 'ERROR! route: %s %s failed with %s', method.toUpperCase(), url, err.stack );
+					res.status( 500 ).send( 'Server error at ' + method.toUpperCase() + ' ' + url );
 				}
 			} else {
 				callback( req, res );
@@ -246,25 +252,30 @@ function stop() {
 	}
 }
 
-wrapper = {
-	buildUrl: buildUrl,
-	getMiddleware: createMiddlewareStack,
-	getAuthMiddleware: createAuthMiddlewareStack,
-	middleware: registerUserMiddleware,
-	route: registerRoute,
-	start: start,
-	static: registerStaticPath,
-	server: undefined,
-	app: undefined,
-	passport: undefined,
-	stop: stop
-};
-
-module.exports = function( req, mw, metric ) {
+function reset() { // jshint ignore:line
+	wrapper = {
+		buildUrl: buildUrl,
+		getMiddleware: createMiddlewareStack,
+		getAuthMiddleware: createAuthMiddlewareStack,
+		middleware: registerUserMiddleware,
+		route: registerRoute,
+		start: start,
+		static: registerStaticPath,
+		server: undefined,
+		app: undefined,
+		passport: undefined,
+		stop: stop
+	};
 	middleware = [];
 	userMiddleware = [];
 	routes = [];
 	paths = [];
+}
+
+module.exports = function( req, mw, metric, resetState ) {
+	if ( resetState ) {
+		reset();
+	}
 	metrics = metric;
 	request = req;
 	middlewareLib = mw;

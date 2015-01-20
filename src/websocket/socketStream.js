@@ -14,19 +14,17 @@ SocketStream.prototype._write = function( chunk, encoding, callback ) {
 	var envelope = {
 		index: this._index++
 	};
-	if ( !chunk ) {
-		envelope.end = true;
-	} else {
-		envelope.data = chunk;
-	}
+	envelope.data = chunk;
 	this._socket.publish( this._replyTo, envelope );
 	if ( callback ) {
 		callback();
 	}
-	if ( envelope.end ) {
-		this.emit( 'finish' );
-	}
 	return true;
+};
+
+SocketStream.prototype.end = function() {
+	this._socket.publish( this._replyTo, { end: true } );
+	this.emit( 'finish' );
 };
 
 module.exports = SocketStream;

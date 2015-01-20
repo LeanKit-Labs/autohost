@@ -6,12 +6,12 @@ var SocketEnvelope;
 var _ = require( 'lodash' );
 var debug = require( 'debug' )( 'autohost:websocket-adapter' );
 var wrapper = {
-		name: 'http',
-		action: wireupAction,
-		resource: wireupResource,
-		start: start,
-		stop: stop
-	};
+	name: 'http',
+	action: wireupAction,
+	resource: wireupResource,
+	start: start,
+	stop: stop
+};
 
 function buildActionAlias( resourceName, actionName ) {
 	return [ resourceName, actionName ].join( '.' );
@@ -48,8 +48,8 @@ function stop() { // jshint ignore:line
 function wireupResource( resource ) { // jshint ignore:line
 	var meta = { topics: {} };
 	_.each( resource.actions, function( action, actionName ) {
-			wireupAction( resource, actionName, action, meta );
-		} );
+		wireupAction( resource, actionName, action, meta );
+	} );
 	return meta;
 }
 
@@ -59,21 +59,30 @@ function wireupAction( resource, actionName, action, meta ) { // jshint ignore:l
 
 	meta.topics[ actionName ] = { topic: topic };
 	debug( 'Mapping resource \'%s\' action \'%s\' to topic %s', resource.name, actionName, alias );
-	socket.on( topic, function( message, socket ) {
+	socket.on( topic, function( message, client ) {
 		var data = message.data || message;
 		var respond = function() {
-			var envelope = new SocketEnvelope( topic, message, socket );
-			action.handle.apply( resource, [ envelope ] );
+			var envelope = new SocketEnvelope( topic, message, client );
+			if ( config && config.handleRouteErrors ) {
+				try {
+					action.handle.apply( resource, [ envelope ] );
+				} catch (err) {
+					client.publish( data.replyTo || topic, 'Server error at topic ' + topic );
+				}
+			} else {
+				action.handle.apply( resource, [ envelope ] );
+			}
 		};
 		if ( authStrategy ) {
-			checkPermissionFor( socket.user, {}, alias )
+			checkPermissionFor( client.user, {}, alias )
 				.then( function( pass ) {
 					if ( pass ) {
-						debug( 'WS activation of action %s for %s granted', alias, getUserString( socket.user ) );
+						debug( 'WS activation of action %s for %s granted', alias, getUserString( client.user ) );
 						respond();
 					} else {
-						debug( 'User %s was denied WS activation of action %s', getUserString( socket.user ), alias );
-						socket.publish( data.replyTo || topic, 'User lacks sufficient permission' );
+
+						debug( 'User %s was denied WS activation of action %s', getUserString( client.user ), alias );
+						client.publish( data.replyTo || topic, 'User lacks sufficient permissions' );
 					}
 				} );
 		} else {

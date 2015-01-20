@@ -19,7 +19,7 @@
     "passport": "^0.2.0",
     "postal": "^0.10.1",
     "qs": "^1.0.0",
-    "request": "^2.39.0",
+    "request": "~2.51.0",
     "should": "^4.0.4",
     "socket.io": "^1.0.6",
     "websocket": "^1.0.8",

@@ -3,18 +3,20 @@ var when = require( 'when' );
 var passport = require( 'passport' );
 var debug = require( 'debug' )( 'autohost:passport' );
 var noOp = function() {
-		return when( true );
-	};
+	return when( true );
+};
 var userCountCheck = noOp;
 var authorizationErrorCount = 'autohost.authorization.errors';
 var authorizationErrorRate = 'autohost.authorization.error.rate';
 var authenticationTimer = 'autohost.authentication.timer';
 var authorizationTimer = 'autohost.authorization.timer';
-var passportInitialize = passport.initialize();
-var passportSession = passport.session();
+var passportInitialize;
+var passportSession;
 var authProvider;
 var anonPaths;
 var metrics;
+
+reset();
 
 function authConditionally( req, res, next ) { // jshint ignore:line
 	// if previous middleware has said to skip auth OR
@@ -30,15 +32,15 @@ function authConditionally( req, res, next ) { // jshint ignore:line
 
 function getAuthMiddleware( uri ) {
 	var list = [
-			{ path: uri, fn: passportInitialize },
-			{ path: uri, fn: passportSession }
-		]
+		{ path: uri, fn: passportInitialize },
+		{ path: uri, fn: passportSession }
+	]
 		.concat( _.map( anonPaths, function( pattern ) {
 			return { path: pattern, fn: skipAuthentication };
 		} ) )
-		.concat( [  { path: uri, fn: whenNoUsers },
-					{ path: uri, fn: authConditionally },
-					{ path: uri, fn: getRoles } ] );
+		.concat( [ { path: uri, fn: whenNoUsers },
+			{ path: uri, fn: authConditionally },
+		{ path: uri, fn: getRoles } ] );
 	return list;
 }
 
@@ -55,7 +57,12 @@ function getRoles( req, res, next ) { // jshint ignore:line
 				metrics.meter( authorizationErrorRate ).record();
 				metrics.timer( authorizationTimer ).record();
 				debug( 'Failed to get roles for %s with %s', getUserString( req.user ), err.stack );
-				res.status( 500 ).send( 'Could not determine user permissions' );
+				// during a socket connection, express is not fully initialized and this call fails ... hard
+				try {
+					res.status( 500 ).send( 'Could not determine user permissions' );
+				} catch (err) {
+					return [];
+				}
 			} )
 			.then( function( roles ) {
 				debug( 'Got roles [ %s ] for %s', roles, req.user );
@@ -91,6 +98,14 @@ function getUserString( user ) { // jshint ignore:line
 	return user.name ? user.name : JSON.stringify( user );
 }
 
+function reset() {
+	passportInitialize = passport.initialize();
+	passportSession = passport.session();
+	authProvider = undefined;
+	anonPaths = undefined;
+	metrics = undefined;
+}
+
 function resetUserCount() {
 	userCountCheck = authProvider.hasUsers;
 }
@@ -98,6 +113,7 @@ function resetUserCount() {
 function skipAuthentication( req, res, next ) { // jshint ignore:line
 	req.skipAuth = true;
 	if ( !req.user ) {
+		;
 		debug( 'Skipping authentication and assigning user anonymous to request %s %s', req.method, req.url );
 		req.user = {
 			id: 'anonymous',
@@ -127,7 +143,10 @@ function withAuthLib( authProvider ) {
 	} );
 }
 
-module.exports = function( config, authPlugin, meter ) {
+module.exports = function( config, authPlugin, meter, resetState ) {
+	if ( resetState ) {
+		reset();
+	}
 	metrics = meter;
 	authProvider = authPlugin;
 	authProvider.initPassport( passport );
@@ -140,9 +159,9 @@ module.exports = function( config, authPlugin, meter ) {
 	}
 	withAuthLib( authProvider );
 	return {
-			getMiddleware: getAuthMiddleware,
-			getSocketRoles: getSocketRoles,
-			hasUsers: userCountCheck,
-			resetUserCheck: resetUserCount
-		};
+		getMiddleware: getAuthMiddleware,
+		getSocketRoles: getSocketRoles,
+		hasUsers: userCountCheck,
+		resetUserCheck: resetUserCount
+	};
 };

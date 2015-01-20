@@ -13,14 +13,14 @@ function cover( done ) {
 }
 
 function runSpecs() { // jshint ignore : line
-	return gulp.src( [ './spec/*.spec.js' ], { read: false } )
+	return gulp.src( [ './spec/**/*.spec.js' ], { read: false } )
 		.pipe( mocha( { reporter: 'spec' } ) );
 }
 
 function writeReport( cb, openBrowser, tests ) {
 	tests
-		.on( 'error', function() {
-			cb();
+		.on( 'error', function( e ) {
+			console.log( 'error occurred during testing', e.stack );
 		} )
 		.pipe( istanbul.writeReports() )
 		.on( 'end', function() {
@@ -36,7 +36,11 @@ gulp.task( 'continuous-coverage', function( cb ) {
 } );
 
 gulp.task( 'continuous-test', function() {
-	return runSpecs();
+	return runSpecs()
+		.on( 'end', function() {
+			console.log( process._getActiveRequests() );
+			console.log( process._getActiveHandles() );
+		} );
 } );
 
 gulp.task( 'coverage', function( cb ) {
@@ -44,7 +48,7 @@ gulp.task( 'coverage', function( cb ) {
 } );
 
 gulp.task( 'coverage-watch', function() {
-	gulp.watch( [ './src/**/*', './spec/*.spec.js' ], [ 'continuous-coverage' ] );
+	gulp.watch( [ './src/**/*', './spec/**/*' ], [ 'continuous-coverage' ] );
 } );
 
 gulp.task( 'test', function() {
@@ -70,9 +74,10 @@ gulp.task( 'format:specs', function() {
 } );
 
 gulp.task( 'test-watch', function() {
-	gulp.watch( [ './src/**/*', './spec/*.spec.js' ], [ 'continuous-test' ] );
+	gulp.watch( [ './src/**/*', './spec/**/*' ], [ 'continuous-test' ] );
 } );
 
 gulp.task( 'default', [ 'continuous-coverage', 'coverage-watch' ], function() {} );
 
+// gulp.task( 'specs', [ 'continuous-test', 'test-watch' ], function() {} );
 gulp.task( 'specs', [ 'continuous-test', 'test-watch' ], function() {} );

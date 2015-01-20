@@ -3,11 +3,11 @@ var cookies = require( 'cookie-parser' );
 var sessionLib = require( 'express-session' );
 var multer = require( 'multer' );
 var wrapper = {
-		attach: applyMiddelware,
-		configure: configure,
-		useCookies: applyCookieMiddleware,
-		useSession: applySessionMiddleware
-	};
+	attach: applyMiddelware,
+	configure: configure,
+	useCookies: applyCookieMiddleware,
+	useSession: applySessionMiddleware
+};
 var config, metrics, session, cookieParser;
 
 function applyCookieMiddleware( attach ) { // jshint ignore: line
@@ -61,12 +61,12 @@ function configure( cfg ) { // jshint ignore:line
 	config = cfg;
 	cfg.sessionStore = cfg.sessionStore || new sessionLib.MemoryStore();
 	session = sessionLib( {
-			name: config.sessionId || 'ah.sid',
-			secret: config.sessionSecret || 'authostthing',
-			saveUninitialized: true,
-			resave: true,
-			store: cfg.sessionStore
-		} );
+		name: config.sessionId || 'ah.sid',
+		secret: config.sessionSecret || 'authostthing',
+		saveUninitialized: true,
+		resave: true,
+		store: cfg.sessionStore
+	} );
 }
 
 function requestMetrics( req, res, next ) { // jshint ignore: line
@@ -75,8 +75,8 @@ function requestMetrics( req, res, next ) { // jshint ignore: line
 	var timerKey = [ req.method.toUpperCase(), req.url, 'timer' ].join( ' ' );
 	metrics.timer( timerKey ).start();
 	res.once( 'finish', function() {
-			metrics.timer( timerKey ).record();
-		} );
+		metrics.timer( timerKey ).record();
+	} );
 	next();
 }
 
