@@ -22,12 +22,12 @@
     "request": "~2.51.0",
     "should": "^4.0.4",
     "socket.io": "^1.0.6",
-    "websocket": "^1.0.8",
+    "websocket": "^1.0.17",
     "when": "^3.4.2"
   },
   "devDependencies": {
-    "autohost-nedb-auth": "~0.1.0",
-    "autohost-riak-auth": "~0.1.0",
+    "autohost-nedb-auth": "~0.1.0-5",
+    "autohost-riak-auth": "~0.1.0-4",
     "connect-redis": "^2.1.0",
     "gulp": "^3.8.6",
     "gulp-istanbul": "^0.5.0",
