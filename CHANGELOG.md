@@ -1,6 +1,25 @@
 ## 0.3.0
 Primary motivation here is to begin work on a version of autohost that will work well with a hypermedia library ( [hyped](https://github.com/leankit-labs/hyped) ). This is a breaking change because of several structural and naming changes to how resources get modeled.
 
+### prerelease 18
+ * Rewrite specifications
+ * Provide test harness
+ * Get coverage to 90%
+ * Improve metrics keys / namespaces
+ * Bring socket abstractions up to feature parity with HTTP where possible
+ * Provide better error responses when trying to forward or redirect from a socket activation of an action
+ * Correctly capture user for socket.io
+ * Preserve header values from UPGRADE request during socket connection
+ * Fix socket stream implementation (streaming to client via socket)
+
+
+### prerelease 17
+Add `.logout` to to HTTP and Socket envelopes to make ending a session within a handler more straight-forward.
+
+### prerelease 16
+ * Bug fix - public path was getting registered before middleware causing static resources under public to get served regardless of authorization.
+ * Formatting (esformatter and then manual clean up)
+
 ### prerelease 15
 Bug fix - passport should not attempt to initialize when no auth provider is passed to init.
 

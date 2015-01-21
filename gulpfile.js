@@ -13,18 +13,18 @@ function cover( done ) {
 }
 
 function runSpecs() { // jshint ignore : line
-	return gulp.src( [ './spec/*.spec.js' ], { read: false } )
-				.pipe( mocha( { reporter: 'spec' } ) );
+	return gulp.src( [ './spec/**/*.spec.js' ], { read: false } )
+		.pipe( mocha( { reporter: 'spec' } ) );
 }
 
 function writeReport( cb, openBrowser, tests ) {
 	tests
-		.on( 'error', function() {
-			cb();
+		.on( 'error', function( e ) {
+			console.log( 'error occurred during testing', e.stack );
 		} )
 		.pipe( istanbul.writeReports() )
 		.on( 'end', function() {
-			if( openBrowser ) {
+			if ( openBrowser ) {
 				open( './coverage/lcov-report/index.html' );
 			}
 			cb();
@@ -36,7 +36,11 @@ gulp.task( 'continuous-coverage', function( cb ) {
 } );
 
 gulp.task( 'continuous-test', function() {
-	return runSpecs();
+	return runSpecs()
+		.on( 'end', function() {
+			console.log( process._getActiveRequests() );
+			console.log( process._getActiveHandles() );
+		} );
 } );
 
 gulp.task( 'coverage', function( cb ) {
@@ -44,7 +48,7 @@ gulp.task( 'coverage', function( cb ) {
 } );
 
 gulp.task( 'coverage-watch', function() {
-	gulp.watch( [ './src/**/*', './spec/*.spec.js' ], [ 'continuous-coverage' ] );
+	gulp.watch( [ './src/**/*', './spec/**/*' ], [ 'continuous-coverage' ] );
 } );
 
 gulp.task( 'test', function() {
@@ -53,12 +57,27 @@ gulp.task( 'test', function() {
 		.on( 'error', process.exit.bind( process, 1 ) );
 } );
 
+var esformatter = require( 'gulp-esformatter' );
+
+gulp.task( 'format', [ 'format:source', 'format:specs' ] );
+
+gulp.task( 'format:source', function() {
+	return gulp.src( './src/**/*' )
+		.pipe( esformatter() )
+		.pipe( gulp.dest( 'src' ) );
+} );
+
+gulp.task( 'format:specs', function() {
+	// return gulp.src( specFilePaths )
+	// 	.pipe( esformatter() )
+	// 	.pipe( gulp.dest( "client/spec" ) );
+} );
+
 gulp.task( 'test-watch', function() {
-	gulp.watch( [ './src/**/*', './spec/*.spec.js' ], [ 'continuous-test' ] );
+	gulp.watch( [ './src/**/*', './spec/**/*' ], [ 'continuous-test' ] );
 } );
 
-gulp.task( 'default', [ 'continuous-coverage', 'coverage-watch' ], function() {
-} );
+gulp.task( 'default', [ 'continuous-coverage', 'coverage-watch' ], function() {} );
 
-gulp.task( 'specs', [ 'continuous-test', 'test-watch' ], function() {
-} );
+// gulp.task( 'specs', [ 'continuous-test', 'test-watch' ], function() {} );
+gulp.task( 'specs', [ 'continuous-test', 'test-watch' ], function() {} );

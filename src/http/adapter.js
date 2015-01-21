@@ -20,9 +20,9 @@ var wrapper = {
 
 function buildActionUrl( resourceName, actionName, action, resource, resources ) {
 	var prefix = config.apiPrefix === undefined ? 'api' : config.apiPrefix;
-	if( _.isRegExp( action.url ) ) {
+	if ( _.isRegExp( action.url ) ) {
 		return regex.prefix( http.buildUrl( config.urlPrefix || '', prefix ), action.url );
-	} else if( config.urlStrategy ) {
+	} else if ( config.urlStrategy ) {
 		var url = config.urlStrategy( resourceName, actionName, action, resources );
 		prefix = hasPrefix( url ) ? '' : prefix;
 		return http.buildUrl( prefix, url );
@@ -40,8 +40,8 @@ function buildActionAlias( resourceName, actionName ) {
 function buildPath( pathSpec ) {
 	var hasLocalPrefix;
 	pathSpec = pathSpec || '';
-	if( _.isArray( pathSpec ) ) {
-		hasLocalPrefix = pathSpec[0].match( /^[.]\// );
+	if ( _.isArray( pathSpec ) ) {
+		hasLocalPrefix = pathSpec[ 0 ].match( /^[.]\// );
 		pathSpec = path.join.apply( {}, pathSpec );
 	}
 	pathSpec = pathSpec.replace( /^~/, process.env.HOME );
@@ -60,27 +60,28 @@ function checkPermissionFor( user, context, action ) {
 		} );
 }
 
-function getUserString( user ) {
+function getUserString( user ) { // jshint ignore:line
 	return user.name ? user.name : JSON.stringify( user );
 }
 
-function hasPrefix( url ) {
+function hasPrefix( url ) { // jshint ignore:line
 	var prefix = http.buildUrl( config.urlPrefix || '', config.apiPrefix || '' );
 	return url.indexOf( prefix ) === 0;
 }
 
-function start() {
+function start() { // jshint ignore:line
 	http.start( config, passport );
 }
 
-function stop() {
+function stop() { // jshint ignore:line
 	http.stop();
 }
 
-function wireupResource( resource, basePath, resources ) {
+function wireupResource( resource, basePath, resources ) { // jshint ignore:line
 	var meta = { routes: {} };
-	if( resource.resources && resource.resources !== '' ) {
-		var directory = buildPath( [ basePath, resource.resources ] );
+	var static = resource.static || resource.resources;
+	if ( static && static !== '' ) {
+		var directory = buildPath( [ basePath, static ] );
 		http.static( '/' + resource.name, directory );
 		meta.path = { url: '/' + resource.name, directory: directory };
 	}
@@ -90,9 +91,10 @@ function wireupResource( resource, basePath, resources ) {
 	return meta;
 }
 
-function wireupAction( resource, actionName, action, meta, resources ) {
+function wireupAction( resource, actionName, action, meta, resources ) { // jshint ignore:line
 	var url = buildActionUrl( resource.name, actionName, action, resource, resources );
 	var alias = buildActionAlias( resource.name, actionName );
+	var errors = [ 'autohost', 'errors', action.method.toUpperCase() + ' ' + url ].join( '.' );
 	meta.routes[ actionName ] = { method: action.method, url: url };
 	debug( 'Mapping resource \'%s\' action \'%s\' to %s %s', resource.name, actionName, action.method, url );
 	http.route( url, action.method, function( req, res ) {
@@ -101,17 +103,29 @@ function wireupAction( resource, actionName, action, meta, resources ) {
 		req._checkPermission = authStrategy ? checkPermissionFor.bind( undefined, req.user, req.context ) : undefined;
 		var respond = function() {
 			var envelope = new HttpEnvelope( req, res );
-			action.handle.apply( resource, [ envelope ] );
+			if ( config && config.handleRouteErrors ) {
+				try {
+					action.handle.apply( resource, [ envelope ] );
+				} catch (err) {
+					metrics.meter( errors ).record();
+					debug( 'ERROR! route: %s %s failed with %s', action.method.toUpperCase(), action.url, err.stack );
+					res.status( 500 ).send( 'Server error at ' + action.method.toUpperCase() + ' ' + action.url );
+				}
+			} else {
+				action.handle.apply( resource, [ envelope ] );
+			}
 		};
-		if( authStrategy ) {
+		if ( authStrategy ) {
 			checkPermissionFor( req.user, req.context, alias )
-				.then( function( pass ) {
-					if( pass ) {
+				.then( function onPermission( pass ) {
+					if ( pass ) {
 						debug( 'HTTP activation of action %s (%s %s) for %s granted', alias, action.method, url, getUserString( req.user ) );
 						respond();
 					} else {
 						debug( 'User %s was denied HTTP activation of action %s (%s %s)', getUserString( req.user ), alias, action.method, url );
-						res.status( 403 ).send( "User lacks sufficient permissions" );
+						if ( !res._headerSent ) {
+							res.status( 403 ).send( 'User lacks sufficient permissions' );
+						}
 					}
 				} );
 		} else {
@@ -123,8 +137,9 @@ function wireupAction( resource, actionName, action, meta, resources ) {
 module.exports = function( cfg, auth, httpLib, req, meter ) {
 	config = cfg;
 	authStrategy = auth;
-	if( auth ) {
+	if ( auth ) {
 		passport = passportFn( cfg, auth, meter );
+		wrapper.passport = passport;
 	}
 	http = httpLib;
 	metrics = meter;

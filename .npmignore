@@ -5,3 +5,4 @@ node_modules/
 .grapplehound.json
 .nonstop.json
 coverage/
+plato/

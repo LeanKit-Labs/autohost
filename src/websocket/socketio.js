@@ -10,36 +10,39 @@ var middleware;
 function acceptSocket( socket ) {
 	debug( 'Processing socket.io connection attempt' );
 
-	var handshake = socket.handshake;
-
+	var request = socket.request;
+	socket.type = 'socketio';
 	// grab user from request
-	socket.user = handshake.user || {
+	socket.user = request.user || {
 		id: 'anonymous',
 		name: 'anonymous'
 	};
-	
+
 	// copy session from request
-	socket.session = handshake.session;
+	socket.session = request.session;
 
 	// copy cookies from request from middleware
 	socket.cookies = {};
-	if( handshake.headers.cookie ) {
-		_.each( handshake.headers.cookie.split( ';' ), function( cookie ) {
+	if ( request.headers.cookie ) {
+		_.each( request.headers.cookie.split( ';' ), function( cookie ) {
 			var crumbs = cookie.split( '=' );
 			socket.cookies[ crumbs[ 0 ].trim() ] = crumbs[ 1 ].trim();
 		} );
 	}
 
 	// attach roles to user on socket
-	if( authStrategy ) {
+	if ( authStrategy ) {
 		authStrategy.getSocketRoles( socket.user )
+			.then( null, function( err ) { // jshint ignore:line
+				return [];
+			} )
 			.then( function( roles ) {
 				socket.user.roles = roles;
 			} );
 	}
 
 	// attach context on request to socket
-	socket.context = handshake.context;
+	socket.context = request.context;
 
 	// normalize socket publishing interface
 	socket.publish = function( topic, message ) {
@@ -51,7 +54,13 @@ function acceptSocket( socket ) {
 		debug( 'Closing socket.io client (user: %s)', JSON.stringify( socket.user ) );
 		socket.removeAllListeners();
 		socket.disconnect( true );
-		registry.remove( socket ); 
+		registry.remove( socket );
+	};
+
+	// add a way to end session
+	socket.logout = function() {
+		request.logout();
+		socket.close();
 	};
 
 	// if client identifies itself, register id
@@ -66,9 +75,9 @@ function acceptSocket( socket ) {
 
 	// subscribe to registered topics
 	_.each( registry.topics, function( callback, topic ) {
-		if( callback ) {
+		if ( callback ) {
 			socket.on( topic, function( data ) {
-				callback( data, socket ); 
+				callback( data, socket );
 			} );
 		}
 	} );
@@ -77,21 +86,21 @@ function acceptSocket( socket ) {
 	socket.on( 'disconnect', function() {
 		debug( 'socket.io client disconnected (user: %s)', JSON.stringify( socket.user ) );
 		socket.removeAllListeners();
-		registry.remove( socket ); 
+		registry.remove( socket );
 	} );
 }
 
 function authSocketIO( req, allow ) {
 	var allowed;
-	if( authStrategy ) {
+	if ( authStrategy ) {
 		middleware
 			.use( '/', function( hreq, hres, next ) {
-				debug( 'Setting socket.io connection user to %s', hreq.user );
+				debug( 'Setting socket.io connection user to %s', JSON.stringify( hreq.user ) );
 				allowed = hreq.user;
 				next();
 			} )
 			.handle( req, req.res, function( err ) {
-				if( err ) {
+				if ( err ) {
 					debug( 'Error in authenticating socket.io connection %s', err.stack );
 					allow( err );
 				} else {
@@ -113,7 +122,11 @@ function configureSocketIO( http ) {
 
 function handle( topic, callback ) {
 	_.each( registry.clients, function( client ) {
-		client.on( topic, function( data ) { callback( data, client ); } );
+		if ( client.type === 'socketio' ) {
+			client.on( topic, function( data ) {
+				callback( data, client );
+			} );
+		}
 	} );
 }
 

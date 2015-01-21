@@ -24,7 +24,7 @@ function buildActionTopic( resourceName, action ) {
 function checkPermissionFor( user, context, action ) {
 	debug( 'Checking %s\'s permissions for %s', getUserString( user ), action );
 	return authStrategy.checkPermission( user, action, context )
-		.then( null, function(err) {
+		.then( null, function( err ) {
 			debug( 'Error during check permissions: %s', err.stack );
 			return false;
 		} )
@@ -33,19 +33,19 @@ function checkPermissionFor( user, context, action ) {
 		} );
 }
 
-function getUserString( user ) {
+function getUserString( user ) { // jshint ignore:line
 	return user.name ? user.name : JSON.stringify( user );
 }
 
-function start() {
+function start() { // jshint ignore:line
 	socket.start( authStrategy );
 }
 
-function stop() {
+function stop() { // jshint ignore:line
 	socket.stop();
 }
 
-function wireupResource( resource ) {
+function wireupResource( resource ) { // jshint ignore:line
 	var meta = { topics: {} };
 	_.each( resource.actions, function( action, actionName ) {
 		wireupAction( resource, actionName, action, meta );
@@ -53,27 +53,40 @@ function wireupResource( resource ) {
 	return meta;
 }
 
-function wireupAction( resource, actionName, action, meta ) {
+function wireupAction( resource, actionName, action, meta ) { // jshint ignore:line
 	var topic = buildActionTopic( resource.name, action );
 	var alias = buildActionAlias( resource.name, actionName );
-
+	var errors = [ 'autohost', 'errors', topic.replace( '.', ':' ) ].join( '.' );
 	meta.topics[ actionName ] = { topic: topic };
 	debug( 'Mapping resource \'%s\' action \'%s\' to topic %s', resource.name, actionName, alias );
-	socket.on( topic, function( message, socket ) {
+	socket.on( topic, function( message, client ) {
+		var timerKey = [ 'autohost', 'perf', topic.replace( '.', ':' ) ].join( '.' );
+		metrics.timer( timerKey ).start();
 		var data = message.data || message;
 		var respond = function() {
-			var envelope = new SocketEnvelope( topic, message, socket );
-			action.handle.apply( resource, [ envelope ] );
+			var envelope = new SocketEnvelope( topic, message, client );
+			if ( config && config.handleRouteErrors ) {
+				try {
+					action.handle.apply( resource, [ envelope ] );
+				} catch (err) {
+					metrics.meter( errors ).record();
+					client.publish( data.replyTo || topic, 'Server error at topic ' + topic );
+				}
+			} else {
+				action.handle.apply( resource, [ envelope ] );
+			}
+			metrics.timer( timerKey ).record();
 		};
-		if( authStrategy ) {
-			checkPermissionFor( socket.user, context, alias )
+		if ( authStrategy ) {
+			checkPermissionFor( client.user, {}, alias )
 				.then( function( pass ) {
-					if( pass ) {
-						debug( 'WS activation of action %s for %s granted', alias, getUserString( socket.user ) );
+					if ( pass ) {
+						debug( 'WS activation of action %s for %s granted', alias, getUserString( client.user ) );
 						respond();
 					} else {
-						debug( 'User %s was denied WS activation of action %s', getUserString( socket.user ), alias );
-						socket.publish( data.replyTo || topic, 'User lacks sufficient permission' );
+						debug( 'User %s was denied WS activation of action %s', getUserString( client.user ), alias );
+						client.publish( data.replyTo || topic, 'User lacks sufficient permissions' );
+						metrics.timer( timerKey ).record();
 					}
 				} );
 		} else {

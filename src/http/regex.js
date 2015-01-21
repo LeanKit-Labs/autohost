@@ -9,10 +9,11 @@ function getRegex( pattern ) {
 
 function applyPrefix( prefix, pattern ) {
 	var original = parseRegex( pattern );
-	if( !prefix ) {
+	var prefixed = getRegex( '[^]?' + prefix.replace( '\/', '[\\\/]' ) );
+	if ( !prefix || prefixed.test( original ) ) {
 		return pattern;
 	} else {
-		if( original.slice( 0, 1 ) === '^' ) {
+		if ( original.slice( 0, 1 ) === '^' ) {
 			var trimmed = original.slice( 1, original.length );
 			var separator = trimmed.indexOf( '\/' ) === 1 ? '' : '/';
 			return getRegex( '^' + prefix + separator + trimmed );

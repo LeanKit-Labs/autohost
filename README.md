@@ -3,12 +3,12 @@ Convention-based, opinionated HTTP server library based on express. Lovingly rip
 
 ## Rationale
 As more services are introduced to a system, the tedium of fitting together all the same libraries over and over:
- 
+
  * is soul-draining
  * encourages copy/pasta
  * adds inertia across multiple projects
  * increases the surface area for defects and maintenance
- 
+
 I created autohost so we could have a consistent, reliable and extendible way to create HTTP/socket powered sites and services. Autohost also attempts to introduce some conventions and structure to projects so that express routes don't end up all over the place and mixed with application logic.
 
 ## Features
@@ -34,7 +34,7 @@ host.init( {}, authProvider );
 ```
 
 	node index.js
-	
+
 Before diving into how to add resources, take a look at the init call and its arguments to understand what's available.
 
 ### init( config, authProvider, [fount] )
@@ -85,7 +85,7 @@ Planned support for:
 [fount](https://github.com/LeanKit-Labs/fount) is a dependency injection library for Node. If your application is using fount, you can provide the instance at the end of the init call so that your resources will have access to the same fount instance from the `host.fount` property within the resource callback.
 
 ## Resources
-Resources are expected to be simple modules containing a factory method that return one or more resource definitions. Autohost now supports dependency resolution by argument in these factory methods. All arguments after the first (`host`) will be checked against autohost's fount instance. This is especially useful when you need to take a dependency on a promise or asynchronous function - fount will only invoke your resource's factory once all dependnecies are available eliminating the need to handle these concerns with callbacks or promises in your resource's implementation. See the Asynchronous Module example under the Module section. 
+Resources are expected to be simple modules containing a factory method that return one or more resource definitions. Autohost now supports dependency resolution by argument in these factory methods. All arguments after the first (`host`) will be checked against autohost's fount instance. This is especially useful when you need to take a dependency on a promise or asynchronous function - fount will only invoke your resource's factory once all dependnecies are available eliminating the need to handle these concerns with callbacks or promises in your resource's implementation. See the Asynchronous Module example under the Module section.
 
 ### Path conventions
 Autohost expects to find all your resources under one folder (`./resource` by default) and your shared static resources under one folder (`./public` by default). Each resource should have its own sub-folder and contain a `resource.js` file that contains a module defining the resource.
@@ -112,14 +112,14 @@ __Synchronous Module - No Fount Dependencies__
 module.exports = function( host ) {
 	return {
 		name: 'resource-name',
-		resources: '', // relative path to static assets for this resource
+		static: '', // relative path to static assets for this resource
 		actions:  {
 			send: {
 				method: 'get', // http verb
 				url: '', // url pattern appended to the resource name
 				topic: 'send', // topic segment appended the resource name
 				handle: function( envelope ) {
-					// see section on envelope for more detail			
+					// see section on envelope for more detail
 				}
 			}
 		}
@@ -145,15 +145,15 @@ host.register( 'myDependency2', somePromise );
 module.exports = function( host, myDependency1, myDependency2 ) {
 	return {
 		name: 'resource-name',
-		resources: '', // relative path to static assets for this resource
+		static: '', // relative path to static assets for this resource
 		urlPrefix: '', // URL prefix for all actions in this resource
-		actions: { 
+		actions: {
 			send: {
 				method: 'get', // http verb
 				url: '', // url pattern appended to the resource name
 				topic: 'send', // topic segment appended the resource name
 				handle: function( envelope ) {
-					// see section on envelope for more detail			
+					// see section on envelope for more detail
 				}
 			}
 		]
@@ -165,7 +165,7 @@ module.exports = function( host, myDependency1, myDependency2 ) {
 The resource name is pre-pended to the action's alias to create a globally unique action name: `resource-name.action-alias`. The resource name is also the first part of the action's URL (after the api prefix) and the first part of a socket message's topic:
 
 	http://{host}:{port}/api/{resource-name}/{action-alias|action-path}
-	
+
 	topic: {resource-name}.{action-topic|action-alias}
 
 
@@ -192,7 +192,7 @@ This property controls what is appended to the resource name in order to create 
 The `url` property provides the URL assigned to this action. You can put path variables in this following the express convention of a leading `:`
 
 	url: '/thing/:arg1/:arg2'
-	
+
 Path variables are accessible on the envelope's `params` property. If a path variable does NOT collide with a property on the request body, the path variable is written to the `envelope.data` hash as well:
 
 ```javascript
@@ -235,6 +235,7 @@ Envelopes are an abstraction around the incoming message or request. They are in
 	path: // url of the request (minus protocol/domain/port) OR message topic
 	responseStream: // a write stream for streaming a response back to the client
 	user: // the user attached to the request or socket
+	logout: // a method to end the current session
 	transport: // 'http' or 'websocket'
 	reply: function( envelope ) // responds to client
 	replyWithFile: function( contentType, fileName, fileStream ) // streams a file back to the client
@@ -266,7 +267,7 @@ Sends a reply back to the requestor via HTTP or web socket. Response envelope is
 	envelope.reply( { data: { something: 'interesting' }, statusCode: 200 } );
 	// HTTP response body will be JSON { something: 'interesting' }
 	// Socket.io will have a payload of { something: 'interesting' } published to the replyTo property OR the original topic
-	// Websockets will get a message of { topic: replyTo|topic, data: { something: 'interesting' } } 
+	// Websockets will get a message of { topic: replyTo|topic, data: { something: 'interesting' } }
 ```
 
 > The options property for a cookie can have the following properties: `domain`, `path`, `maxAge`, `expires`, `httpOnly`, `secure`, `signed`
@@ -315,8 +316,8 @@ The solution is to use `urlPrefix` set to 'special' and to either write all your
 
 ### parseAhead
 Normally, middleware can't have access to path variables that aren't defined as part of its mount point. This is because the sequential routing table doesn't know what path will eventually be resolved when it's processing general purpose middleware (e.g. mounted at `/`). Setting `parseAhead` to true in your configuration will add special middleware that does two things:
- 
- * add a `preparams` property to the request with parameters from "future" matching routes 
+
+ * add a `preparams` property to the request with parameters from "future" matching routes
  * redefines the `req.param` function to check `preparams` before falling back to default
 
 The upside is that you can write general purpose middleware that can access path variables instead of having to write the same kind of middleware for a lot of different paths and then worry about keeping paths synchronized. The downside is that there is obviously a performance penalty for traversing the route stack like this.
@@ -396,6 +397,12 @@ host.init( {
 }, authProvider );
 ```
 
+#### Ending a session
+To end a session:
+
+ * `logout` method on the envelope in a resource action handle
+ * `logout` on the request in any middleware
+
 ## Metrics
 Autohost collects a good bit of metrics. It measures action activation as well as authorization and authentication calls so that you can get detailed information on where time is being spent in the stack at a high level. The metrics also include memory utlization as well as system memory and process load. You can access them from `host.metrics`.
 
@@ -403,7 +410,7 @@ Autohost collects a good bit of metrics. It measures action activation as well a
 Autohost provides metadata to describe the routes and topic available via an OPTIONS to api:
 
 	OPTIONS http://{host}:{port}/api
-	
+
 The metadata follows this format:
 
 ```json
@@ -413,7 +420,7 @@ The metadata follows this format:
             "action-alias": {
                 "verb": "get",
                 "url": "/api/resource-name/action-alias|action-path"
-            }            
+            }
         },
         "path": {
             "url": "/_autohost",

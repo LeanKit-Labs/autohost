@@ -10,36 +10,14 @@ var debug = require( 'debug' )( 'autohost:auth.mock' );
 var bearerAuth;
 var basicAuth;
 var queryAuth;
-var useSession;
-var wrapper = {
-		authenticate: authenticate,
-		checkPermission: checkPermission,
-		getUserRoles: getUserRoles,
-		hasUsers: hasUsers,
-		serializeUser: serializeUser,
-		deserializeUser: deserializeUser,
-		strategies: [
-			new Basic( authenticateCredentials ),
-			new Bearer( authenticateToken ),
-			new Query( authenticateQuery )
-		],
-		initPassport: function( passport ) {
-			basicAuth = passport.authenticate( 'basic', { session: useSession } );
-			bearerAuth = passport.authenticate( 'bearer', { session: useSession } );
-			queryAuth = passport.authenticate( 'query', { session: useSession } );
-		},
-		users: {},
-		actions: {},
-		roles: {},
-		tokens: {}
-	};
+var useSession = true;
+var wrapper = {};
 
 function authenticate( req, res, next ) {
 	var authorization = req.headers.authorization;
-	if( /Basic/i.test( authorization ) ) {
+	if ( /Basic/i.test( authorization ) ) {
 		basicAuth( req, res, next );
-	}
-	else if( req._query && req._query[ 'token' ] ) {
+	} else if ( req._query && req._query[ 'token' ] ) {
 		queryAuth( req, res, next );
 	} else {
 		bearerAuth( req, res, next );
@@ -50,25 +28,28 @@ function authenticateCredentials( userName, password, done ) {
 	var user = _.where( wrapper.users, function( o, u ) {
 		return u === userName && o.password === password;
 	} );
-	debug( 'credentials %s:%s resulted in', userName, password, user ,'amongst', _.keys( wrapper.users ) );
+	debug( 'credentials %s:%s resulted in', userName, password, user, 'amongst', _.keys( wrapper.users ) );
 	done( null, ( user.length ? user[ 0 ] : user ) || false );
 }
 
 function authenticateToken( token, done ) {
 	var userName = wrapper.tokens[ token ],
 		user = userName ? wrapper.users[ userName ] : false;
-	debug( 'bearer token %s resulted in', token, user ,'amongst', _.keys( wrapper.users ) );
+	debug( 'bearer token %s resulted in', token, user, 'amongst', _.keys( wrapper.users ) );
 	done( null, user );
 }
 
 function authenticateQuery( token, done ) {
 	var userName = wrapper.tokens[ token ];
 	var user = userName ? wrapper.users[ userName ] : false;
-	debug( 'query token %s resulted in', token, user ,'amongst', _.keys( wrapper.users ) );
+	debug( 'query token %s resulted in', token, user, 'amongst', _.keys( wrapper.users ) );
 	done( null, user );
 }
 
 function checkPermission( user, action, context ) {
+	if ( /noperm/.test( user.name ? user.name : user ) ) {
+		return when.reject( new Error( 'Failing for failure' ) );
+	}
 	debug( 'checking user %s for action %s', getUserString( user ), action );
 	return when.try( hasPermissions, getUserRoles( user ), getActionRoles( action ), context );
 }
@@ -78,10 +59,10 @@ function getUserString( user ) {
 }
 
 function hasPermissions( userRoles, actionRoles, context ) {
-	if( context.noSoupForYou ) {
-		return false ;
+	if ( context.noSoupForYou ) {
+		return false;
 	} else {
-		return _.isEmpty( actionRoles ) || 
+		return _.isEmpty( actionRoles ) ||
 			( _.intersection( userRoles, actionRoles ).length > 0 );
 	}
 }
@@ -93,6 +74,9 @@ function getActionRoles( action ) {
 }
 
 function getUserRoles( user ) {
+	if ( /error/.test( user.name ? user.name : user ) ) {
+		return when.reject( new Error( 'Failing for failure' ) );
+	}
 	var userName = user.name ? user.name : user;
 	return when.promise( function( resolve ) {
 		var tmp = wrapper.users[ userName ];
@@ -114,12 +98,38 @@ function serializeUser( user, done ) {
 function deserializeUser( user, done ) {
 	try {
 		done( null, _.isObject( user ) ? user : JSON.parse( user ) );
-	} catch ( e ) {
+	} catch (e) {
 		done( e, null );
-	}	
+	}
 }
 
-module.exports = function( config ) {
-	useSession = !config.noSession;
+function reset() {
+	wrapper = {
+		authenticate: authenticate,
+		checkPermission: checkPermission,
+		getUserRoles: getUserRoles,
+		hasUsers: hasUsers,
+		serializeUser: serializeUser,
+		deserializeUser: deserializeUser,
+		strategies: [
+			new Basic( authenticateCredentials ),
+			new Bearer( authenticateToken ),
+			new Query( authenticateQuery )
+		],
+		initPassport: function( passport ) {
+			basicAuth = passport.authenticate( 'basic', { session: useSession } );
+			bearerAuth = passport.authenticate( 'bearer', { session: useSession } );
+			queryAuth = passport.authenticate( 'query', { session: useSession } );
+		},
+		users: {},
+		actions: {},
+		roles: {},
+		tokens: {}
+	};
+}
+
+module.exports = function() {
+	// useSession = !config.noSession;
+	reset();
 	return wrapper;
 };
