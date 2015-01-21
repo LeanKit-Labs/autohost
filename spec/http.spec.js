@@ -1,11 +1,9 @@
-var should = require( 'should' ); //jshint ignore:line
+var should = require( 'should' ); // jshint ignore:line
 var _ = require( 'lodash' );
 var when = require( 'when' );
 var seq = require( 'when/sequence' );
 var fs = require( 'fs' );
 var requestor = require( 'request' ).defaults( { jar: false } );
-var postal = require( 'postal' );
-var events = postal.channel( 'events' );
 var port = 88981;
 var config = {
 	port: port,
@@ -57,7 +55,7 @@ describe( 'HTTP', function() {
 			}
 		};
 
-		var errorCall = function( env ) {
+		var errorCall = function( /* env */ ) {
 			throw new Error( 'I am bad at things!' );
 		};
 
@@ -67,9 +65,9 @@ describe( 'HTTP', function() {
 
 		var redirectCall = function( env ) {
 			var data = { id: env.data.id };
-			if ( env.data.id == '100' ) {
+			if ( env.data.id == '100' ) { // jshint ignore:line
 				env.redirect( '/api/test/thing/200' );
-			} else if ( env.data.id == '101' ) {
+			} else if ( env.data.id == '101' ) { // jshint ignore:line
 				env.redirect( 301, '/api/test/thing/201' );
 			} else {
 				env.reply( { data: data } );

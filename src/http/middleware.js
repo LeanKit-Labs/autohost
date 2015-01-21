@@ -10,13 +10,13 @@ var wrapper = {
 };
 var config, metrics, session, cookieParser;
 
-function applyCookieMiddleware( attach ) { // jshint ignore: line
+function applyCookieMiddleware( attach ) {
 	if ( !config.noCookies ) {
 		attach( '/', cookieParser );
 	}
 }
 
-function applyMiddelware( attach, hasAuth ) { // jshint ignore: line
+function applyMiddelware( attach, hasAuth ) {
 	// add a timer to track ALL requests
 	attach( '/', requestMetrics );
 
@@ -44,20 +44,20 @@ function applyMiddelware( attach, hasAuth ) { // jshint ignore: line
 	}
 }
 
-function applySessionMiddleware( attach ) { // jshint ignore: line
+function applySessionMiddleware( attach ) {
 	// turn on sessions unless turned off by the consumer
 	if ( !config.noSession ) {
 		attach( '/', session );
 	}
 }
 
-function crossOrigin( req, res, next ) { // jshint ignore: line
+function crossOrigin( req, res, next ) {
 	res.header( 'Access-Control-Allow-Origin', '*' );
 	res.header( 'Access-Control-Allow-Headers', 'X-Requested-With' );
 	next();
 }
 
-function configure( cfg ) { // jshint ignore:line
+function configure( cfg ) {
 	config = cfg;
 	cfg.sessionStore = cfg.sessionStore || new sessionLib.MemoryStore();
 	session = sessionLib( {
@@ -69,7 +69,7 @@ function configure( cfg ) { // jshint ignore:line
 	} );
 }
 
-function requestMetrics( req, res, next ) { // jshint ignore: line
+function requestMetrics( req, res, next ) {
 	req.context = {};
 	res.setMaxListeners( 0 );
 	var timerKey = [ 'autohost', 'perf', req.method.toUpperCase() + ' ' + req.url ].join( '.' );

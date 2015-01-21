@@ -6,7 +6,7 @@ var debug = require( 'debug' )( 'autohost:ws-transport' );
 var wrapper, websocket, socketIO, metrics;
 reset();
 
-function addClient( socket ) { // jshint ignore:line
+function addClient( socket ) {
 	wrapper.clients.push( socket );
 	if ( socket.user !== 'anonymous' ) {
 		socketIdentified( socket.user, socket );
@@ -14,7 +14,7 @@ function addClient( socket ) { // jshint ignore:line
 	eventChannel.publish( 'socket.client.connected', { socket: socket } );
 }
 
-function socketIdentified( id, socket ) { // jshint ignore:line
+function socketIdentified( id, socket ) {
 	if ( wrapper.clients.lookup[ id ] ) {
 		wrapper.clients.lookup[ id ].push( socket );
 	} else {
@@ -23,14 +23,14 @@ function socketIdentified( id, socket ) { // jshint ignore:line
 	eventChannel.publish( 'socket.client.identified', { id: id, socket: socket } );
 }
 
-function notifyClients( message, data ) { // jshint ignore:line
+function notifyClients( message, data ) {
 	debug( 'Notifying %d clients: %s %s', wrapper.clients.length, message, JSON.stringify( data ) );
 	_.each( wrapper.clients, function( client ) {
 		client.publish( message, data );
 	} );
 }
 
-function onTopic( topic, handle, context ) { // jshint ignore:line
+function onTopic( topic, handle /* context */ ) {
 	debug( 'TOPIC: %s -> %s', topic, ( handle.name || 'anonymous' ) );
 	var errors = [ 'autohost', 'errors ', topic.replace( '.', ':' ) ].join( '.' );
 	var safe = function( data, socket ) {
@@ -55,7 +55,7 @@ function onTopic( topic, handle, context ) { // jshint ignore:line
 	}
 }
 
-function removeClient( socket ) { // jshint ignore:line
+function removeClient( socket ) {
 	var index = wrapper.clients.indexOf( socket );
 	if ( index >= 0 ) {
 		wrapper.clients.splice( index, 1 );
@@ -70,7 +70,7 @@ function removeClient( socket ) { // jshint ignore:line
 	eventChannel.publish( 'socket.client.closed', { id: socket.id, socket: socket } );
 }
 
-function reset() { // jshint ignore:line
+function reset() {
 	wrapper = {
 		add: addClient,
 		clients: [],
@@ -87,7 +87,7 @@ function reset() { // jshint ignore:line
 	wrapper.clients.lookup = {};
 }
 
-function sendToClient( id, message, data ) { // jshint ignore:line
+function sendToClient( id, message, data ) {
 	debug( 'Sending to clients %s: %s %s', id, message, JSON.stringify( data ) );
 	var sockets = wrapper.clients.lookup[ id ];
 	if ( !sockets ) {
@@ -104,7 +104,7 @@ function sendToClient( id, message, data ) { // jshint ignore:line
 	return false;
 }
 
-function start() { // jshint ignore:line
+function start() {
 	if ( config.socketio || config.socketIO || config.socketIo ) {
 		socketIO = require( './socketio.js' )( config, wrapper, http.passport );
 		socketIO.config( http );
@@ -115,7 +115,7 @@ function start() { // jshint ignore:line
 	}
 }
 
-function stop() { // jshint ignore:line
+function stop() {
 	_.each( wrapper.clients, function( socket ) {
 		if ( socket ) {
 			socket.removeAllListeners();

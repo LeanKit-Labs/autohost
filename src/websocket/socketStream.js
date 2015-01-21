@@ -3,7 +3,7 @@ var util = require( 'util' );
 
 util.inherits( SocketStream, Writable );
 
-function SocketStream( replyTo, socket ) { // jshint ignore:line
+function SocketStream( replyTo, socket ) {  
 	Writable.call( this, { decodeStrings: false, objectMode: true } );
 	this._socket = socket;
 	this._index = 0;

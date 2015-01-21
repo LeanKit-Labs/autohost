@@ -8,8 +8,8 @@ var http = require( 'http' );
 var debug = require( 'debug' )( 'autohost:http-transport' );
 var regex = require( './regex.js' );
 var Router = express.Router;
-var expreq = express.request; //jshint ignore:line
-var expres = express.response; //jshint ignore:line
+var expreq = express.request;
+var expres = express.response;
 var middleware, userMiddleware, routes, paths, request, config, metrics, middlewareLib;
 
 var wrapper;
@@ -62,14 +62,17 @@ function createAuthMiddlewareStack() {
 
 // adaptation of express's initializing middleware
 // the original approach breaks engine-io
-function expressInit( req, res, next ) { // jshint ignore:line
+function expressInit( req, res, next ) {
 	req.next = next;
 	req.context = {};
 	// patching this according to how express does it
-	/* jshint ignore:start */
+	// not jshint ignoring the following lines because then it
+	// warns that expreq and expres aren't used.
+	// This works according to express implemenetation
+	// DO NOT CHANGE IT
 	req.__proto__ = expreq;
 	res.__proto__ = expres;
-	/* jshint ignore:end */
+
 	next();
 }
 
@@ -103,7 +106,7 @@ function parseAhead( router, req, done ) {
 	var method = req.method ? req.method.toLowerCase() : undefined;
 	next();
 
-	function next() { // jshint ignore:line
+	function next() {
 		var layer = stack[ idx++ ];
 		if ( !layer ) {
 			// strip dangling query params
@@ -150,7 +153,7 @@ function preprocessPathVariables( req, res, next ) {
 
 // Internal query-parsing middleware from express
 // (not exposed, so copied here)
-function queryParser( req, res, next ) { // jshint ignore:line
+function queryParser( req, res, next ) {
 	if ( !req.query ) {
 		var val = parseUrl( req ).query;
 		req.query = queryparse( val );
@@ -207,7 +210,7 @@ function registerRoute( url, method, callback ) {
 	routes.push( fn );
 }
 
-function registerStaticPath( url, filePath ) { // jshint ignore:line
+function registerStaticPath( url, filePath ) {
 	var fn = function() {
 		url = prefix( url );
 		var target = path.resolve( filePath );
@@ -252,7 +255,7 @@ function stop() {
 	}
 }
 
-function reset() { // jshint ignore:line
+function reset() {
 	wrapper = {
 		buildUrl: buildUrl,
 		getMiddleware: createMiddlewareStack,

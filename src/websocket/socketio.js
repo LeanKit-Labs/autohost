@@ -33,7 +33,7 @@ function acceptSocket( socket ) {
 	// attach roles to user on socket
 	if ( authStrategy ) {
 		authStrategy.getSocketRoles( socket.user )
-			.then( null, function( err ) { // jshint ignore:line
+			.then( null, function( /* err */ ) {
 				return [];
 			} )
 			.then( function( roles ) {
