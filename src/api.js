@@ -8,16 +8,16 @@ var debug = require( 'debug' )( 'autohost:api' );
 var readDirectory = nodeWhen.lift( fs.readdir );
 var resources = {};
 var wrapper = {
-		actionList: {},
-		addAdapter: addAdapter,
-		clearAdapters: clearAdapters,
-		loadModule: loadModule,
-		loadResources: loadResources,
-		resources: resources,
-		start: start,
-		startAdapters: startAdapters,
-		stop: stop,
-	};
+	actionList: {},
+	addAdapter: addAdapter,
+	clearAdapters: clearAdapters,
+	loadModule: loadModule,
+	loadResources: loadResources,
+	resources: resources,
+	start: start,
+	startAdapters: startAdapters,
+	stop: stop,
+};
 var config;
 var adapters = [];
 var host;
@@ -46,8 +46,8 @@ function clearAdapters() { //jshint ignore:line
 function getActions( resource ) {
 	var list = wrapper.actionList[ resource.name ] = [];
 	_.each( resource.actions, function( action, actionName ) {
-			list.push( [ resource.name, actionName ].join( '.' ) );
-		} );
+		list.push( [ resource.name, actionName ].join( '.' ) );
+	} );
 }
 
 function deepMerge( target, source ) { // jshint ignore:line
@@ -92,10 +92,11 @@ function loadAll( resourcePath ) {
 	var loadActions = [ loadResources( resourcePath ) ] || [];
 	if ( config.modules ) {
 		_.each( config.modules, function( mod ) {
-				var modPath = require.resolve( mod );
-				loadActions.push( loadModule( modPath ) );
-			} );
+			var modPath = require.resolve( mod );
+			loadActions.push( loadModule( modPath ) );
+		} );
 	}
+	loadActions.push( loadModule( './ahResource' ) );
 	return when.all( loadActions );
 }
 
@@ -113,8 +114,8 @@ function loadModule( resourcePath ) { // jshint ignore:line
 			return fount.resolve( args )
 				.then( function( deps ) {
 					var argList = _.map( args, function( arg ) {
-							return deps[ arg ];
-						} );
+						return deps[ arg ];
+					} );
 					argList.unshift( host );
 					var mod = modFn.apply( modFn, argList );
 					attachPath( mod, resourcePath );
@@ -146,9 +147,9 @@ function loadResources( filePath ) { //jshint ignore:line
 function normalizeResources( list ) {
 	var flattened = _.flatten( list );
 	_.each( flattened, function( resource ) {
-			resources[ resource.name ] = resource;
-			getActions( resource );
-		} );
+		resources[ resource.name ] = resource;
+		getActions( resource );
+	} );
 	return resources;
 }
 
@@ -165,8 +166,8 @@ function processResource( resource ) { //jshint ignore:line
 	var meta = _.map( adapters, function( adapter ) {
 		if ( _.isArray( resource ) ) {
 			return _.reduce( resource, function( acc, x ) {
-					return deepMerge( x, adapter.resource( x, resource._path, resources ) );
-				}, {} );
+				return deepMerge( x, adapter.resource( x, resource._path, resources ) );
+			}, {} );
 		} else {
 			return adapter.resource( resource, resource._path, resources );
 		}
@@ -184,8 +185,8 @@ function reduce( acc, resource ) { //jshint ignore:line
 	_.each( resource, function( val, key ) {
 		if ( acc[ key ] ) {
 			_.each( val, function( list, prop ) {
-					acc[ key ][ prop ] = list;
-				} );
+				acc[ key ][ prop ] = list;
+			} );
 		} else {
 			acc[ key ] = val;
 		}
@@ -214,14 +215,14 @@ function start( resourcePath, auth ) { //jshint ignore:line
 
 function stop() { // jshint ignore:line
 	_.each( adapters, function( adapter ) {
-			adapter.stop();
-		} );
+		adapter.stop();
+	} );
 }
 
 function startAdapters( auth ) { // jshint ignore:line
 	_.each( adapters, function( adapter ) {
-			adapter.start( config, auth );
-		} );
+		adapter.start( config, auth );
+	} );
 }
 
 function trimString( str ) {

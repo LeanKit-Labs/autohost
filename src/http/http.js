@@ -183,7 +183,7 @@ function registerUserMiddleware( filter, callback ) {
 function registerRoute( url, method, callback ) {
 	method = method.toLowerCase();
 	method = method === 'all' || method === 'any' ? 'all' : method;
-	var errors = [ url, method, 'errors' ].join( '.' );
+	var errors = [ 'autohost', 'errors', method.toUpperCase() + ' ' + url ].join( '.' );
 	var fn = function() {
 		url = prefix( url );
 		debug( 'ROUTE: %s %s -> %s', method, url, ( callback.name || 'anonymous' ) );

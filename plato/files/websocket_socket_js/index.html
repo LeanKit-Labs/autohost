@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - websocket/socket.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>websocket/socket.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">69.49</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">141</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">32.71</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">1.31</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">var config, socketIO, websocket, http;
+var _ = require( &#039;lodash&#039; );
+var postal = require( &#039;postal&#039; );
+var eventChannel = postal.channel( &#039;events&#039; );
+var debug = require( &#039;debug&#039; )( &#039;autohost:ws-transport&#039; );
+var wrapper, websocket, socketIO, metrics;
+reset();
+
+function addClient( socket ) { // jshint ignore:line
+	wrapper.clients.push( socket );
+	if ( socket.user !== &#039;anonymous&#039; ) {
+		socketIdentified( socket.user, socket );
+	}
+	eventChannel.publish( &#039;socket.client.connected&#039;, { socket: socket } );
+}
+
+function socketIdentified( id, socket ) { // jshint ignore:line
+	if ( wrapper.clients.lookup[ id ] ) {
+		wrapper.clients.lookup[ id ].push( socket );
+	} else {
+		wrapper.clients.lookup[ id ] = [ socket ];
+	}
+	eventChannel.publish( &#039;socket.client.identified&#039;, { id: id, socket: socket } );
+}
+
+function notifyClients( message, data ) { // jshint ignore:line
+	debug( &#039;Notifying %d clients: %s %s&#039;, wrapper.clients.length, message, JSON.stringify( data ) );
+	_.each( wrapper.clients, function( client ) {
+		client.publish( message, data );
+	} );
+}
+
+function onTopic( topic, handle, context ) { // jshint ignore:line
+	debug( &#039;TOPIC: %s -&gt; %s&#039;, topic, ( handle.name || &#039;anonymous&#039; ) );
+	var errors = [ &#039;autohost&#039;, &#039;errors &#039;, topic.replace( &#039;.&#039;, &#039;:&#039; ) ].join( &#039;.&#039; );
+	var safe = function( data, socket ) {
+		if ( config &amp;&amp; config.handleRouteErrors ) {
+			try {
+				handle( data, socket );
+			} catch (err) {
+				metrics.meter( errors ).record();
+				socket.publish( data.replyTo || topic, &#039;Server error at topic &#039; + topic );
+			}
+		} else {
+			handle( data, socket );
+		}
+	};
+
+	wrapper.topics[ topic ] = safe;
+	if ( socketIO ) {
+		socketIO.on( topic, safe );
+	}
+	if ( websocket ) {
+		websocket.on( topic, safe );
+	}
+}
+
+function removeClient( socket ) { // jshint ignore:line
+	var index = wrapper.clients.indexOf( socket );
+	if ( index &gt;= 0 ) {
+		wrapper.clients.splice( index, 1 );
+	}
+	if ( socket.id &amp;&amp; wrapper.clients.lookup[ socket.id ] ) {
+		var list = wrapper.clients.lookup[ socket.id ];
+		index = list.indexOf( socket );
+		if ( index &gt;= 0 ) {
+			list.splice( index, 1 );
+		}
+	}
+	eventChannel.publish( &#039;socket.client.closed&#039;, { id: socket.id, socket: socket } );
+}
+
+function reset() { // jshint ignore:line
+	wrapper = {
+		add: addClient,
+		clients: [],
+		identified: socketIdentified,
+		notify: notifyClients,
+		on: onTopic,
+		remove: removeClient,
+		reset: reset,
+		send: sendToClient,
+		start: start,
+		stop: stop,
+		topics: {}
+	};
+	wrapper.clients.lookup = {};
+}
+
+function sendToClient( id, message, data ) { // jshint ignore:line
+	debug( &#039;Sending to clients %s: %s %s&#039;, id, message, JSON.stringify( data ) );
+	var sockets = wrapper.clients.lookup[ id ];
+	if ( !sockets ) {
+		sockets = _.where( wrapper.clients, function( client ) {
+			return client.user.id === id || client.user.name === id;
+		} );
+	}
+	if ( sockets ) {
+		_.each( sockets, function( socket ) {
+			socket.publish( message, data );
+		} );
+		return true;
+	}
+	return false;
+}
+
+function start() { // jshint ignore:line
+	if ( config.socketio || config.socketIO || config.socketIo ) {
+		socketIO = require( &#039;./socketio.js&#039; )( config, wrapper, http.passport );
+		socketIO.config( http );
+	}
+	if ( config.websocket || config.websockets ) {
+		websocket = require( &#039;./websocket&#039; )( config, wrapper, http.passport );
+		websocket.config( http );
+	}
+}
+
+function stop() { // jshint ignore:line
+	_.each( wrapper.clients, function( socket ) {
+		if ( socket ) {
+			socket.removeAllListeners();
+			socket.close();
+		}
+	} );
+	if ( socketIO ) {
+		socketIO.stop();
+	}
+	if ( websocket ) {
+		websocket.stop();
+	}
+}
+
+module.exports = function( cfg, httpLib, metric, resetState ) {
+	if ( resetState ) {
+		reset();
+	}
+	metrics = metric;
+	config = cfg;
+	http = httpLib;
+	return wrapper;
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ complexity.cyclomatic }} <br>
+    Length : {{ complexity.halstead.length }} <br>
+    Difficulty : {{ complexity.halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ complexity.halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

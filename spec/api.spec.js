@@ -42,8 +42,10 @@ describe( 'API', function() {
 				} );
 		} );
 
-		it( 'should result in an empty list', function() {
-			should( result ).eql( {} );
+		it( 'should only show the default API endpoint', function() {
+			should( result ).eql( {
+				ah: { routes: { metrics: { method: 'get', url: undefined } } }
+			} );
 		} );
 
 		after( function() {
@@ -105,6 +107,7 @@ describe( 'API', function() {
 					two: [ 'two.hello', 'two.goodbye' ],
 					three: [ 'three.c', 'three.d' ],
 					four: [ 'four.e', 'four.f' ],
+					ah: [ 'ah.metrics' ]
 				} );
 		} );
 

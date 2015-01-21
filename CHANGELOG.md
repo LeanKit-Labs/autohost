@@ -1,6 +1,18 @@
 ## 0.3.0
 Primary motivation here is to begin work on a version of autohost that will work well with a hypermedia library ( [hyped](https://github.com/leankit-labs/hyped) ). This is a breaking change because of several structural and naming changes to how resources get modeled.
 
+### prerelease 18
+ * Rewrite specifications
+ * Provide test harness
+ * Get coverage to 90%
+ * Improve metrics keys / namespaces
+ * Bring socket abstractions up to feature parity with HTTP where possible
+ * Provide better error responses when trying to forward or redirect from a socket activation of an action
+ * Correctly capture user for socket.io
+ * Preserve header values from UPGRADE request during socket connection
+ * Fix socket stream implementation (streaming to client via socket)
+
+
 ### prerelease 17
 Add `.logout` to to HTTP and Socket envelopes to make ending a session within a handler more straight-forward.
 

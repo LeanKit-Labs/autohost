@@ -98,7 +98,7 @@ function getUserString( user ) { // jshint ignore:line
 	return user.name ? user.name : JSON.stringify( user );
 }
 
-function reset() {
+function reset() { // jshint ignore:line
 	passportInitialize = passport.initialize();
 	passportSession = passport.session();
 	authProvider = undefined;
@@ -113,7 +113,6 @@ function resetUserCount() {
 function skipAuthentication( req, res, next ) { // jshint ignore:line
 	req.skipAuth = true;
 	if ( !req.user ) {
-		;
 		debug( 'Skipping authentication and assigning user anonymous to request %s %s', req.method, req.url );
 		req.user = {
 			id: 'anonymous',

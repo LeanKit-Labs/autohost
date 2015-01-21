@@ -25,7 +25,6 @@ describe( 'Socket.io', function() {
 	// * action to capture various information from the incoming request and return it to the caller
 	// * action to redirect to a different resource
 	// * action that throws exception
-	// * action with a regex URL
 	// * route that throws an exception
 	before( function() {
 		harness = require( './harness.js' )( config );
@@ -57,7 +56,7 @@ describe( 'Socket.io', function() {
 			}
 		};
 
-		var errorCall = function( env ) {
+		var errorCall = function( env ) { // jshint ignore:line
 			throw new Error( 'I am bad at things!' );
 		};
 
@@ -67,17 +66,13 @@ describe( 'Socket.io', function() {
 
 		var redirectCall = function( env ) {
 			var data = { id: env.data.id };
-			if ( env.data.id == '100' ) {
+			if ( env.data.id == '100' ) { // jshint ignore:line
 				env.redirect( '/api/test/thing/200' );
-			} else if ( env.data.id == '101' ) {
+			} else if ( env.data.id == '101' ) { // jshint ignore:line
 				env.redirect( 301, '/api/test/thing/201' );
 			} else {
 				env.reply( { data: data } );
 			}
-		};
-
-		var regexUrl = function( env ) {
-			env.reply( { data: 'regex route matched' } );
 		};
 
 		harness.addMiddleware( '/', function( req, res, next ) {
@@ -95,7 +90,6 @@ describe( 'Socket.io', function() {
 				error: { url: '/error', method: 'get', topic: 'error', handle: errorCall },
 				file: { url: '/file', method: 'get', topic: 'file', handle: fileCall },
 				proxy: { url: '/proxy/:one/:two/:three', method: 'post', topic: 'proxy', handle: anonProxy },
-				regex: { url: /test\/regex.*/, method: 'all', handle: regexUrl },
 				thing: { url: '/thing/:id', method: 'get', topic: 'thing', handle: redirectCall }
 			}
 		} );
@@ -140,7 +134,6 @@ describe( 'Socket.io', function() {
 	} );
 
 	describe( 'Sending args message (unauthenticated)', function() {
-		var response;
 		before( function( done ) {
 
 			var io = harness.getIOClient( 'http://localhost:88981', { timeout: 500, reconnection: false } );
@@ -228,7 +221,7 @@ describe( 'Socket.io', function() {
 	} );
 
 	describe( 'Requesting temporarily moved resource', function() {
-		var redirect, response;
+		var response;
 		before( function( done ) {
 			var io = harness.getIOClient( 'http://localhost:88981', { query: 'token=one', reconnection: false } );
 			io.once( 'test.thing', function( msg ) {

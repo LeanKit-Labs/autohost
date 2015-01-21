@@ -3,11 +3,8 @@ var _ = require( 'lodash' );
 var postal = require( 'postal' );
 var eventChannel = postal.channel( 'events' );
 var debug = require( 'debug' )( 'autohost:ws-transport' );
-var clients = [];
-var wrapper, websocket, socketIO;
+var wrapper, websocket, socketIO, metrics;
 reset();
-
-wrapper.clients.lookup = {};
 
 function addClient( socket ) { // jshint ignore:line
 	wrapper.clients.push( socket );
@@ -35,22 +32,26 @@ function notifyClients( message, data ) { // jshint ignore:line
 
 function onTopic( topic, handle, context ) { // jshint ignore:line
 	debug( 'TOPIC: %s -> %s', topic, ( handle.name || 'anonymous' ) );
-	var original = handle;
-	if ( config && config.handleRouteErrors ) {
-		handle = function( data, socket ) {
+	var errors = [ 'autohost', 'errors ', topic.replace( '.', ':' ) ].join( '.' );
+	var safe = function( data, socket ) {
+		if ( config && config.handleRouteErrors ) {
 			try {
-				original( data, socket );
+				handle( data, socket );
 			} catch (err) {
+				metrics.meter( errors ).record();
 				socket.publish( data.replyTo || topic, 'Server error at topic ' + topic );
 			}
-		};
-	}
-	wrapper.topics[ topic ] = handle;
+		} else {
+			handle( data, socket );
+		}
+	};
+
+	wrapper.topics[ topic ] = safe;
 	if ( socketIO ) {
-		socketIO.on( topic, handle );
+		socketIO.on( topic, safe );
 	}
 	if ( websocket ) {
-		websocket.on( topic, handle );
+		websocket.on( topic, safe );
 	}
 }
 
@@ -72,7 +73,7 @@ function removeClient( socket ) { // jshint ignore:line
 function reset() { // jshint ignore:line
 	wrapper = {
 		add: addClient,
-		clients: clients,
+		clients: [],
 		identified: socketIdentified,
 		notify: notifyClients,
 		on: onTopic,
@@ -83,6 +84,7 @@ function reset() { // jshint ignore:line
 		stop: stop,
 		topics: {}
 	};
+	wrapper.clients.lookup = {};
 }
 
 function sendToClient( id, message, data ) { // jshint ignore:line
@@ -128,10 +130,11 @@ function stop() { // jshint ignore:line
 	}
 }
 
-module.exports = function( cfg, httpLib, resetState ) {
+module.exports = function( cfg, httpLib, metric, resetState ) {
 	if ( resetState ) {
 		reset();
 	}
+	metrics = metric;
 	config = cfg;
 	http = httpLib;
 	return wrapper;

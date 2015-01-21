@@ -56,10 +56,12 @@ function wireupResource( resource ) { // jshint ignore:line
 function wireupAction( resource, actionName, action, meta ) { // jshint ignore:line
 	var topic = buildActionTopic( resource.name, action );
 	var alias = buildActionAlias( resource.name, actionName );
-
+	var errors = [ 'autohost', 'errors', topic.replace( '.', ':' ) ].join( '.' );
 	meta.topics[ actionName ] = { topic: topic };
 	debug( 'Mapping resource \'%s\' action \'%s\' to topic %s', resource.name, actionName, alias );
 	socket.on( topic, function( message, client ) {
+		var timerKey = [ 'autohost', 'perf', topic.replace( '.', ':' ) ].join( '.' );
+		metrics.timer( timerKey ).start();
 		var data = message.data || message;
 		var respond = function() {
 			var envelope = new SocketEnvelope( topic, message, client );
@@ -67,11 +69,13 @@ function wireupAction( resource, actionName, action, meta ) { // jshint ignore:l
 				try {
 					action.handle.apply( resource, [ envelope ] );
 				} catch (err) {
+					metrics.meter( errors ).record();
 					client.publish( data.replyTo || topic, 'Server error at topic ' + topic );
 				}
 			} else {
 				action.handle.apply( resource, [ envelope ] );
 			}
+			metrics.timer( timerKey ).record();
 		};
 		if ( authStrategy ) {
 			checkPermissionFor( client.user, {}, alias )
@@ -80,9 +84,9 @@ function wireupAction( resource, actionName, action, meta ) { // jshint ignore:l
 						debug( 'WS activation of action %s for %s granted', alias, getUserString( client.user ) );
 						respond();
 					} else {
-
 						debug( 'User %s was denied WS activation of action %s', getUserString( client.user ), alias );
 						client.publish( data.replyTo || topic, 'User lacks sufficient permissions' );
+						metrics.timer( timerKey ).record();
 					}
 				} );
 		} else {

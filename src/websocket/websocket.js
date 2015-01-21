@@ -137,6 +137,8 @@ function handleWebSocketRequest( request ) { // jshint ignore:line
 					debug( 'Websocket connection accepted as user %s', JSON.stringify( request.httpRequest.user ) );
 					request.user = request.httpRequest.user;
 					request.session = request.httpRequest.session;
+					request.cookies = request.httpRequest.cookies;
+					request.headers = request.httpRequest.headers;
 					acceptSocketRequest( request );
 				}
 			} );

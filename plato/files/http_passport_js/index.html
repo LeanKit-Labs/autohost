@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - http/passport.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>http/passport.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">71.12</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">166</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">29.33</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">1.49</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">var _ = require( &#039;lodash&#039; );
+var when = require( &#039;when&#039; );
+var passport = require( &#039;passport&#039; );
+var debug = require( &#039;debug&#039; )( &#039;autohost:passport&#039; );
+var noOp = function() {
+	return when( true );
+};
+var userCountCheck = noOp;
+var authorizationErrorCount = &#039;autohost.authorization.errors&#039;;
+var authorizationErrorRate = &#039;autohost.authorization.error.rate&#039;;
+var authenticationTimer = &#039;autohost.authentication.timer&#039;;
+var authorizationTimer = &#039;autohost.authorization.timer&#039;;
+var passportInitialize;
+var passportSession;
+var authProvider;
+var anonPaths;
+var metrics;
+
+reset();
+
+function authConditionally( req, res, next ) { // jshint ignore:line
+	// if previous middleware has said to skip auth OR
+	// a user was attached from a session, skip authenticating
+	if ( req.skipAuth || req.user ) {
+		next();
+	} else {
+		metrics.timer( authenticationTimer ).start();
+		authProvider.authenticate( req, res, next );
+		metrics.timer( authenticationTimer ).record();
+	}
+}
+
+function getAuthMiddleware( uri ) {
+	var list = [
+		{ path: uri, fn: passportInitialize },
+		{ path: uri, fn: passportSession }
+	]
+		.concat( _.map( anonPaths, function( pattern ) {
+			return { path: pattern, fn: skipAuthentication };
+		} ) )
+		.concat( [ { path: uri, fn: whenNoUsers },
+			{ path: uri, fn: authConditionally },
+		{ path: uri, fn: getRoles } ] );
+	return list;
+}
+
+function getRoles( req, res, next ) { // jshint ignore:line
+	var userName = _.isObject( req.user.name ) ? req.user.name.name : req.user.name;
+	if ( userName === &#039;anonymous&#039; ) {
+		req.user.roles = [ &#039;anonymous&#039; ];
+		next();
+	} else {
+		metrics.timer( authorizationTimer ).start();
+		authProvider.getUserRoles( req.user, req.context )
+			.then( null, function( err ) {
+				metrics.counter( authorizationErrorCount ).incr();
+				metrics.meter( authorizationErrorRate ).record();
+				metrics.timer( authorizationTimer ).record();
+				debug( &#039;Failed to get roles for %s with %s&#039;, getUserString( req.user ), err.stack );
+				// during a socket connection, express is not fully initialized and this call fails ... hard
+				try {
+					res.status( 500 ).send( &#039;Could not determine user permissions&#039; );
+				} catch (err) {
+					return [];
+				}
+			} )
+			.then( function( roles ) {
+				debug( &#039;Got roles [ %s ] for %s&#039;, roles, req.user );
+				req.user.roles = roles;
+				metrics.timer( authorizationTimer ).record();
+				next();
+			} );
+	}
+}
+
+function getSocketRoles( user ) {
+	if ( user.name === &#039;anonymous&#039; ) {
+		return when( [ &#039;anonymous&#039; ] );
+	} else {
+		metrics.timer( authorizationTimer ).start();
+		return authProvider.getUserRoles( user, {} )
+			.then( null, function( err ) {
+				metrics.counter( authorizationErrorCount ).incr();
+				metrics.meter( authorizationErrorRate ).record();
+				metrics.timer( authorizationTimer ).record();
+				debug( &#039;Failed to get roles for %s with %s&#039;, getUserString( user ), err.stack );
+				return [];
+			} )
+			.then( function( roles ) {
+				debug( &#039;Got roles [ %s ] for %s&#039;, roles, getUserString( user ) );
+				metrics.timer( authorizationTimer ).record();
+				return roles;
+			} );
+	}
+}
+
+function getUserString( user ) { // jshint ignore:line
+	return user.name ? user.name : JSON.stringify( user );
+}
+
+function reset() { // jshint ignore:line
+	passportInitialize = passport.initialize();
+	passportSession = passport.session();
+	authProvider = undefined;
+	anonPaths = undefined;
+	metrics = undefined;
+}
+
+function resetUserCount() {
+	userCountCheck = authProvider.hasUsers;
+}
+
+function skipAuthentication( req, res, next ) { // jshint ignore:line
+	req.skipAuth = true;
+	if ( !req.user ) {
+		debug( &#039;Skipping authentication and assigning user anonymous to request %s %s&#039;, req.method, req.url );
+		req.user = {
+			id: &#039;anonymous&#039;,
+			name: &#039;anonymous&#039;,
+			roles: []
+		};
+	}
+	next();
+}
+
+function whenNoUsers( req, res, next ) { // jshint ignore:line
+	userCountCheck()
+		.then( function( hasUsers ) {
+			if ( hasUsers ) {
+				userCountCheck = noOp;
+				next();
+			} else {
+				skipAuthentication( req, res, next );
+			}
+		} );
+}
+
+function withAuthLib( authProvider ) {
+	userCountCheck = authProvider.hasUsers || userCountCheck;
+	_.each( authProvider.strategies, function( strategy ) {
+		passport.use( strategy );
+	} );
+}
+
+module.exports = function( config, authPlugin, meter, resetState ) {
+	if ( resetState ) {
+		reset();
+	}
+	metrics = meter;
+	authProvider = authPlugin;
+	authProvider.initPassport( passport );
+	passport.serializeUser( authProvider.serializeUser );
+	passport.deserializeUser( authProvider.deserializeUser );
+	if ( config.anonymous ) {
+		anonPaths = _.isArray( config.anonymous ) ? config.anonymous : [ config.anonymous ];
+	} else {
+		anonPaths = [];
+	}
+	withAuthLib( authProvider );
+	return {
+		getMiddleware: getAuthMiddleware,
+		getSocketRoles: getSocketRoles,
+		hasUsers: userCountCheck,
+		resetUserCheck: resetUserCount
+	};
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ complexity.cyclomatic }} <br>
+    Length : {{ complexity.halstead.length }} <br>
+    Difficulty : {{ complexity.halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ complexity.halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

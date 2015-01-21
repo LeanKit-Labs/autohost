@@ -94,7 +94,7 @@ function wireupResource( resource, basePath, resources ) { // jshint ignore:line
 function wireupAction( resource, actionName, action, meta, resources ) { // jshint ignore:line
 	var url = buildActionUrl( resource.name, actionName, action, resource, resources );
 	var alias = buildActionAlias( resource.name, actionName );
-	var errors = [ action.url, action.method, 'errors' ].join( '.' );
+	var errors = [ 'autohost', 'errors', action.method.toUpperCase() + ' ' + url ].join( '.' );
 	meta.routes[ actionName ] = { method: action.method, url: url };
 	debug( 'Mapping resource \'%s\' action \'%s\' to %s %s', resource.name, actionName, action.method, url );
 	http.route( url, action.method, function( req, res ) {
@@ -116,24 +116,18 @@ function wireupAction( resource, actionName, action, meta, resources ) { // jshi
 			}
 		};
 		if ( authStrategy ) {
-			var promise = checkPermissionFor( req.user, req.context, alias )
-				.then( function( pass ) {
+			checkPermissionFor( req.user, req.context, alias )
+				.then( function onPermission( pass ) {
 					if ( pass ) {
 						debug( 'HTTP activation of action %s (%s %s) for %s granted', alias, action.method, url, getUserString( req.user ) );
 						respond();
 					} else {
 						debug( 'User %s was denied HTTP activation of action %s (%s %s)', getUserString( req.user ), alias, action.method, url );
-						res.status( 403 ).send( 'User lacks sufficient permissions' );
+						if ( !res._headerSent ) {
+							res.status( 403 ).send( 'User lacks sufficient permissions' );
+						}
 					}
 				} );
-		// if ( config && config.handleRouteErrors ) {
-		// 	promise
-		// 		.then( null, function( err ) {
-		// 			metrics.meter( errors ).record();
-		// 			debug( 'ERROR! route: %s %s failed with %s', action.method.toUpperCase(), action.url, err.stack );
-		// 			res.status( 500 ).send( 'Server error at ' + action.method.toUpperCase() + ' ' + action.url );
-		// 		} );
-		// }
 		} else {
 			respond();
 		}

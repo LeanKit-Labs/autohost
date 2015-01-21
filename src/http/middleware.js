@@ -72,7 +72,7 @@ function configure( cfg ) { // jshint ignore:line
 function requestMetrics( req, res, next ) { // jshint ignore: line
 	req.context = {};
 	res.setMaxListeners( 0 );
-	var timerKey = [ req.method.toUpperCase(), req.url, 'timer' ].join( ' ' );
+	var timerKey = [ 'autohost', 'perf', req.method.toUpperCase() + ' ' + req.url ].join( '.' );
 	metrics.timer( timerKey ).start();
 	res.once( 'finish', function() {
 		metrics.timer( timerKey ).record();

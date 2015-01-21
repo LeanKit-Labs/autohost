@@ -201,6 +201,7 @@ describe( 'HTTP', function() {
 			}, function( err, resp ) {
 					response = {
 						body: resp.body,
+						status: resp.statusCode,
 						header: resp.headers[ 'test-header' ],
 						cookie: resp.headers[ 'set-cookie' ][ 0 ]
 					};

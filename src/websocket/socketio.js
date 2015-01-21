@@ -8,91 +8,86 @@ var io;
 var middleware;
 
 function acceptSocket( socket ) {
-	try {
-		debug( 'Processing socket.io connection attempt' );
+	debug( 'Processing socket.io connection attempt' );
 
-		var request = socket.request;
-		socket.type = 'socketio';
-		// grab user from request
-		socket.user = request.user || {
-			id: 'anonymous',
-			name: 'anonymous'
-		};
+	var request = socket.request;
+	socket.type = 'socketio';
+	// grab user from request
+	socket.user = request.user || {
+		id: 'anonymous',
+		name: 'anonymous'
+	};
 
-		// copy session from request
-		socket.session = request.session;
+	// copy session from request
+	socket.session = request.session;
 
-		// copy cookies from request from middleware
-		socket.cookies = {};
-		if ( request.headers[ 'set-cookie' ] ) {
-			console.log( 'HOLLAAAAAHHHHHHHHHHHHHHH' );
-			_.each( request.headers.headers[ 'set-cookie' ].split( ';' ), function( cookie ) {
-				var crumbs = cookie.split( '=' );
-				socket.cookies[ crumbs[ 0 ].trim() ] = crumbs[ 1 ].trim();
+	// copy cookies from request from middleware
+	socket.cookies = {};
+	if ( request.headers.cookie ) {
+		_.each( request.headers.cookie.split( ';' ), function( cookie ) {
+			var crumbs = cookie.split( '=' );
+			socket.cookies[ crumbs[ 0 ].trim() ] = crumbs[ 1 ].trim();
+		} );
+	}
+
+	// attach roles to user on socket
+	if ( authStrategy ) {
+		authStrategy.getSocketRoles( socket.user )
+			.then( null, function( err ) { // jshint ignore:line
+				return [];
+			} )
+			.then( function( roles ) {
+				socket.user.roles = roles;
+			} );
+	}
+
+	// attach context on request to socket
+	socket.context = request.context;
+
+	// normalize socket publishing interface
+	socket.publish = function( topic, message ) {
+		socket.emit( topic, message );
+	};
+
+	// add a way to close a socket
+	socket.close = function() {
+		debug( 'Closing socket.io client (user: %s)', JSON.stringify( socket.user ) );
+		socket.removeAllListeners();
+		socket.disconnect( true );
+		registry.remove( socket );
+	};
+
+	// add a way to end session
+	socket.logout = function() {
+		request.logout();
+		socket.close();
+	};
+
+	// if client identifies itself, register id
+	socket.on( 'client.identity', function( data ) {
+		debug( 'Client sent identity %s', JSON.stringify( data ) );
+		socket.id = data.id;
+		registry.identified( data.id, socket );
+	} );
+
+	// add anonymous socket
+	registry.add( socket );
+
+	// subscribe to registered topics
+	_.each( registry.topics, function( callback, topic ) {
+		if ( callback ) {
+			socket.on( topic, function( data ) {
+				callback( data, socket );
 			} );
 		}
+	} );
 
-		// attach roles to user on socket
-		if ( authStrategy ) {
-			authStrategy.getSocketRoles( socket.user )
-				.then( null, function( err ) {
-					return [];
-				} )
-				.then( function( roles ) {
-					socket.user.roles = roles;
-				} );
-		}
-
-		// attach context on request to socket
-		socket.context = request.context;
-
-		// normalize socket publishing interface
-		socket.publish = function( topic, message ) {
-			socket.emit( topic, message );
-		};
-
-		// add a way to close a socket
-		socket.close = function() {
-			debug( 'Closing socket.io client (user: %s)', JSON.stringify( socket.user ) );
-			socket.removeAllListeners();
-			socket.disconnect( true );
-			registry.remove( socket );
-		};
-
-		// add a way to end session
-		socket.logout = function() {
-			request.logout();
-			socket.close();
-		};
-
-		// if client identifies itself, register id
-		socket.on( 'client.identity', function( data ) {
-			debug( 'Client sent identity %s', JSON.stringify( data ) );
-			socket.id = data.id;
-			registry.identified( data.id, socket );
-		} );
-
-		// add anonymous socket
-		registry.add( socket );
-
-		// subscribe to registered topics
-		_.each( registry.topics, function( callback, topic ) {
-			if ( callback ) {
-				socket.on( topic, function( data ) {
-					callback( data, socket );
-				} );
-			}
-		} );
-
-		socket.publish( 'server.connected', { user: socket.user } );
-		socket.on( 'disconnect', function() {
-			debug( 'socket.io client disconnected (user: %s)', JSON.stringify( socket.user ) );
-			socket.removeAllListeners();
-			registry.remove( socket );
-		} );
-	} catch (e) {
-		console.log( e.stack );
-	}
+	socket.publish( 'server.connected', { user: socket.user } );
+	socket.on( 'disconnect', function() {
+		debug( 'socket.io client disconnected (user: %s)', JSON.stringify( socket.user ) );
+		socket.removeAllListeners();
+		registry.remove( socket );
+	} );
 }
 
 function authSocketIO( req, allow ) {

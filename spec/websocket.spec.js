@@ -25,7 +25,6 @@ describe( 'Websocket', function() {
 	// * action to capture various information from the incoming request and return it to the caller
 	// * action to redirect to a different resource
 	// * action that throws exception
-	// * action with a regex URL
 	// * route that throws an exception
 	before( function() {
 		harness = require( './harness.js' )( config );
@@ -46,18 +45,10 @@ describe( 'Websocket', function() {
 		};
 
 		var anonProxy = function( env ) {
-			if ( env.transport === 'http' ) {
-				var url = 'http://localhost:88981' + env.url.replace( 'proxy', 'args' );
-				env.forwardTo( {
-					headers: { 'Authorization': 'Bearer one' },
-					url: url
-				} );
-			} else {
-				env.reply( { data: 'This call is not supported over websockets' } );
-			}
+			env.forwardTo( {} );
 		};
 
-		var errorCall = function( env ) {
+		var errorCall = function( env ) { // jshint ignore:line
 			throw new Error( 'I am bad at things!' );
 		};
 
@@ -67,17 +58,13 @@ describe( 'Websocket', function() {
 
 		var redirectCall = function( env ) {
 			var data = { id: env.data.id };
-			if ( env.data.id == '100' ) {
+			if ( env.data.id == '100' ) { // jshint ignore:line
 				env.redirect( '/api/test/thing/200' );
-			} else if ( env.data.id == '101' ) {
+			} else if ( env.data.id == '101' ) { // jshint ignore:line
 				env.redirect( 301, '/api/test/thing/201' );
 			} else {
 				env.reply( { data: data } );
 			}
-		};
-
-		var regexUrl = function( env ) {
-			env.reply( { data: 'regex route matched' } );
 		};
 
 		harness.addMiddleware( '/', function( req, res, next ) {
@@ -95,7 +82,6 @@ describe( 'Websocket', function() {
 				error: { url: '/error', method: 'get', topic: 'error', handle: errorCall },
 				file: { url: '/file', method: 'get', topic: 'file', handle: fileCall },
 				proxy: { url: '/proxy/:one/:two/:three', method: 'post', topic: 'proxy', handle: anonProxy },
-				regex: { url: /test\/regex.*/, method: 'all', handle: regexUrl },
 				thing: { url: '/thing/:id', method: 'get', topic: 'thing', handle: redirectCall }
 			}
 		} );
@@ -117,7 +103,7 @@ describe( 'Websocket', function() {
 	describe( 'Sending args message (authenticated & authorized)', function() {
 		var response, ws;
 		before( function( done ) {
-			ws = harness.getWSClient( 'http://localhost:88981/websocket', { Authorization: 'Bearer one' } );
+			ws = harness.getWSClient( 'http://localhost:88981/websocket', { Authorization: 'Bearer one', Cookie: 'header-one=one' } );
 			ws.once( 'connect', function( socket ) {
 				socket.on( 'message', function( msg ) {
 					var json = JSON.parse( msg.utf8Data );
@@ -325,6 +311,33 @@ describe( 'Websocket', function() {
 
 		it( 'should return error message', function() {
 			response.should.eql( 'Server error at topic fail' );
+		} );
+	} );
+
+	describe( 'Proxy - Args (unsupported)', function() {
+		var response, ws;
+		before( function( done ) {
+			ws = harness.getWSClient( 'http://localhost:88981/websocket', { Authorization: 'Bearer one' } );
+			ws.once( 'connect', function( socket ) {
+				socket.on( 'message', function( msg ) {
+					var json = JSON.parse( msg.utf8Data );
+					if ( json.topic === 'test.proxy' && !response ) {
+						response = json.data;
+						done();
+					}
+				} );
+
+				socket.sendUTF( JSON.stringify( {
+					topic: 'test.proxy',
+					data: {
+						id: 100
+					}
+				} ) );
+			} );
+		} );
+
+		it( 'should return error message', function() {
+			response.should.eql( 'The API call \'test.proxy\' is not supported via websockets. Sockets do not support proxying via forwardTo.' );
 		} );
 	} );
 

@@ -21,6 +21,7 @@ function SocketEnvelope( topic, message, socket ) {
 	this.replyTo = this.data.replyTo || topic;
 	this.responseStream = new SocketStream( this.replyTo || topic, socket );
 	this.session = socket.session;
+	this.topic = topic;
 	this.logout = function() {
 		socket.logout();
 	};
@@ -31,7 +32,7 @@ function SocketEnvelope( topic, message, socket ) {
 }
 
 SocketEnvelope.prototype.forwardTo = function( /* options */ ) {
-	throw new Error( 'Sockets do not support proxying via forwardTo.' );
+	this.reply( { data: 'The API call \'' + this.topic + '\' is not supported via websockets. Sockets do not support proxying via forwardTo.' } );
 };
 
 SocketEnvelope.prototype.redirect = function( /* options */ ) {

@@ -66,7 +66,7 @@ HttpEnvelope.prototype.redirect = function( statusCode, url ) {
 };
 
 HttpEnvelope.prototype.reply = function( envelope ) {
-	var code = envelope.statusCode || 200;
+	var code = envelope.statusCode || envelope.status || 200;
 	if ( envelope.headers ) {
 		_.each( envelope.headers, function( v, k ) {
 			this._original.res.set( k, v );
