@@ -1,4 +1,3 @@
-var should = require( 'should' ); //jshint ignore:line
 var _ = require( 'lodash' );
 var path = require( 'path' );
 var port = 88988;

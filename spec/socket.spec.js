@@ -1,4 +1,4 @@
-var should = require( 'should' ); //jshint ignore:line
+var should = require( 'should' ); // jshint ignore:line
 var port = 88988;
 var config = {
 	port: port,

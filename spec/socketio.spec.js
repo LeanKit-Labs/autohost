@@ -1,11 +1,5 @@
-var should = require( 'should' ); //jshint ignore:line
-var _ = require( 'lodash' );
-var when = require( 'when' );
-var seq = require( 'when/sequence' );
+var should = require( 'should' ); // jshint ignore:line
 var fs = require( 'fs' );
-var requestor = require( 'request' ).defaults( { jar: false } );
-var postal = require( 'postal' );
-var events = postal.channel( 'events' );
 var port = 88981;
 var config = {
 	port: port,
@@ -56,7 +50,7 @@ describe( 'Socket.io', function() {
 			}
 		};
 
-		var errorCall = function( env ) { // jshint ignore:line
+		var errorCall = function( /* env */ ) {
 			throw new Error( 'I am bad at things!' );
 		};
 
@@ -66,9 +60,9 @@ describe( 'Socket.io', function() {
 
 		var redirectCall = function( env ) {
 			var data = { id: env.data.id };
-			if ( env.data.id == '100' ) { // jshint ignore:line
+			if ( env.data.id == '100' ) { //jshint ignore:line
 				env.redirect( '/api/test/thing/200' );
-			} else if ( env.data.id == '101' ) { // jshint ignore:line
+			} else if ( env.data.id == '101' ) { //jshint ignore:line
 				env.redirect( 301, '/api/test/thing/201' );
 			} else {
 				env.reply( { data: data } );
@@ -134,21 +128,17 @@ describe( 'Socket.io', function() {
 	} );
 
 	describe( 'Sending args message (unauthenticated)', function() {
-		before( function( done ) {
-
+		it( 'should reject user as unauthenticated', function( done ) {
 			var io = harness.getIOClient( 'http://localhost:88981', { timeout: 500, reconnection: false } );
 			io.once( 'connect_error', function() {
 				done();
 			} );
 		} );
-
-		it( 'should reject user as unauthenticated', function() {} );
 	} );
 
 	describe( 'Sending args message (unauthorized)', function() {
 		var response;
 		before( function( done ) {
-
 			var io = harness.getIOClient( 'http://localhost:88981', { query: 'token=two', reconnection: false } );
 			io.once( 'test.args', function( msg ) {
 				response = msg;

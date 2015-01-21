@@ -23,7 +23,7 @@ var adapters = [];
 var host;
 var fount;
 
-function addAdapter( adapter ) { //jshint ignore:line
+function addAdapter( adapter ) {  
 	adapters.push( adapter );
 }
 
@@ -38,7 +38,7 @@ function attachPath( target, filePath ) {
 	}
 }
 
-function clearAdapters() { //jshint ignore:line
+function clearAdapters() {  
 	adapters = [];
 }
 
@@ -50,7 +50,7 @@ function getActions( resource ) {
 	} );
 }
 
-function deepMerge( target, source ) { // jshint ignore:line
+function deepMerge( target, source ) {
 	_.each( source, function( val, key ) {
 		var original = target[ key ];
 		if ( _.isObject( val ) ) {
@@ -103,7 +103,7 @@ function loadAll( resourcePath ) {
 
 // loads a module based on the file path and resolves the function
 // promises and all
-function loadModule( resourcePath ) { // jshint ignore:line
+function loadModule( resourcePath ) {
 	try {
 		var key = path.resolve( resourcePath );
 		delete require.cache[ key ];
@@ -133,7 +133,7 @@ function loadModule( resourcePath ) { // jshint ignore:line
 }
 
 // loadResources from path and returns the modules once they're loaded
-function loadResources( filePath ) { //jshint ignore:line
+function loadResources( filePath ) {  
 	var resourcePath = path.resolve( process.cwd(), filePath );
 	return getResources( resourcePath )
 		.then( function( list ) {
@@ -153,7 +153,7 @@ function normalizeResources( list ) {
 	return resources;
 }
 
-function processModule( mod ) { // jshint ignore:line
+function processModule( mod ) {
 	if ( mod && mod.name ) {
 		return processResource( mod, path.dirname( mod._path ) );
 	} else {
@@ -162,7 +162,7 @@ function processModule( mod ) { // jshint ignore:line
 	}
 }
 
-function processResource( resource ) { //jshint ignore:line
+function processResource( resource ) {  
 	var meta = _.map( adapters, function( adapter ) {
 		if ( _.isArray( resource ) ) {
 			return _.reduce( resource, function( acc, x ) {
@@ -181,7 +181,7 @@ function processResources() {
 	return _.reduce( _.map( resources, processModule ), reduce );
 }
 
-function reduce( acc, resource ) { //jshint ignore:line
+function reduce( acc, resource ) {  
 	_.each( resource, function( val, key ) {
 		if ( acc[ key ] ) {
 			_.each( val, function( list, prop ) {
@@ -194,7 +194,7 @@ function reduce( acc, resource ) { //jshint ignore:line
 	return acc;
 }
 
-function start( resourcePath, auth ) { //jshint ignore:line
+function start( resourcePath, auth ) {  
 	wrapper.actionList = {};
 	return loadAll( resourcePath )
 		.then( normalizeResources )
@@ -213,13 +213,13 @@ function start( resourcePath, auth ) { //jshint ignore:line
 		} );
 }
 
-function stop() { // jshint ignore:line
+function stop() {
 	_.each( adapters, function( adapter ) {
 		adapter.stop();
 	} );
 }
 
-function startAdapters( auth ) { // jshint ignore:line
+function startAdapters( auth ) {
 	_.each( adapters, function( adapter ) {
 		adapter.start( config, auth );
 	} );
@@ -229,7 +229,7 @@ function trimString( str ) {
 	return str.trim();
 }
 
-function trim( list ) { // jshint ignore:line
+function trim( list ) {
 	return ( list && list.length ) ? _.filter( list.map( trimString ) ) : [];
 }
 

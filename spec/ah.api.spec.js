@@ -1,10 +1,8 @@
-var should = require( 'should' ); //jshint ignore:line
+var should = require( 'should' ); // jshint ignore:line
 var _ = require( 'lodash' );
 var when = require( 'when' );
 var seq = require( 'when/sequence' );
 var requestor = require( 'request' ).defaults( { jar: true } );
-var postal = require( 'postal' );
-var events = postal.channel( 'events' );
 var port = 88988;
 var config = {
 	port: port,
@@ -28,7 +26,7 @@ describe( 'AH Resource', function() {
 			env.reply( { data: 'goodbye' } );
 		};
 
-		var errorCall = function( env ) {
+		var errorCall = function( /* env */ ) {
 			throw new Error( 'I am bad at things!' );
 		};
 
@@ -118,6 +116,7 @@ describe( 'AH Resource', function() {
 							headers: { 'Authorization': 'Bearer one' }
 						}, function( err, resp ) {
 							metrics = JSON.parse( resp.body );
+							console.log( JSON.stringify( metrics, null, 2 ) );
 							done();
 						} );
 				}, 100 );

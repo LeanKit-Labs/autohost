@@ -60,24 +60,24 @@ function checkPermissionFor( user, context, action ) {
 		} );
 }
 
-function getUserString( user ) { // jshint ignore:line
+function getUserString( user ) {  
 	return user.name ? user.name : JSON.stringify( user );
 }
 
-function hasPrefix( url ) { // jshint ignore:line
+function hasPrefix( url ) {  
 	var prefix = http.buildUrl( config.urlPrefix || '', config.apiPrefix || '' );
 	return url.indexOf( prefix ) === 0;
 }
 
-function start() { // jshint ignore:line
+function start() {  
 	http.start( config, passport );
 }
 
-function stop() { // jshint ignore:line
+function stop() {  
 	http.stop();
 }
 
-function wireupResource( resource, basePath, resources ) { // jshint ignore:line
+function wireupResource( resource, basePath, resources ) {  
 	var meta = { routes: {} };
 	var static = resource.static || resource.resources;
 	if ( static && static !== '' ) {
@@ -91,7 +91,7 @@ function wireupResource( resource, basePath, resources ) { // jshint ignore:line
 	return meta;
 }
 
-function wireupAction( resource, actionName, action, meta, resources ) { // jshint ignore:line
+function wireupAction( resource, actionName, action, meta, resources ) {  
 	var url = buildActionUrl( resource.name, actionName, action, resource, resources );
 	var alias = buildActionAlias( resource.name, actionName );
 	var errors = [ 'autohost', 'errors', action.method.toUpperCase() + ' ' + url ].join( '.' );

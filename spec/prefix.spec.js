@@ -1,11 +1,6 @@
-var should = require( 'should' ); //jshint ignore:line
-var _ = require( 'lodash' );
-var when = require( 'when' );
-var seq = require( 'when/sequence' );
+var should = require( 'should' ); // jshint ignore:line
 var fs = require( 'fs' );
 var requestor = require( 'request' ).defaults( { jar: false } );
-var postal = require( 'postal' );
-var events = postal.channel( 'events' );
 var port = 88981;
 
 describe( 'URL & API Prefix', function() {
@@ -155,7 +150,7 @@ describe( 'URL Strategy with Prefix', function() {
 			parseAhead: true,
 			handleRouteErrors: true,
 			urlPrefix: '/prefixed',
-			urlStrategy: function( resourceName, actionName, action, resources ) {
+			urlStrategy: function( resourceName, actionName /* action, resources */ ) {
 				return [ 'strategized', resourceName, actionName ].join( '/' );
 			}
 		};

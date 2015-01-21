@@ -1,4 +1,4 @@
-var should = require( 'should' ); //jshint ignore:line
+var should = require( 'should' ); // jshint ignore:line
 var regex = require( '../src/http/regex.js' );
 
 describe( 'URL Regex', function() {

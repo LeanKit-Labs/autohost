@@ -1,11 +1,6 @@
-var should = require( 'should' ); //jshint ignore:line
-var _ = require( 'lodash' );
-var when = require( 'when' );
-var seq = require( 'when/sequence' );
+var should = require( 'should' ); // jshint ignore:line
 var fs = require( 'fs' );
 var requestor = require( 'request' ).defaults( { jar: false } );
-var postal = require( 'postal' );
-var events = postal.channel( 'events' );
 var port = 88981;
 var config = {
 	port: port,
@@ -47,7 +42,7 @@ describe( 'No Authentication', function() {
 			} );
 		};
 
-		var errorCall = function( env ) {
+		var errorCall = function( /* env */ ) {
 			throw new Error( 'I am bad at things!' );
 		};
 

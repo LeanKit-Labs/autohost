@@ -111,7 +111,7 @@ function handle( topic, callback ) {
 	} );
 }
 
-function handleWebSocketRequest( request ) { // jshint ignore:line
+function handleWebSocketRequest( request ) {  
 	// if this doesn't end in websocket, we should ignore the request, it isn't for this lib
 	if ( !/websocket[\/]?$/.test( request.resourceURL.path ) ) {
 		debug( 'Websocket connection attempt (%s) does not match allowed URL /websocket', request.resourceURL.path );

@@ -28,7 +28,7 @@ var wrapper = {
 	on: onEvent
 };
 
-function initialize( cfg, authProvider, fount ) { //jshint ignore:line
+function initialize( cfg, authProvider, fount ) {
 	api = require( './api.js' )( wrapper, cfg );
 	wrapper.fount = fount || internalFount;
 	if ( initialized ) {
@@ -55,7 +55,7 @@ function onEvent( topic, handle ) {
 	eventChannel.subscribe( topic, handle );
 }
 
-function setup( authProvider ) { //jshint ignore:line
+function setup( authProvider ) {
 	var config = wrapper.config;
 	var metrics = wrapper.metrics;
 

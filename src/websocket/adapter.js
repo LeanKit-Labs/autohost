@@ -33,19 +33,19 @@ function checkPermissionFor( user, context, action ) {
 		} );
 }
 
-function getUserString( user ) { // jshint ignore:line
+function getUserString( user ) {
 	return user.name ? user.name : JSON.stringify( user );
 }
 
-function start() { // jshint ignore:line
+function start() {
 	socket.start( authStrategy );
 }
 
-function stop() { // jshint ignore:line
+function stop() {
 	socket.stop();
 }
 
-function wireupResource( resource ) { // jshint ignore:line
+function wireupResource( resource ) {
 	var meta = { topics: {} };
 	_.each( resource.actions, function( action, actionName ) {
 		wireupAction( resource, actionName, action, meta );
@@ -53,7 +53,7 @@ function wireupResource( resource ) { // jshint ignore:line
 	return meta;
 }
 
-function wireupAction( resource, actionName, action, meta ) { // jshint ignore:line
+function wireupAction( resource, actionName, action, meta ) {
 	var topic = buildActionTopic( resource.name, action );
 	var alias = buildActionAlias( resource.name, actionName );
 	var errors = [ 'autohost', 'errors', topic.replace( '.', ':' ) ].join( '.' );

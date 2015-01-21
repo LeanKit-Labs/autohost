@@ -1,4 +1,4 @@
-var should = require( 'should' ); //jshint ignore:line
+var should = require( 'should' ); // jshint ignore:line
 var fount = require( 'fount' );
 var _ = require( 'lodash' );
 
@@ -112,7 +112,7 @@ describe( 'API', function() {
 		} );
 
 		it( 'should start adapter', function() {
-			adapter.started.should.be.true; //jshint ignore:line
+			adapter.started.should.be.true; // jshint ignore:line
 		} );
 
 		after( function() {
