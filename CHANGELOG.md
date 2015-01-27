@@ -1,6 +1,9 @@
 ## 0.3.0
 Primary motivation here is to begin work on a version of autohost that will work well with a hypermedia library ( [hyped](https://github.com/leankit-labs/hyped) ). This is a breaking change because of several structural and naming changes to how resources get modeled.
 
+### prerelease 19
+Allow for specs to reset userCountCheck so that the auth providers can be reset after adding or removing accounts and get expected behavior.
+
 ### prerelease 18
  * Rewrite specifications
  * Provide test harness

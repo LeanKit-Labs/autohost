@@ -61,6 +61,7 @@ function setup( authProvider ) {
 
 	httpAdapter = httpAdapterFn( config, authProvider, wrapper.http, request, metrics );
 	api.addAdapter( httpAdapter );
+	wrapper.passport = httpAdapter.passport;
 
 	// API metadata
 	if ( !config.noOptions ) {
