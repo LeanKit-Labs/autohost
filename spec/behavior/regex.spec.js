@@ -1,5 +1,5 @@
-var should = require( 'should' ); // jshint ignore:line
-var regex = require( '../src/http/regex.js' );
+require( '../setup' );
+var regex = require( '../../src/http/regex.js' );
 
 describe( 'URL Regex', function() {
 	describe( 'when matching a thing with things', function() {
@@ -15,11 +15,11 @@ describe( 'URL Regex', function() {
 		} );
 
 		it( 'it should match URLs beginning with views', function() {
-			url1Match.should.be.true; // jshint ignore:line
+			url1Match.should.be.true;
 		} );
 
 		it( 'it should not match URLs with views all willy-nilly', function() {
-			url2Match.should.be.false; // jshint ignore:line
+			url2Match.should.be.false;
 		} );
 	} );
 
@@ -40,15 +40,15 @@ describe( 'URL Regex', function() {
 
 
 		it( 'it should match URLs beginning with the correct prefix', function() {
-			url1Match.should.be.true; // jshint ignore:line
+			url1Match.should.be.true;
 		} );
 
 		it( 'it should not match URLs missing the prefix', function() {
-			url2Match.should.be.false; // jshint ignore:line
+			url2Match.should.be.false;
 		} );
 
 		it( 'it should not match URLs that are partial matches', function() {
-			url3Match.should.be.false; // jshint ignore:line
+			url3Match.should.be.false;
 		} );
 	} );
 
@@ -69,15 +69,15 @@ describe( 'URL Regex', function() {
 
 
 		it( 'it should match URLs beginning with the correct prefix', function() {
-			url1Match.should.be.true; // jshint ignore:line
+			url1Match.should.be.true;
 		} );
 
 		it( 'it should not match URLs missing the prefix', function() {
-			url2Match.should.be.false; // jshint ignore:line
+			url2Match.should.be.false;
 		} );
 
 		it( 'it should not match URLs that are partial matches', function() {
-			url3Match.should.be.false; // jshint ignore:line
+			url3Match.should.be.false;
 		} );
 	} );
 
@@ -98,15 +98,15 @@ describe( 'URL Regex', function() {
 
 
 		it( 'it should match URLs beginning with the correct prefix', function() {
-			url1Match.should.be.true; // jshint ignore:line
+			url1Match.should.be.true;
 		} );
 
 		it( 'it should not match URLs missing the prefix', function() {
-			url2Match.should.be.false; // jshint ignore:line
+			url2Match.should.be.false;
 		} );
 
 		it( 'it should not match URLs that are partial matches', function() {
-			url3Match.should.be.false; // jshint ignore:line
+			url3Match.should.be.false;
 		} );
 	} );
 
@@ -127,15 +127,15 @@ describe( 'URL Regex', function() {
 
 
 		it( 'it should match URLs beginning with the correct prefix', function() {
-			url1Match.should.be.true; // jshint ignore:line
+			url1Match.should.be.true;
 		} );
 
 		it( 'it should not match URLs missing the prefix', function() {
-			url2Match.should.be.false; // jshint ignore:line
+			url2Match.should.be.false;
 		} );
 
 		it( 'it should not match URLs that are partial matches', function() {
-			url3Match.should.be.false; // jshint ignore:line
+			url3Match.should.be.false;
 		} );
 	} );
 
@@ -156,15 +156,15 @@ describe( 'URL Regex', function() {
 
 
 		it( 'it should match URLs beginning with the correct prefix', function() {
-			url3Match.should.be.true; // jshint ignore:line
+			url3Match.should.be.true;
 		} );
 
 		it( 'it should not match URLs missing the prefix', function() {
-			url2Match.should.be.false; // jshint ignore:line
+			url2Match.should.be.false;
 		} );
 
 		it( 'it should not match URLs with additional segments between prefix and pattern', function() {
-			url1Match.should.be.false; // jshint ignore:line
+			url1Match.should.be.false;
 		} );
 	} );
 } );

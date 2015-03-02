@@ -1,7 +1,21 @@
-var should = require( 'should' ); // jshint ignore:line
-var fs = require( 'fs' );
+require( '../setup' );
 var requestor = require( 'request' ).defaults( { jar: false } );
 var port = 88981;
+var post, get;
+before( function() {
+	get = function( req ) {
+		return when.promise( function( resolve, reject ) {
+			requestor.get( req, function( err, res ) {
+				if ( err ) {
+					reject( err );
+				} else {
+					resolve( res );
+				}
+			} );
+		} );
+	};
+	post = lift( requestor.post );
+} );
 
 describe( 'URL & API Prefix', function() {
 	var cookieExpiresAt;
@@ -75,57 +89,41 @@ describe( 'URL & API Prefix', function() {
 
 	describe( 'HTTP', function() {
 		describe( 'Posting overlapping args (authorized)', function() {
-			var response;
-			before( function( done ) {
-				requestor.post( {
-					url: 'http://localhost:88981/prefixed/test/args/alpha/bravo/charlie?three=echo&four=foxtrot',
-					json: true,
-					body: { four: 'delta' },
-					headers: { 'Authorization': 'Bearer one' }
-				}, function( err, resp ) {
-						response = {
-							body: resp.body,
-							header: resp.headers[ 'test-header' ],
-							cookie: resp.headers[ 'set-cookie' ][ 0 ]
-						};
-						done();
-					} );
-			} );
-
 			it( 'should preserve overlapping values', function() {
-				response.body.should.eql( [ 'alpha', 'bravo', 'charlie', 'delta', 'echo', 'foxtrot', 'an extension!', { one: 'alpha', two: 'bravo', three: 'charlie' } ] );
-			} );
-
-			it( 'should include custom header', function() {
-				response.header.should.equal( 'look a header value!' );
-			} );
-
-			it( 'should include custom cookie', function() {
-				response.cookie.should.equal( 'an-cookies=chocolate%20chip; Domain=autohost.com; Path=/api; Expires=' + cookieExpiresAt.toUTCString() );
+				return post(
+					{
+						url: 'http://localhost:88981/prefixed/test/args/alpha/bravo/charlie?three=echo&four=foxtrot',
+						json: true,
+						body: { four: 'delta' },
+						headers: { 'Authorization': 'Bearer one' }
+					} )
+					.then( transformResponse( 'body', 'testHeader', 'setCookie' ), onError )
+					.should.eventually.deep.equal(
+					{
+						body: [
+							'alpha', 'bravo', 'charlie', 'delta', 'echo', 'foxtrot', 'an extension!',
+							{ one: 'alpha', two: 'bravo', three: 'charlie' }
+						],
+						header: 'look a header value!',
+						cookie: 'an-cookies=chocolate%20chip; Domain=autohost.com; Path=/api; Expires=' + cookieExpiresAt.toUTCString()
+					} );
 			} );
 		} );
 
 		describe( 'Accessing static files from a resource static path', function() {
-			var response;
-			before( function( done ) {
-				requestor.get( {
-					url: 'http://localhost:88981/prefixed/testWithStatic/txt/hello.txt',
-					headers: { 'Authorization': 'Bearer one' }
-				}, function( err, resp ) {
-						response = {
-							body: resp.body,
-							type: resp.headers[ 'content-type' ]
-						};
-						done();
-					} );
-			} );
-
-			it( 'should return the file', function() {
-				response.body.should.eql( 'hello, world!' );
-			} );
-
-			it( 'should return the correct mimetype', function() {
-				response.type.should.equal( 'text/plain; charset=UTF-8' );
+			it( 'should return the file and correct mimetype', function() {
+				return get(
+					{
+						url: 'http://localhost:88981/prefixed/testWithStatic/txt/hello.txt',
+						headers: { 'Authorization': 'Bearer one' }
+					} )
+					.then( transformResponse( 'body', 'type' ), onError )
+					.should.eventually.deep.equal(
+					{
+						body: 'hello, world!',
+						type: 'text/plain; charset=UTF-8'
+					}
+				);
 			} );
 		} );
 	} );
@@ -198,83 +196,73 @@ describe( 'URL Strategy with Prefix', function() {
 
 	describe( 'HTTP', function() {
 		describe( 'Requesting file via API', function() {
-			var response;
-			before( function( done ) {
-				requestor.get( {
-					url: 'http://localhost:88981/prefixed/api/strategized/test/file',
-					headers: { 'Authorization': 'Bearer one' }
-				}, function( err, resp ) {
-						response = {
-							body: resp.body,
-							type: resp.headers[ 'content-type' ]
-						};
-						done();
-					} );
-			} );
-
-			it( 'should return the file', function() {
-				response.body.should.eql( 'hello, world!' );
-			} );
-
-			it( 'should return the correct mimetype', function() {
-				response.type.should.equal( 'text/plain; charset=utf-8' );
+			it( 'should return the file and correct mimetype', function() {
+				return get(
+					{
+						url: 'http://localhost:88981/prefixed/api/strategized/test/file',
+						headers: { 'Authorization': 'Bearer one' }
+					} )
+					.then( transformResponse( 'body', 'type' ), onError )
+					.should.eventually.deep.equal(
+					{
+						body: 'hello, world!',
+						type: 'text/plain; charset=utf-8'
+					}
+				);
 			} );
 		} );
 
 		describe( 'Requesting temporarily moved resource', function() {
-			var redirect, response;
-			before( function( done ) {
-				requestor( {
-					method: 'get',
-					url: 'http://localhost:88981/prefixed/api/strategized/test/thing?id=100',
-					headers: { 'Authorization': 'Bearer one' },
-					followRedirect: function( r ) {
-						redirect = r;
-						return true;
-					}
-				}, function( err, resp ) {
-						response = {
-							body: JSON.parse( resp.body ),
-							status: resp.statusCode
-						};
-						done();
+			it( 'should redirect correctly', function() {
+				var redirect;
+				return get(
+					{
+						url: 'http://localhost:88981/prefixed/api/strategized/test/thing?id=100',
+						headers: { 'Authorization': 'Bearer one' },
+						followRedirect: function( r ) {
+							redirect = r;
+							return true;
+						}
+					} )
+					.then( transformResponse( 'body', 'statusCode' ), onError )
+					.then( function( res ) {
+						res.originalCode = redirect.statusCode;
+						res.body = JSON.parse( res.body );
+						return res;
+					} )
+					.should.eventually.deep.equal(
+					{
+						body: { id: '200' },
+						statusCode: 200,
+						originalCode: 302
 					} );
-			} );
-
-			it( 'should return the redirected item', function() {
-				response.body.should.eql( { id: '200' } );
-			} );
-
-			it( 'should provied correct redirection', function() {
-				redirect.statusCode.should.equal( 302 );
 			} );
 		} );
 
 		describe( 'Requesting permanently moved resource', function() {
-			var redirect, response;
-			before( function( done ) {
-				requestor.get( {
-					url: 'http://localhost:88981/prefixed/api/strategized/test/thing?id=101',
-					headers: { 'Authorization': 'Bearer one' },
-					followRedirect: function( r ) {
-						redirect = r;
-						return true;
-					}
-				}, function( err, resp ) {
-						response = {
-							body: JSON.parse( resp.body ),
-							status: resp.statusCode
-						};
-						done();
+			it( 'should redirect correctly', function() {
+				var redirect;
+				return get(
+					{
+						url: 'http://localhost:88981/prefixed/api/strategized/test/thing?id=101',
+						headers: { 'Authorization': 'Bearer one' },
+						followRedirect: function( r ) {
+							redirect = r;
+							return true;
+						}
+					} )
+					.then( transformResponse( 'body', 'statusCode' ), onError )
+					.then( function( res ) {
+						res.originalCode = redirect.statusCode;
+						res.body = JSON.parse( res.body );
+						return res;
+					} )
+					.should.eventually.deep.equal(
+					{
+						body: { id: '201' },
+						statusCode: 200,
+						originalCode: 301
 					} );
-			} );
-
-			it( 'should return the redirected item', function() {
-				response.body.should.eql( { id: '201' } );
-			} );
-
-			it( 'should provied correct redirection', function() {
-				redirect.statusCode.should.equal( 301 );
 			} );
 		} );
 	} );

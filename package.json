@@ -1,6 +1,6 @@
 {
   "name": "autohost",
-  "version": "0.3.0-19",
+  "version": "0.3.0-20",
   "description": "Resource driven, transport agnostic host",
   "main": "src/index.js",
   "dependencies": {
@@ -20,7 +20,6 @@
     "postal": "^0.10.1",
     "qs": "^1.0.0",
     "request": "~2.51.0",
-    "should": "^4.0.4",
     "socket.io": "^1.0.6",
     "websocket": "^1.0.17",
     "when": "^3.4.2"
@@ -40,7 +39,9 @@
     "passport-strategy": "^1.0.0",
     "processhost": "^0.1.13",
     "redis": "^0.12.1",
-    "should": "^4.0.4",
+    "biggulp": "0.*.*",
+    "chai": "^2.0.0",
+    "chai-as-promised": "^4.2.0",
     "socket.io-client": "^1.0.6"
   },
   "scripts": {

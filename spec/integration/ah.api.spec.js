@@ -1,7 +1,4 @@
-var should = require( 'should' ); // jshint ignore:line
-var _ = require( 'lodash' );
-var when = require( 'when' );
-var seq = require( 'when/sequence' );
+require( '../setup' );
 var requestor = require( 'request' ).defaults( { jar: true } );
 var port = 88988;
 var config = {
@@ -38,7 +35,7 @@ describe( 'AH Resource', function() {
 				logout: { url: '/logout', method: 'all', topic: 'logout', handle: logout }
 			}
 		} );
-		harness.addResource( require( '../src/ahResource' )( harness ) );
+		harness.addResource( require( '../../src/ahResource' )( harness ) );
 		harness.addMiddleware( '/api/test/call', function( req, res, next ) {
 			loggedOut = true;
 			next();
@@ -48,7 +45,6 @@ describe( 'AH Resource', function() {
 	} );
 
 	describe( 'HTTP: metrics', function() {
-		var codes;
 		var metrics;
 		var requests = [
 			{
@@ -84,16 +80,11 @@ describe( 'AH Resource', function() {
 			};
 		};
 
-		before( function( done ) {
-			seq( _.map( requests, get ) )
-				.then( function( responses ) {
-					codes = _.map( responses, 'statusCode' );
-					done();
-				} );
-		} );
-
 		it( 'should have completed all requests successfully', function() {
-			codes.should.eql( [ 200, 200, 200, 500, 200, 200 ] );
+			return seq( _.map( requests, get ) )
+				.then( function( responses ) {
+					return _.map( responses, 'statusCode' );
+				} ).should.eventually.deep.equal( [ 200, 200, 200, 500, 200, 200 ] );
 		} );
 
 		it( 'should contain metrics under expected namespaces', function() {
@@ -116,7 +107,6 @@ describe( 'AH Resource', function() {
 							headers: { 'Authorization': 'Bearer one' }
 						}, function( err, resp ) {
 							metrics = JSON.parse( resp.body );
-							console.log( JSON.stringify( metrics, null, 2 ) );
 							done();
 						} );
 				}, 100 );
