@@ -23,7 +23,7 @@ var adapters = [];
 var host;
 var fount;
 
-function addAdapter( adapter ) {  
+function addAdapter( adapter ) {
 	adapters.push( adapter );
 }
 
@@ -38,7 +38,7 @@ function attachPath( target, filePath ) {
 	}
 }
 
-function clearAdapters() {  
+function clearAdapters() {
 	adapters = [];
 }
 
@@ -133,7 +133,7 @@ function loadModule( resourcePath ) {
 }
 
 // loadResources from path and returns the modules once they're loaded
-function loadResources( filePath ) {  
+function loadResources( filePath ) {
 	var resourcePath = path.resolve( process.cwd(), filePath );
 	return getResources( resourcePath )
 		.then( function( list ) {
@@ -162,7 +162,7 @@ function processModule( mod ) {
 	}
 }
 
-function processResource( resource ) {  
+function processResource( resource ) {
 	var meta = _.map( adapters, function( adapter ) {
 		if ( _.isArray( resource ) ) {
 			return _.reduce( resource, function( acc, x ) {
@@ -181,7 +181,7 @@ function processResources() {
 	return _.reduce( _.map( resources, processModule ), reduce );
 }
 
-function reduce( acc, resource ) {  
+function reduce( acc, resource ) {
 	_.each( resource, function( val, key ) {
 		if ( acc[ key ] ) {
 			_.each( val, function( list, prop ) {
@@ -194,7 +194,7 @@ function reduce( acc, resource ) {
 	return acc;
 }
 
-function start( resourcePath, auth ) {  
+function start( resourcePath, auth ) {
 	wrapper.actionList = {};
 	return loadAll( resourcePath )
 		.then( normalizeResources )

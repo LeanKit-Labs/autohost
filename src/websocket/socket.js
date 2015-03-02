@@ -3,10 +3,12 @@ var _ = require( 'lodash' );
 var postal = require( 'postal' );
 var eventChannel = postal.channel( 'events' );
 var debug = require( 'debug' )( 'autohost:ws-transport' );
+var uuid = require( 'node-uuid' );
 var wrapper, websocket, socketIO, metrics;
 reset();
 
 function addClient( socket ) {
+	socket.connectionId = uuid.v4();
 	wrapper.clients.push( socket );
 	if ( socket.user !== 'anonymous' ) {
 		socketIdentified( socket.user, socket );
@@ -37,7 +39,7 @@ function onTopic( topic, handle /* context */ ) {
 		if ( config && config.handleRouteErrors ) {
 			try {
 				handle( data, socket );
-			} catch (err) {
+			} catch ( err ) {
 				metrics.meter( errors ).record();
 				socket.publish( data.replyTo || topic, 'Server error at topic ' + topic );
 			}

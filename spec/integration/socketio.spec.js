@@ -1,5 +1,4 @@
-var should = require( 'should' ); // jshint ignore:line
-var fs = require( 'fs' );
+require( '../setup' );
 var port = 88981;
 var config = {
 	port: port,

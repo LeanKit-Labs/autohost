@@ -1,7 +1,4 @@
-var should = require( 'should' ); // jshint ignore:line
-var _ = require( 'lodash' );
-var when = require( 'when' );
-var seq = require( 'when/sequence' );
+require( '../setup' );
 var requestor = require( 'request' ).defaults( { jar: true } );
 var postal = require( 'postal' );
 var events = postal.channel( 'events' );
@@ -12,6 +9,7 @@ var config = {
 	websocket: true,
 	defaultUser: true
 };
+var post, get;
 
 describe( 'Session Management', function() {
 	var harness, loggedOut;
@@ -38,11 +36,23 @@ describe( 'Session Management', function() {
 		} );
 		harness.setActionRoles( 'test.call', [ 'user' ] );
 		harness.start();
+		get = function( req ) {
+			return when.promise( function( resolve, reject ) {
+				requestor.get( req, function( err, res ) {
+					if ( err ) {
+						reject( err );
+					} else {
+						resolve( res );
+					}
+				} );
+			} );
+		};
+		post = lift( requestor.post );
 	} );
 
 	describe( 'HTTP: when making requests before and after logout', function() {
-		var codes;
 		var counter = 0;
+		var originalAuthenticate;
 		var requests = [
 			{
 				url: 'http://localhost:88988/api/test/call',
@@ -62,17 +72,13 @@ describe( 'Session Management', function() {
 				url: 'http://localhost:88988/api/test/call'
 			}
 		];
-		var get = function( req ) {
+		var getFn = function( req ) {
 			return function() {
-				return when.promise( function( resolve ) {
-					requestor.get( req, function( err, resp ) {
-						resolve( err || resp );
-					} );
-				} );
+				return get( req );
 			};
 		};
 
-		before( function( done ) {
+		before( function() {
 			originalAuthenticate = harness.auth.authenticate;
 			harness.auth.authenticate = function( req, res, next ) {
 				// don't count the call after logout
@@ -81,20 +87,22 @@ describe( 'Session Management', function() {
 				}
 				originalAuthenticate( req, res, next );
 			};
-
-			seq( _.map( requests, get ) )
-				.then( function( responses ) {
-					codes = _.map( responses, 'statusCode' );
-					done();
-				} );
 		} );
 
 		it( 'should have completed all requests successfully', function() {
-			codes.should.eql( [ 200, 200, 200, 200, 401 ] );
+			return seq( _.map( requests, getFn ) )
+				.then( function( responses ) {
+					return _.map( responses, 'statusCode' );
+				} )
+				.should.eventually.deep.equal( [ 200, 200, 200, 200, 401 ] );
 		} );
 
 		it( 'should not authenticate requests once session is established', function() {
 			counter.should.be.lessThan( 2 );
+		} );
+
+		after( function() {
+			harness.auth.authenticate = originalAuthenticate;
 		} );
 	} );
 

@@ -24,12 +24,12 @@ module.exports = function setup( config ) {
 		}
 	}
 
-	var middleware = require( '../src/http/middleware.js' )( metrics );
+	var middleware = require( '../../src/http/middleware.js' )( metrics );
 	middleware.configure( config );
-	var http = require( '../src/http/http.js' )( requestor, middleware, metrics, true );
-	var httpAdapter = require( '../src/http/adapter.js' )( config, authProvider, http, requestor, metrics );
-	var socket = require( '../src/websocket/socket.js' )( config, http, metrics, true );
-	var socketAdapter = require( '../src/websocket/adapter.js' )( config, authProvider, socket, metrics );
+	var http = require( '../../src/http/http.js' )( requestor, middleware, metrics, true );
+	var httpAdapter = require( '../../src/http/adapter.js' )( config, authProvider, http, requestor, metrics );
+	var socket = require( '../../src/websocket/socket.js' )( config, http, metrics, true );
+	var socketAdapter = require( '../../src/websocket/adapter.js' )( config, authProvider, socket, metrics );
 
 	var actionRoles = function( action, roles ) {
 		if ( authProvider ) {

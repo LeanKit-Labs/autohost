@@ -1,4 +1,6 @@
-var should = require( 'should' ); // jshint ignore:line
+require( '../setup' );
+var postal = require( 'postal' );
+var eventChannel = postal.channel( 'events' );
 var port = 88988;
 var config = {
 	port: port,
@@ -19,13 +21,18 @@ describe( 'Socket Management', function() {
 
 	describe( 'with multiple socket clients', function() {
 		var io, ws, ioC, wsC;
-
+		var clients = [];
+		var eventSubscription;
 		before( function( done ) {
 			function check() {
 				if ( ioC && wsC ) {
 					done();
 				}
 			}
+
+			eventSubscription = eventChannel.subscribe( 'socket.client.connected', function( client ) {
+				clients.push( client );
+			} );
 
 			io = harness.getIOClient( 'http://localhost:88988', { query: 'token=one', reconnection: false } );
 			io.once( 'connect', function() {
@@ -38,6 +45,15 @@ describe( 'Socket Management', function() {
 				wsC = c;
 				check();
 			} );
+		} );
+
+		it( 'should uniquely id clients', function() {
+			var client1Id = clients[ 0 ].socket.connectionId;
+			var client2Id = clients[ 1 ].socket.connectionId;
+
+			expect( client1Id ).to.exist;
+			expect( client2Id ).to.exist;
+			client1Id.should.not.equal( client2Id );
 		} );
 
 		describe( 'when notifying clients', function() {
@@ -111,6 +127,10 @@ describe( 'Socket Management', function() {
 				ioMessages.should.eql( [ { message: 'sent to userone' } ] );
 				wsMessages.should.eql( [ { message: 'sent to usertwo' } ] );
 			} );
+		} );
+
+		after( function() {
+			eventSubscription.unsubscribe();
 		} );
 	} );
 

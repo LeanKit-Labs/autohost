@@ -1,5 +1,4 @@
-var should = require( 'should' ); // jshint ignore:line
-var fs = require( 'fs' );
+require( '../setup' );
 var requestor = require( 'request' ).defaults( { jar: false } );
 var port = 88981;
 var config = {
@@ -12,6 +11,7 @@ var config = {
 	handleRouteErrors: true,
 	noAuth: true
 };
+var get, post;
 
 describe( 'No Authentication', function() {
 	var cookieExpiresAt;
@@ -25,7 +25,9 @@ describe( 'No Authentication', function() {
 	// * route that throws an exception
 	before( function() {
 		harness = require( './harness.js' )( config );
-		harness.httpAdapter.passport.resetUserCheck();
+		if ( harness.httpAdapter.passport ) {
+			harness.httpAdapter.passport.resetUserCheck();
+		}
 		cookieExpiresAt = new Date( Date.now() + 60000 );
 		var argsCall = function( env ) {
 			env.reply( {
@@ -91,60 +93,56 @@ describe( 'No Authentication', function() {
 
 		harness.addRoute( '/test/fail', 'GET', errorCall );
 		harness.start();
+
+		get = function( req ) {
+			return when.promise( function( resolve, reject ) {
+				requestor.get( req, function( err, res ) {
+					if ( err ) {
+						reject( err );
+					} else {
+						resolve( res );
+					}
+				} );
+			} );
+		};
+		post = lift( requestor.post );
 	} );
 
 	describe( 'HTTP', function() {
 		describe( 'Posting overlapping args', function() {
-			var response;
-			before( function( done ) {
-				requestor.post( {
-					url: 'http://localhost:88981/api/test/args/alpha/bravo/charlie?three=echo&four=foxtrot',
-					json: true,
-					body: { four: 'delta' }
-				}, function( err, resp ) {
-						response = {
-							body: resp.body,
-							header: resp.headers[ 'test-header' ],
-							cookie: resp.headers[ 'set-cookie' ][ 0 ]
-						};
-						done();
-					} );
-			} );
-
 			it( 'should preserve overlapping values', function() {
-				response.body.should.eql( [ 'alpha', 'bravo', 'charlie', 'delta', 'echo', 'foxtrot', 'an extension!', { one: 'alpha', two: 'bravo', three: 'charlie' } ] );
-			} );
-
-			it( 'should include custom header', function() {
-				response.header.should.equal( 'look a header value!' );
-			} );
-
-			it( 'should include custom cookie', function() {
-				response.cookie.should.equal( 'an-cookies=chocolate%20chip; Domain=autohost.com; Path=/api; Expires=' + cookieExpiresAt.toUTCString() );
+				return post(
+					{
+						url: 'http://localhost:88981/api/test/args/alpha/bravo/charlie?three=echo&four=foxtrot',
+						json: true,
+						body: { four: 'delta' }
+					} )
+					.then( transformResponse( 'body', 'testHeader', 'setCookie' ), onError )
+					.should.eventually.deep.equal(
+					{
+						body: [
+							'alpha', 'bravo', 'charlie', 'delta', 'echo', 'foxtrot', 'an extension!',
+							{ one: 'alpha', two: 'bravo', three: 'charlie' }
+						],
+						header: 'look a header value!',
+						cookie: 'an-cookies=chocolate%20chip; Domain=autohost.com; Path=/api; Expires=' + cookieExpiresAt.toUTCString()
+					} );
 			} );
 		} );
 
 		describe( 'Accessing static files from a resource static path', function() {
-			var response;
-			before( function( done ) {
-				requestor.get( {
-					url: 'http://localhost:88981/testWithStatic/txt/hello.txt',
-					headers: { 'Authorization': 'Bearer one' }
-				}, function( err, resp ) {
-						response = {
-							body: resp.body,
-							type: resp.headers[ 'content-type' ]
-						};
-						done();
-					} );
-			} );
-
-			it( 'should return the file', function() {
-				response.body.should.eql( 'hello, world!' );
-			} );
-
-			it( 'should return the correct mimetype', function() {
-				response.type.should.equal( 'text/plain; charset=UTF-8' );
+			it( 'should return the file and correct mimetype', function() {
+				return get(
+					{
+						url: 'http://localhost:88981/testWithStatic/txt/hello.txt'
+					} )
+					.then( transformResponse( 'body', 'type' ), onError )
+					.should.eventually.deep.equal(
+					{
+						body: 'hello, world!',
+						type: 'text/plain; charset=UTF-8'
+					}
+				);
 			} );
 		} );
 	} );
