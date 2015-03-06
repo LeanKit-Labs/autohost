@@ -1,6 +1,6 @@
 {
   "name": "autohost",
-  "version": "0.3.0-21",
+  "version": "0.3.0-22",
   "description": "Resource driven, transport agnostic host",
   "main": "src/index.js",
   "dependencies": {
@@ -10,7 +10,7 @@
     "debug": "^1.0.4",
     "express": "^4.7.2",
     "express-session": "^1.7.2",
-    "fount": "0.0.4",
+    "fount": "~0.0.6",
     "gulp-esformatter": "^1.0.1",
     "lodash": "^2.4.1",
     "multer": "^0.1.3",
