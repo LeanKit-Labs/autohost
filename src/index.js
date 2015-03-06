@@ -29,8 +29,8 @@ var wrapper = {
 };
 
 function initialize( cfg, authProvider, fount ) {
-	api = require( './api.js' )( wrapper, cfg );
 	wrapper.fount = fount || internalFount;
+	api = require( './api.js' )( wrapper, cfg );
 	if ( initialized ) {
 		api.startAdapters();
 		return when( api.resources );
