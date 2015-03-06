@@ -6,7 +6,8 @@ var wrapper = {
 	attach: applyMiddelware,
 	configure: configure,
 	useCookies: applyCookieMiddleware,
-	useSession: applySessionMiddleware
+	useSession: applySessionMiddleware,
+	sessionLib: sessionLib
 };
 var config, metrics, session, cookieParser;
 
@@ -85,5 +86,3 @@ module.exports = function( meter ) {
 	cookieParser = cookies();
 	return wrapper;
 };
-
-module.exports.sessionLib = sessionLib;

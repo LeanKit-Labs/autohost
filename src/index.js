@@ -24,7 +24,7 @@ var wrapper = {
 	meta: undefined,
 	http: httpFn( request, middleware, metrics ),
 	socket: undefined,
-	session: middlewareLib.sessionLib,
+	session: middleware.sessionLib,
 	on: onEvent
 };
 
