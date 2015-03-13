@@ -64,6 +64,9 @@
       "url": "http://digitalbush.com"
     }
   ],
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
+  },
   "license": "MIT License - http://opensource.org/licenses/MIT",
   "bugs": {
     "url": "https://github.com/LeanKit-Labs/autohost/issues"
