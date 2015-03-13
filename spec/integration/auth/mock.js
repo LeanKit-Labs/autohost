@@ -69,7 +69,7 @@ function hasPermissions( userRoles, actionRoles, context ) {
 
 function getActionRoles( action ) {
 	return when.promise( function( resolve ) {
-		resolve( wrapper.actions[ action ].roles || [] );
+		resolve( wrapper.actions[ action ] && wrapper.actions[ action ].roles || [] );
 	} );
 }
 
@@ -98,7 +98,7 @@ function serializeUser( user, done ) {
 function deserializeUser( user, done ) {
 	try {
 		done( null, _.isObject( user ) ? user : JSON.parse( user ) );
-	} catch (e) {
+	} catch ( e ) {
 		done( e, null );
 	}
 }
