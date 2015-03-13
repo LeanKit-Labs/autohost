@@ -1,5 +1,5 @@
 require( '../setup' );
-var port = 88981;
+var port = 8988;
 var config = {
 	port: port,
 	socketio: true,
@@ -39,7 +39,7 @@ describe( 'Socket.io', function() {
 
 		var anonProxy = function( env ) {
 			if ( env.transport === 'http' ) {
-				var url = 'http://localhost:88981' + env.url.replace( 'proxy', 'args' );
+				var url = 'http://localhost:8988' + env.url.replace( 'proxy', 'args' );
 				env.forwardTo( {
 					headers: { 'Authorization': 'Bearer one' },
 					url: url
@@ -105,7 +105,7 @@ describe( 'Socket.io', function() {
 		var response, io;
 		before( function( done ) {
 
-			io = harness.getIOClient( 'http://localhost:88981', { query: 'token=one', reconnection: false } );
+			io = harness.getIOClient( 'http://localhost:8988', { query: 'token=one', reconnection: false } );
 			io.once( 'test.args', function( msg ) {
 				response = msg;
 				done();
@@ -128,7 +128,7 @@ describe( 'Socket.io', function() {
 
 	describe( 'Sending args message (unauthenticated)', function() {
 		it( 'should reject user as unauthenticated', function( done ) {
-			var io = harness.getIOClient( 'http://localhost:88981', { timeout: 500, reconnection: false } );
+			var io = harness.getIOClient( 'http://localhost:8988', { timeout: 500, reconnection: false } );
 			io.once( 'connect_error', function() {
 				done();
 			} );
@@ -138,7 +138,7 @@ describe( 'Socket.io', function() {
 	describe( 'Sending args message (unauthorized)', function() {
 		var response;
 		before( function( done ) {
-			var io = harness.getIOClient( 'http://localhost:88981', { query: 'token=two', reconnection: false } );
+			var io = harness.getIOClient( 'http://localhost:8988', { query: 'token=two', reconnection: false } );
 			io.once( 'test.args', function( msg ) {
 				response = msg;
 				done();
@@ -163,7 +163,7 @@ describe( 'Socket.io', function() {
 		var response;
 		before( function( done ) {
 
-			var io = harness.getIOClient( 'http://localhost:88981', { query: 'token=three', reconnection: false } );
+			var io = harness.getIOClient( 'http://localhost:8988', { query: 'token=three', reconnection: false } );
 			io.once( 'test.args', function( msg ) {
 				response = msg;
 				done();
@@ -188,7 +188,7 @@ describe( 'Socket.io', function() {
 		var response;
 		before( function( done ) {
 
-			var io = harness.getIOClient( 'http://localhost:88981', { query: 'token=four', reconnection: false } );
+			var io = harness.getIOClient( 'http://localhost:8988', { query: 'token=four', reconnection: false } );
 			io.once( 'test.args', function( msg ) {
 				response = msg;
 				done();
@@ -212,7 +212,7 @@ describe( 'Socket.io', function() {
 	describe( 'Requesting temporarily moved resource', function() {
 		var response;
 		before( function( done ) {
-			var io = harness.getIOClient( 'http://localhost:88981', { query: 'token=one', reconnection: false } );
+			var io = harness.getIOClient( 'http://localhost:8988', { query: 'token=one', reconnection: false } );
 			io.once( 'test.thing', function( msg ) {
 				response = msg;
 				done();
@@ -232,7 +232,7 @@ describe( 'Socket.io', function() {
 	describe( 'Making a request to a broken action', function() {
 		var response;
 		before( function( done ) {
-			var io = harness.getIOClient( 'http://localhost:88981', { query: 'token=one', reconnection: false } );
+			var io = harness.getIOClient( 'http://localhost:8988', { query: 'token=one', reconnection: false } );
 			io.once( 'test.error', function( msg ) {
 				response = msg;
 				done();
@@ -251,7 +251,7 @@ describe( 'Socket.io', function() {
 	describe( 'Making a request to a broken topic', function() {
 		var response;
 		before( function( done ) {
-			var io = harness.getIOClient( 'http://localhost:88981', { query: 'token=one', reconnection: false } );
+			var io = harness.getIOClient( 'http://localhost:8988', { query: 'token=one', reconnection: false } );
 			io.once( 'fail', function( msg ) {
 				response = msg;
 				done();
@@ -274,7 +274,7 @@ describe( 'Socket.io', function() {
 		};
 		var io, onMessage;
 		before( function( done ) {
-			io = harness.getIOClient( 'http://localhost:88981', { query: 'token=one', reconnection: false } );
+			io = harness.getIOClient( 'http://localhost:8988', { query: 'token=one', reconnection: false } );
 			onMessage = function( msg ) {
 				if ( msg.start ) {
 					response.metadata = msg;
@@ -313,7 +313,7 @@ describe( 'Socket.io', function() {
 			var response;
 			before( function( done ) {
 
-				var io = harness.getIOClient( 'http://localhost:88981', { reconnection: false } );
+				var io = harness.getIOClient( 'http://localhost:8988', { reconnection: false } );
 				io.once( 'test.args', function( msg ) {
 					response = msg;
 					done();
@@ -338,7 +338,7 @@ describe( 'Socket.io', function() {
 			var response;
 			before( function( done ) {
 				harness.setActionRoles( 'test.args', [] );
-				var io = harness.getIOClient( 'http://localhost:88981', { reconnection: false } );
+				var io = harness.getIOClient( 'http://localhost:8988', { reconnection: false } );
 				io.once( 'test.args', function( msg ) {
 					response = msg;
 					done();

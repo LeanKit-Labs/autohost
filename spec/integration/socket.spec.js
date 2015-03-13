@@ -1,7 +1,7 @@
 require( '../setup' );
 var postal = require( 'postal' );
 var eventChannel = postal.channel( 'events' );
-var port = 88988;
+var port = 8988;
 var config = {
 	port: port,
 	socketio: true,
@@ -34,13 +34,13 @@ describe( 'Socket Management', function() {
 				clients.push( client );
 			} );
 
-			io = harness.getIOClient( 'http://localhost:88988', { query: 'token=one', reconnection: false } );
+			io = harness.getIOClient( 'http://localhost:8988', { query: 'token=one', reconnection: false } );
 			io.once( 'connect', function() {
 				ioC = true;
 				check();
 			} );
 
-			ws = harness.getWSClient( 'http://localhost:88988/websocket', { Authorization: 'Bearer two' } );
+			ws = harness.getWSClient( 'http://localhost:8988/websocket', { Authorization: 'Bearer two' } );
 			ws.once( 'connect', function( c ) {
 				wsC = c;
 				check();
