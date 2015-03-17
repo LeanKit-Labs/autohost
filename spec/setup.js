@@ -42,3 +42,12 @@ function onError() {
 
 global.transformResponse = transformResponse;
 global.onError = onError;
+
+var _log = console.log;
+console.log = function () {
+	if ( typeof arguments[0] === 'string' && /autohost listening/.test( arguments[0] ) ) {
+		return; // swallow this message
+	} else {
+		_log.apply( console, arguments );
+	}
+};
