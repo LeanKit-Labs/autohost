@@ -1,6 +1,6 @@
 {
   "name": "autohost",
-  "version": "0.3.0-23",
+  "version": "0.3.0-24",
   "description": "Resource driven, transport agnostic host",
   "main": "src/index.js",
   "dependencies": {
@@ -59,6 +59,16 @@
   ],
   "author": "Alex Robson",
   "contributors": [
+    {
+      "name": "Doug Neiner",
+      "email": "doug@dougneiner.com",
+      "url": "http://code.dougneiner.com"
+    },
+    {
+      "name": "Jim Cowart",
+      "email": "jim@ifandelse.com",
+      "url": "http://ifandelse.com"
+    },
     {
       "name": "Josh Bush",
       "url": "http://digitalbush.com"
