@@ -67,6 +67,20 @@ The object literal follows the format:
 }
 ```
 
+#### Static
+
+The static option supports either a path, an options hash, or `false`. Currently, the options (except `path`) are passed through to [`express.static`](http://expressjs.com/guide/using-middleware.html#express.static) with the `path` property being used as the route. (If set to `false`, no default static path will be auto-configured):
+
+```js
+{
+	static: {
+		path: './public',
+		maxAge: '2d',
+		setHeaders: function ( res, path, stat ) { ... }
+	}
+}
+```
+
 Please refer to the [session](#session) section for information on additional configuration options that control how the session is configured.
 
 ### AuthProvider
@@ -292,7 +306,7 @@ The http transport API has three methods you can call to add middleware, API rou
 
  * `host.http.middleware( mountPath, callback )`
  * `host.http.route( url, callback )`
- * `host.http.static( url, filePath )`
+ * `host.http.static( url, filePath or options )` (See [static](#static) above for details on options)
 
 Keep in mind - most of the features you'll want to add beyond what autohost provides can probably be accomplished via middleware.
 
