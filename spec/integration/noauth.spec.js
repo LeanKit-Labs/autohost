@@ -91,6 +91,17 @@ describe( 'No Authentication', function() {
 			static: './spec/public/'
 		} );
 
+		harness.addResource( {
+			name: 'testWithStaticAndMaxAge',
+			static: {
+				path: './spec/public/',
+				maxAge: '1d',
+				setHeaders: function ( res ) {
+					res.set( 'test-header', 'custom' );
+				}
+			}
+		} );
+
 		harness.addRoute( '/test/fail', 'GET', errorCall );
 		harness.start();
 
@@ -130,8 +141,8 @@ describe( 'No Authentication', function() {
 			} );
 		} );
 
-		describe( 'Accessing static files from a resource static path', function() {
-			it( 'should return the file and correct mimetype', function() {
+		describe( 'Accessing static files from a resource static path (string)', function() {
+			it( 'should return the file correct mimetype', function() {
 				return get(
 					{
 						url: 'http://localhost:8988/testWithStatic/txt/hello.txt'
@@ -141,6 +152,24 @@ describe( 'No Authentication', function() {
 					{
 						body: 'hello, world!',
 						type: 'text/plain; charset=UTF-8'
+					}
+				);
+			} );
+		} );
+
+		describe( 'Accessing static files from a resource static path (hash)', function() {
+			it( 'should return the file correct cache settings and custom header', function() {
+				return get(
+					{
+						url: 'http://localhost:8988/testWithStaticAndMaxAge/txt/hello.txt'
+					} )
+					.then( transformResponse( 'body', 'type', 'cache', 'testHeader' ), onError )
+					.should.eventually.deep.equal(
+					{
+						body: 'hello, world!',
+						type: 'text/plain; charset=UTF-8',
+						cache: 'public, max-age=86400',
+						header: 'custom'
 					}
 				);
 			} );

@@ -79,8 +79,10 @@ module.exports = function setup( config ) {
 		http.route( url, method, handle );
 	};
 
-	var addPath = function( url, filePath ) {
-		http.static( url, path.join( __dirname, filePath ) );
+	var addPath = function( url, opts ) {
+		var options = typeof opts === 'string' ? { path: opts } : opts;
+		options.path = path.join( __dirname, options.path );
+		http.static( url, options );
 	};
 
 	var addTopic = function( topic, handle ) {

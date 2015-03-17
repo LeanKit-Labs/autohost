@@ -20,6 +20,9 @@ function transformResponse() {
 		if ( _.contains( props, 'type' ) ) {
 			obj.type = resp.headers[ 'content-type' ];
 		}
+		if ( _.contains( props, 'cache' ) ) {
+			obj.cache = resp.headers[ 'cache-control' ];
+		}
 		if ( _.contains( props, 'testHeader' ) ) {
 			obj.header = resp.headers[ 'test-header' ];
 		}

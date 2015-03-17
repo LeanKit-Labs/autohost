@@ -78,7 +78,6 @@ function expressInit( req, res, next ) {
 
 function initialize() {
 	var cwd = process.cwd();
-	var public = path.resolve( cwd, ( config.static || './public' ) );
 	config.tmp = path.resolve( cwd, ( config.temp || './tmp' ) );
 
 	_.each( middleware, function( m ) {
@@ -91,10 +90,21 @@ function initialize() {
 	_.each( routes, function( r ) {
 		r();
 	} );
-	wrapper.static( '/', public );
 	_.each( paths, function( p ) {
 		p();
 	} );
+}
+
+function initializePublicRoute() {
+	var cwd = process.cwd();
+	var publicRoute;
+
+	if ( config.static !== false ) {
+		publicRoute = config.static || './public';
+		publicRoute = typeof publicRoute === 'string' ? { path: publicRoute } : publicRoute;
+		publicRoute.path = path.resolve( cwd, publicRoute.path );
+		wrapper.static( '/', publicRoute );
+	}
 }
 
 // this might be the worst thing to ever happen to anything ever
@@ -210,12 +220,15 @@ function registerRoute( url, method, callback ) {
 	routes.push( fn );
 }
 
-function registerStaticPath( url, filePath ) {
+function registerStaticPath( url, opt ) {
+	var filePath = opt.path || opt;
+	var options = typeof opt === 'string' ? {} : _.omit( opt, 'path' );
+
 	var fn = function() {
 		url = prefix( url );
 		var target = path.resolve( filePath );
 		debug( 'STATIC: %s -> %s', url, target );
-		wrapper.app.use( url, express.static( target ) );
+		wrapper.app.use( url, express.static( target, options ) );
 	};
 	paths.push( fn );
 	if ( wrapper.app ) {
@@ -241,6 +254,7 @@ function start( cfg, pass ) {
 	// prime middleware with defaults
 	middlewareLib.attach( registerMiddleware, pass !== undefined );
 
+	initializePublicRoute();
 	wrapper.app = express();
 	initialize();
 	wrapper.server = http.createServer( wrapper.app );

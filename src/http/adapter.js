@@ -80,10 +80,11 @@ function stop() {
 function wireupResource( resource, basePath, resources ) {  
 	var meta = { routes: {} };
 	var static = resource.static || resource.resources;
-	if ( static && static !== '' ) {
-		var directory = buildPath( [ basePath, static ] );
-		http.static( '/' + resource.name, directory );
-		meta.path = { url: '/' + resource.name, directory: directory };
+	if ( static ) {
+		static = typeof static === 'string' ? { path: static } : static;
+		static.path = buildPath( [ basePath, static.path ] );
+		http.static( '/' + resource.name, static );
+		meta.path = { url: '/' + resource.name, directory: static.path };
 	}
 	_.each( resource.actions, function( action, actionName ) {
 		wireupAction( resource, actionName, action, meta, resources );
