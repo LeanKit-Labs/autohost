@@ -1,6 +1,6 @@
 require( '../setup' );
 var requestor = require( 'request' ).defaults( { jar: true } );
-var port = 88988;
+var port = 8988;
 var config = {
 	port: port,
 	socketio: true,
@@ -48,23 +48,23 @@ describe( 'AH Resource', function() {
 		var metrics;
 		var requests = [
 			{
-				url: 'http://localhost:88988/api/test/call',
+				url: 'http://localhost:8988/api/test/call',
 				headers: { 'Authorization': 'Bearer one' }
 			},
 			{
-				url: 'http://localhost:88988/api/test/call',
+				url: 'http://localhost:8988/api/test/call',
 			},
 			{
-				url: 'http://localhost:88988/api/test/call',
+				url: 'http://localhost:8988/api/test/call',
 			},
 			{
-				url: 'http://localhost:88988/api/test/err'
+				url: 'http://localhost:8988/api/test/err'
 			},
 			{
-				url: 'http://localhost:88988/api/_ah/ah/metrics'
+				url: 'http://localhost:8988/api/_ah/ah/metrics'
 			},
 			{
-				url: 'http://localhost:88988/api/test/logout'
+				url: 'http://localhost:8988/api/test/logout'
 			}
 		];
 		var get = function( req ) {
@@ -98,12 +98,12 @@ describe( 'AH Resource', function() {
 		var metrics, io;
 
 		before( function( done ) {
-			io = harness.getIOClient( 'http://localhost:88988', { query: 'token=one', reconnection: false } );
+			io = harness.getIOClient( 'http://localhost:8988', { query: 'token=one', reconnection: false } );
 			io.once( 'finished', function() {
 				setTimeout( function() {
 					requestor.get(
 						{
-							url: 'http://localhost:88988/api/_ah/ah/metrics',
+							url: 'http://localhost:8988/api/_ah/ah/metrics',
 							headers: { 'Authorization': 'Bearer one' }
 						}, function( err, resp ) {
 							metrics = JSON.parse( resp.body );

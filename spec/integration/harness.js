@@ -1,6 +1,6 @@
 var _ = require( 'lodash' );
 var path = require( 'path' );
-var port = 88988;
+var port = 8988;
 var defaults = {
 	port: port,
 	socketio: true,

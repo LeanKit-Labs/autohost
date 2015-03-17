@@ -2,7 +2,7 @@ require( '../setup' );
 var requestor = require( 'request' ).defaults( { jar: true } );
 var postal = require( 'postal' );
 var events = postal.channel( 'events' );
-var port = 88988;
+var port = 8988;
 var config = {
 	port: port,
 	socketio: true,
@@ -55,21 +55,21 @@ describe( 'Session Management', function() {
 		var originalAuthenticate;
 		var requests = [
 			{
-				url: 'http://localhost:88988/api/test/call',
+				url: 'http://localhost:8988/api/test/call',
 				headers: { 'Authorization': 'Bearer one' }
 			},
 			{
-				url: 'http://localhost:88988/api/test/call',
+				url: 'http://localhost:8988/api/test/call',
 				headers: { 'Authorization': 'Bearer one' }
 			},
 			{
-				url: 'http://localhost:88988/api/test/call',
+				url: 'http://localhost:8988/api/test/call',
 			},
 			{
-				url: 'http://localhost:88988/api/test/logout'
+				url: 'http://localhost:8988/api/test/logout'
 			},
 			{
-				url: 'http://localhost:88988/api/test/call'
+				url: 'http://localhost:8988/api/test/call'
 			}
 		];
 		var getFn = function( req ) {
@@ -112,7 +112,7 @@ describe( 'Session Management', function() {
 		var disconnected;
 
 		before( function( done ) {
-			var io = harness.getIOClient( 'http://localhost:88988?token=one', { query: 'token=one' } );
+			var io = harness.getIOClient( 'http://localhost:8988?token=one', { query: 'token=one' } );
 			io.once( 'test.call', function( msg ) {
 				responses.push( msg );
 				io.emit( 'test.logout', { thing: 'whatever' } );

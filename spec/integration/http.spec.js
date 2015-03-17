@@ -1,6 +1,6 @@
 require( '../setup' );
 var requestor = require( 'request' ).defaults( { jar: false } );
-var port = 88981;
+var port = 8988;
 var config = {
 	port: port,
 	socketio: true,
@@ -42,7 +42,7 @@ describe( 'HTTP', function() {
 
 		var anonProxy = function( env ) {
 			if ( env.transport === 'http' ) {
-				var url = 'http://localhost:88981' + env.url.replace( 'proxy', 'args' );
+				var url = 'http://localhost:8988' + env.url.replace( 'proxy', 'args' );
 				env.forwardTo( {
 					headers: { 'Authorization': 'Bearer one' },
 					url: url
@@ -126,7 +126,7 @@ describe( 'HTTP', function() {
 		it( 'should preserve overlapping values', function() {
 			return post(
 				{
-					url: 'http://localhost:88981/api/test/args/alpha/bravo/charlie?three=echo&four=foxtrot',
+					url: 'http://localhost:8988/api/test/args/alpha/bravo/charlie?three=echo&four=foxtrot',
 					json: true,
 					body: { four: 'delta' },
 					headers: { 'Authorization': 'Bearer one' }
@@ -148,7 +148,7 @@ describe( 'HTTP', function() {
 		it( 'should reject user as unauthorized', function() {
 			return post(
 				{
-					url: 'http://localhost:88981/api/test/args/alpha/bravo/charlie?three=echo&four=foxtrot',
+					url: 'http://localhost:8988/api/test/args/alpha/bravo/charlie?three=echo&four=foxtrot',
 					json: true,
 					body: { four: 'delta' }
 				} )
@@ -161,7 +161,7 @@ describe( 'HTTP', function() {
 		it( 'should reject user as not having adequate permissions', function() {
 			return post(
 				{
-					url: 'http://localhost:88981/api/test/args/alpha/bravo/charlie?three=echo&four=foxtrot',
+					url: 'http://localhost:8988/api/test/args/alpha/bravo/charlie?three=echo&four=foxtrot',
 					json: true,
 					body: { four: 'delta' },
 					headers: { 'Authorization': 'Bearer two' }
@@ -175,7 +175,7 @@ describe( 'HTTP', function() {
 		it( 'should reject user as not having adequate permissions', function() {
 			return post(
 				{
-					url: 'http://localhost:88981/api/test/args/alpha/bravo/charlie?three=echo&four=foxtrot',
+					url: 'http://localhost:8988/api/test/args/alpha/bravo/charlie?three=echo&four=foxtrot',
 					json: true,
 					body: { four: 'delta' },
 					headers: { 'Authorization': 'Bearer three' }
@@ -189,7 +189,7 @@ describe( 'HTTP', function() {
 		it( 'should reject user as not having adequate permissions', function() {
 			return post(
 				{
-					url: 'http://localhost:88981/api/test/args/alpha/bravo/charlie?three=echo&four=foxtrot',
+					url: 'http://localhost:8988/api/test/args/alpha/bravo/charlie?three=echo&four=foxtrot',
 					json: true,
 					body: { four: 'delta' },
 					headers: { 'Authorization': 'Bearer four' }
@@ -202,7 +202,7 @@ describe( 'HTTP', function() {
 		it( 'should preserve overlapping values', function() {
 			return post(
 				{
-					url: 'http://localhost:88981/api/test/proxy/alpha/bravo/charlie?three=echo&four=foxtrot',
+					url: 'http://localhost:8988/api/test/proxy/alpha/bravo/charlie?three=echo&four=foxtrot',
 					json: true,
 					body: { four: 'delta' }
 				} )
@@ -223,7 +223,7 @@ describe( 'HTTP', function() {
 		it( 'should preserve overlapping values', function() {
 			return post(
 				{
-					url: 'http://localhost:88981/api/test/proxy/alpha/bravo/charlie?three=echo&four=foxtrot',
+					url: 'http://localhost:8988/api/test/proxy/alpha/bravo/charlie?three=echo&four=foxtrot',
 					json: true,
 					body: { four: 'delta' },
 					headers: {
@@ -247,7 +247,7 @@ describe( 'HTTP', function() {
 		it( 'should return the file', function() {
 			return get(
 				{
-					url: 'http://localhost:88981/api/test/file',
+					url: 'http://localhost:8988/api/test/file',
 					headers: { 'Authorization': 'Bearer one' }
 				} )
 				.then( transformResponse( 'body', 'type' ), onError )
@@ -264,7 +264,7 @@ describe( 'HTTP', function() {
 			var redirect;
 			return get(
 				{
-					url: 'http://localhost:88981/api/test/thing/100',
+					url: 'http://localhost:8988/api/test/thing/100',
 					headers: { 'Authorization': 'Bearer one' },
 					followRedirect: function( r ) {
 						redirect = r;
@@ -291,7 +291,7 @@ describe( 'HTTP', function() {
 			var redirect;
 			return get(
 				{
-					url: 'http://localhost:88981/api/test/thing/101',
+					url: 'http://localhost:8988/api/test/thing/101',
 					headers: { 'Authorization': 'Bearer one' },
 					followRedirect: function( r ) {
 						redirect = r;
@@ -316,19 +316,19 @@ describe( 'HTTP', function() {
 	describe( 'Requests to regular expression action', function() {
 		var requests = [
 			{
-				url: 'http://localhost:88981/api/test/regex/a/b/c/d/e/f/g/h/i',
+				url: 'http://localhost:8988/api/test/regex/a/b/c/d/e/f/g/h/i',
 				headers: { 'Authorization': 'Bearer one' }
 			},
 			{
-				url: 'http://localhost:88981/api/test/regexIsSoCool',
+				url: 'http://localhost:8988/api/test/regexIsSoCool',
 				headers: { 'Authorization': 'Bearer one' }
 			},
 			{
-				url: 'http://localhost:88981/api/test/regex?is=fun',
+				url: 'http://localhost:8988/api/test/regex?is=fun',
 				headers: { 'Authorization': 'Bearer one' }
 			},
 			{
-				url: 'http://localhost:88981/api/test/oops/regex',
+				url: 'http://localhost:8988/api/test/oops/regex',
 				headers: { 'Authorization': 'Bearer one' }
 			}
 		];
@@ -352,7 +352,7 @@ describe( 'HTTP', function() {
 		it( 'should return a 500 and error message', function() {
 			return get(
 				{
-					url: 'http://localhost:88981/api/test/error',
+					url: 'http://localhost:8988/api/test/error',
 					headers: { 'Authorization': 'Bearer one' }
 				} )
 				.then( transformResponse( 'body', 'statusCode' ), onError )
@@ -369,7 +369,7 @@ describe( 'HTTP', function() {
 		it( 'should return a 500 and error message', function() {
 			return get(
 				{
-					url: 'http://localhost:88981/api/test/fail',
+					url: 'http://localhost:8988/api/test/fail',
 					headers: { 'Authorization': 'Bearer one' }
 				} )
 				.then( transformResponse( 'body', 'statusCode' ), onError )
@@ -386,7 +386,7 @@ describe( 'HTTP', function() {
 		it( 'should return the file and correct mimetype', function() {
 			return get(
 				{
-					url: 'http://localhost:88981/testWithStatic/txt/hello.txt',
+					url: 'http://localhost:8988/testWithStatic/txt/hello.txt',
 					headers: { 'Authorization': 'Bearer one' }
 				} )
 				.then( transformResponse( 'body', 'type' ), onError )
@@ -409,7 +409,7 @@ describe( 'HTTP', function() {
 			it( 'should return the file and correct mimetype', function() {
 				return get(
 					{
-						url: 'http://localhost:88981/testWithStatic/txt/hello.txt'
+						url: 'http://localhost:8988/testWithStatic/txt/hello.txt'
 					} )
 					.then( transformResponse( 'body', 'type' ), onError )
 					.should.eventually.deep.equal(

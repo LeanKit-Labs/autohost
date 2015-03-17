@@ -1,6 +1,6 @@
 require( '../setup' );
 var requestor = require( 'request' ).defaults( { jar: false } );
-var port = 88981;
+var port = 8988;
 var config = {
 	port: port,
 	socketio: true,
@@ -113,7 +113,7 @@ describe( 'No Authentication', function() {
 			it( 'should preserve overlapping values', function() {
 				return post(
 					{
-						url: 'http://localhost:88981/api/test/args/alpha/bravo/charlie?three=echo&four=foxtrot',
+						url: 'http://localhost:8988/api/test/args/alpha/bravo/charlie?three=echo&four=foxtrot',
 						json: true,
 						body: { four: 'delta' }
 					} )
@@ -134,7 +134,7 @@ describe( 'No Authentication', function() {
 			it( 'should return the file and correct mimetype', function() {
 				return get(
 					{
-						url: 'http://localhost:88981/testWithStatic/txt/hello.txt'
+						url: 'http://localhost:8988/testWithStatic/txt/hello.txt'
 					} )
 					.then( transformResponse( 'body', 'type' ), onError )
 					.should.eventually.deep.equal(

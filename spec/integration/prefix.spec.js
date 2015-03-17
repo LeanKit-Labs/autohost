@@ -1,6 +1,6 @@
 require( '../setup' );
 var requestor = require( 'request' ).defaults( { jar: false } );
-var port = 88981;
+var port = 8988;
 var post, get;
 before( function() {
 	get = function( req ) {
@@ -92,7 +92,7 @@ describe( 'URL & API Prefix', function() {
 			it( 'should preserve overlapping values', function() {
 				return post(
 					{
-						url: 'http://localhost:88981/prefixed/test/args/alpha/bravo/charlie?three=echo&four=foxtrot',
+						url: 'http://localhost:8988/prefixed/test/args/alpha/bravo/charlie?three=echo&four=foxtrot',
 						json: true,
 						body: { four: 'delta' },
 						headers: { 'Authorization': 'Bearer one' }
@@ -114,7 +114,7 @@ describe( 'URL & API Prefix', function() {
 			it( 'should return the file and correct mimetype', function() {
 				return get(
 					{
-						url: 'http://localhost:88981/prefixed/testWithStatic/txt/hello.txt',
+						url: 'http://localhost:8988/prefixed/testWithStatic/txt/hello.txt',
 						headers: { 'Authorization': 'Bearer one' }
 					} )
 					.then( transformResponse( 'body', 'type' ), onError )
@@ -199,7 +199,7 @@ describe( 'URL Strategy with Prefix', function() {
 			it( 'should return the file and correct mimetype', function() {
 				return get(
 					{
-						url: 'http://localhost:88981/prefixed/api/strategized/test/file',
+						url: 'http://localhost:8988/prefixed/api/strategized/test/file',
 						headers: { 'Authorization': 'Bearer one' }
 					} )
 					.then( transformResponse( 'body', 'type' ), onError )
@@ -217,7 +217,7 @@ describe( 'URL Strategy with Prefix', function() {
 				var redirect;
 				return get(
 					{
-						url: 'http://localhost:88981/prefixed/api/strategized/test/thing?id=100',
+						url: 'http://localhost:8988/prefixed/api/strategized/test/thing?id=100',
 						headers: { 'Authorization': 'Bearer one' },
 						followRedirect: function( r ) {
 							redirect = r;
@@ -244,7 +244,7 @@ describe( 'URL Strategy with Prefix', function() {
 				var redirect;
 				return get(
 					{
-						url: 'http://localhost:88981/prefixed/api/strategized/test/thing?id=101',
+						url: 'http://localhost:8988/prefixed/api/strategized/test/thing?id=101',
 						headers: { 'Authorization': 'Bearer one' },
 						followRedirect: function( r ) {
 							redirect = r;

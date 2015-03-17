@@ -1,5 +1,5 @@
 require( '../setup' );
-var port = 88981;
+var port = 8988;
 var config = {
 	port: port,
 	socketio: true,
@@ -96,7 +96,7 @@ describe( 'Websocket', function() {
 	describe( 'Sending args message (authenticated & authorized)', function() {
 		var response, ws;
 		before( function( done ) {
-			ws = harness.getWSClient( 'http://localhost:88981/websocket', { Authorization: 'Bearer one', Cookie: 'header-one=one' } );
+			ws = harness.getWSClient( 'http://localhost:8988/websocket', { Authorization: 'Bearer one', Cookie: 'header-one=one' } );
 			ws.once( 'connect', function( socket ) {
 				socket.on( 'message', function( msg ) {
 					var json = JSON.parse( msg.utf8Data );
@@ -127,7 +127,7 @@ describe( 'Websocket', function() {
 		var ws;
 		before( function( done ) {
 
-			ws = harness.getWSClient( 'http://localhost:88981/websocket', { Authorization: 'Bearer none' } );
+			ws = harness.getWSClient( 'http://localhost:8988/websocket', { Authorization: 'Bearer none' } );
 			ws.once( 'connectFailed', function() {
 				done();
 			} );
@@ -139,7 +139,7 @@ describe( 'Websocket', function() {
 	describe( 'Sending args message (unauthorized)', function() {
 		var response, ws;
 		before( function( done ) {
-			ws = harness.getWSClient( 'http://localhost:88981/websocket', { Authorization: 'Bearer two' } );
+			ws = harness.getWSClient( 'http://localhost:8988/websocket', { Authorization: 'Bearer two' } );
 			ws.once( 'connect', function( socket ) {
 				socket.on( 'message', function( msg ) {
 					var json = JSON.parse( msg.utf8Data );
@@ -169,7 +169,7 @@ describe( 'Websocket', function() {
 	describe( 'Sending args message (exception on role check)', function() {
 		var response, ws;
 		before( function( done ) {
-			ws = harness.getWSClient( 'http://localhost:88981/websocket', { Authorization: 'Bearer three' } );
+			ws = harness.getWSClient( 'http://localhost:8988/websocket', { Authorization: 'Bearer three' } );
 			ws.once( 'connect', function( socket ) {
 				socket.on( 'message', function( msg ) {
 					var json = JSON.parse( msg.utf8Data );
@@ -199,7 +199,7 @@ describe( 'Websocket', function() {
 	describe( 'Sending args message (exception on checkPermissions)', function() {
 		var response, ws;
 		before( function( done ) {
-			ws = harness.getWSClient( 'http://localhost:88981/websocket', { Authorization: 'Bearer four' } );
+			ws = harness.getWSClient( 'http://localhost:8988/websocket', { Authorization: 'Bearer four' } );
 			ws.once( 'connect', function( socket ) {
 				socket.on( 'message', function( msg ) {
 					var json = JSON.parse( msg.utf8Data );
@@ -229,7 +229,7 @@ describe( 'Websocket', function() {
 	describe( 'Requesting temporarily moved resource', function() {
 		var response, ws;
 		before( function( done ) {
-			ws = harness.getWSClient( 'http://localhost:88981/websocket', { Authorization: 'Bearer one' } );
+			ws = harness.getWSClient( 'http://localhost:8988/websocket', { Authorization: 'Bearer one' } );
 			ws.once( 'connect', function( socket ) {
 				socket.on( 'message', function( msg ) {
 					var json = JSON.parse( msg.utf8Data );
@@ -256,7 +256,7 @@ describe( 'Websocket', function() {
 	describe( 'Making a request to a broken action', function() {
 		var response, ws;
 		before( function( done ) {
-			ws = harness.getWSClient( 'http://localhost:88981/websocket', { Authorization: 'Bearer one' } );
+			ws = harness.getWSClient( 'http://localhost:8988/websocket', { Authorization: 'Bearer one' } );
 			ws.once( 'connect', function( socket ) {
 				socket.on( 'message', function( msg ) {
 					var json = JSON.parse( msg.utf8Data );
@@ -283,7 +283,7 @@ describe( 'Websocket', function() {
 	describe( 'Making a request to a broken topic', function() {
 		var response, ws;
 		before( function( done ) {
-			ws = harness.getWSClient( 'http://localhost:88981/websocket', { Authorization: 'Bearer one' } );
+			ws = harness.getWSClient( 'http://localhost:8988/websocket', { Authorization: 'Bearer one' } );
 			ws.once( 'connect', function( socket ) {
 				socket.on( 'message', function( msg ) {
 					var json = JSON.parse( msg.utf8Data );
@@ -310,7 +310,7 @@ describe( 'Websocket', function() {
 	describe( 'Proxy - Args (unsupported)', function() {
 		var response, ws;
 		before( function( done ) {
-			ws = harness.getWSClient( 'http://localhost:88981/websocket', { Authorization: 'Bearer one' } );
+			ws = harness.getWSClient( 'http://localhost:8988/websocket', { Authorization: 'Bearer one' } );
 			ws.once( 'connect', function( socket ) {
 				socket.on( 'message', function( msg ) {
 					var json = JSON.parse( msg.utf8Data );
@@ -354,7 +354,7 @@ describe( 'Websocket', function() {
 				}
 			};
 
-			ws = harness.getWSClient( 'http://localhost:88981/websocket', { Authorization: 'Bearer one' } );
+			ws = harness.getWSClient( 'http://localhost:8988/websocket', { Authorization: 'Bearer one' } );
 			ws.once( 'connect', function( socket ) {
 				socket.on( 'message', function( msg ) {
 					var json = JSON.parse( msg.utf8Data );
@@ -389,7 +389,7 @@ describe( 'Websocket', function() {
 		describe( 'Sending args message without adequate permissions', function() {
 			var response, ws;
 			before( function( done ) {
-				ws = harness.getWSClient( 'http://localhost:88981/websocket', {} );
+				ws = harness.getWSClient( 'http://localhost:8988/websocket', {} );
 				ws.once( 'connect', function( socket ) {
 					socket.on( 'message', function( msg ) {
 						var json = JSON.parse( msg.utf8Data );
@@ -420,7 +420,7 @@ describe( 'Websocket', function() {
 			var response, ws;
 			before( function( done ) {
 				harness.setActionRoles( 'test.args', [] );
-				ws = harness.getWSClient( 'http://localhost:88981/websocket', {} );
+				ws = harness.getWSClient( 'http://localhost:8988/websocket', {} );
 				ws.once( 'connect', function( socket ) {
 					socket.on( 'message', function( msg ) {
 						var json = JSON.parse( msg.utf8Data );
