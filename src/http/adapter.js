@@ -19,7 +19,15 @@ var wrapper = {
 };
 
 function buildActionUrl( resourceName, actionName, action, resource, resources ) {
-	var prefix = config.apiPrefix === undefined ? 'api' : config.apiPrefix;
+	var prefix;
+	if ( resource.apiPrefix !== undefined ) {
+		// Use the resource specific override
+		prefix = resource.apiPrefix;
+	} else {
+		// If the resource doesn't have an override, use the config or default
+		prefix = config.apiPrefix === undefined ? 'api' : config.apiPrefix;
+	}
+
 	if ( _.isRegExp( action.url ) ) {
 		return regex.prefix( http.buildUrl( config.urlPrefix || '', prefix ), action.url );
 	} else if ( config.urlStrategy ) {

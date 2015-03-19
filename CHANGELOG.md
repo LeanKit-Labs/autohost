@@ -1,6 +1,10 @@
 ## 0.3.0
 Primary motivation here is to begin work on a version of autohost that will work well with a hypermedia library ( [hyped](https://github.com/leankit-labs/hyped) ). This is a breaking change because of several structural and naming changes to how resources get modeled.
 
+### prerelease 25
+ * Updated two remaining areas where apiPrefix wouldn't be honored if empty
+ * Add ability to override apiPrefix for a resource
+
 ### prerelease 24
  * Add ability to turn off the default static path handler with `static: false`
  * Add ability to pass additional options to static with `static: { ... }`

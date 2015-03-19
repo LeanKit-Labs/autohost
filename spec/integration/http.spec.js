@@ -75,6 +75,10 @@ describe( 'HTTP', function() {
 			env.reply( { data: 'regex route matched' } );
 		};
 
+		var apiPrefixCall = function( env ) {
+			env.reply( { data: 'custom apiPrefix route matched' } );
+		};
+
 		harness.addMiddleware( '/', function( req, res, next ) {
 			req.extendHttp = {
 				extension: 'an extension!',
@@ -92,6 +96,22 @@ describe( 'HTTP', function() {
 				proxy: { url: '/proxy/:one/:two/:three', method: 'post', topic: 'proxy', handle: anonProxy },
 				regex: { url: /test\/regex.*/, method: 'all', handle: regexUrl },
 				thing: { url: '/thing/:id', method: 'get', topic: 'thing', handle: redirectCall }
+			}
+		} );
+
+		harness.addResource( {
+			name: 'apiPrefixEmpty',
+			apiPrefix: '',
+			actions: {
+				prefix: { url: '/apiPrefix', method: 'get', topic: 'prefix', handle: apiPrefixCall }
+			}
+		} );
+
+		harness.addResource( {
+			name: 'apiPrefixSet',
+			apiPrefix: '/custom',
+			actions: {
+				prefix: { url: '/apiPrefix', method: 'get', topic: 'prefix', handle: apiPrefixCall }
 			}
 		} );
 
@@ -356,6 +376,38 @@ describe( 'HTTP', function() {
 					return _.map( responses, 'statusCode' );
 				} )
 				.should.eventually.deep.equal( [ 200, 200, 200, 404 ] );
+		} );
+	} );
+
+	describe( 'Requesting a resource with a custom apiPrefix', function() {
+		it( 'should match the request with an empty apiPrefix', function() {
+			return get(
+				{
+					url: 'http://localhost:8988/apiPrefixEmpty/apiPrefix',
+					headers: { 'Authorization': 'Bearer one' }
+				} )
+				.then( transformResponse( 'body', 'statusCode' ), onError )
+				.should.eventually.deep.equal(
+				{
+					body: 'custom apiPrefix route matched',
+					statusCode: 200
+				}
+			);
+		} );
+
+		it( 'should match the request with a custom apiPrefix', function() {
+			return get(
+				{
+					url: 'http://localhost:8988/custom/apiPrefixSet/apiPrefix',
+					headers: { 'Authorization': 'Bearer one' }
+				} )
+				.then( transformResponse( 'body', 'statusCode' ), onError )
+				.should.eventually.deep.equal(
+				{
+					body:'custom apiPrefix route matched',
+					statusCode: 200
+				}
+			);
 		} );
 	} );
 
