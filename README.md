@@ -126,7 +126,9 @@ __Synchronous Module - No Fount Dependencies__
 module.exports = function( host ) {
 	return {
 		name: 'resource-name',
-		static: '', // relative path to static assets for this resource
+		static: '', // relative path to static assets for this resource,
+		apiPrefix: '', // Optional override for global apiPrefix setting. Omit entirely to use default.
+		urlPrefix: '', // URL prefix for all actions in this resource
 		actions:  {
 			send: {
 				method: 'get', // http verb
@@ -160,6 +162,7 @@ module.exports = function( host, myDependency1, myDependency2 ) {
 	return {
 		name: 'resource-name',
 		static: '', // relative path to static assets for this resource
+		apiPrefix: '', // Optional override for global apiPrefix setting. Omit entirely to use default.
 		urlPrefix: '', // URL prefix for all actions in this resource
 		actions: {
 			send: {
@@ -317,6 +320,8 @@ Autohost's config provides two optional arguments you can use to control the HTT
 By default autohost places all resource action routes behind `/api` to prevent any collisions with static routes. You can remove this entirely by providing an empty string or simply change it so something else.
 
 	Note: a `urlPrefix` will always precede this if one has been supplied.
+
+You can also override this setting per-resource by giving your resource an `apiPrefix` setting.
 
 #### urlPrefix
 In the rare event that you are using a reverse proxy in front of autohost that is routing requests from a path segment to your autohost service, you can use a urlPrefix to ensure that whatever leading path from the original url causes a redirection to your autohost service aligns with the routes supplied to express.

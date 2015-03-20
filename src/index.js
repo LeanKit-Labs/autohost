@@ -58,6 +58,7 @@ function onEvent( topic, handle ) {
 function setup( authProvider ) {
 	var config = wrapper.config;
 	var metrics = wrapper.metrics;
+	var apiPrefix = config.apiPrefix === undefined ? '/api' : config.apiPrefix;
 
 	httpAdapter = httpAdapterFn( config, authProvider, wrapper.http, request, metrics );
 	api.addAdapter( httpAdapter );
@@ -65,7 +66,7 @@ function setup( authProvider ) {
 
 	// API metadata
 	if ( !config.noOptions ) {
-		wrapper.http.middleware( '/api', function( req, res, next ) {
+		wrapper.http.middleware( apiPrefix, function( req, res, next ) {
 			if ( req.method === 'OPTIONS' || req.method === 'options' ) {
 				res.status( 200 ).send( wrapper.meta );
 			} else {
@@ -80,7 +81,7 @@ function setup( authProvider ) {
 
 	return api.start( config.resources || path.join( process.cwd(), './resource' ), authProvider )
 		.then( function( meta ) {
-			meta.prefix = config.apiPrefix || '/api';
+			meta.prefix = apiPrefix;
 			wrapper.meta = meta;
 			initialized = true;
 			return api.resources;
