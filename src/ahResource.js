@@ -8,13 +8,12 @@ module.exports = function( host ) {
 				url: "/metrics",
 				method: "get",
 				handle: function( envelope ) {
-					host.metrics.getMetrics( function( metrics ) {
-						if ( envelope.hyped ) {
-							envelope.hyped( metrics ).render();
-						} else {
-							envelope.reply( { data: metrics } );
-						}
-					} );
+					var metrics = host.metrics.getReport();
+					if ( envelope.hyped ) {
+						envelope.hyped( metrics ).render();
+					} else {
+						envelope.reply( { data: metrics } );
+					}
 				}
 			}
 		}

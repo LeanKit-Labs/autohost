@@ -1,9 +1,9 @@
 var config;
 var authStrategy;
 var socket;
-var metrics;
 var SocketEnvelope;
 var _ = require( 'lodash' );
+var metrics = require( '../metrics' );
 var debug = require( 'debug' )( 'autohost:websocket-adapter' );
 var wrapper = {
 	name: 'http',
@@ -56,37 +56,41 @@ function wireupResource( resource ) {
 function wireupAction( resource, actionName, action, meta ) {
 	var topic = buildActionTopic( resource.name, action );
 	var alias = buildActionAlias( resource.name, actionName );
-	var errors = [ 'autohost', 'errors', topic.replace( '.', ':' ) ].join( '.' );
+
+	var baseMetricNamespace = [ 'resource', 'ws', topic ];
+	var errors = metrics.meter( baseMetricNamespace.concat( 'error' ) );
+	var timerKey = baseMetricNamespace.concat( 'duration' );
+
 	meta.topics[ actionName ] = { topic: topic };
 	debug( 'Mapping resource \'%s\' action \'%s\' to topic %s', resource.name, actionName, alias );
 	socket.on( topic, function( message, client ) {
-		var timerKey = [ 'autohost', 'perf', topic.replace( '.', ':' ) ].join( '.' );
-		metrics.timer( timerKey ).start();
 		var data = message.data || message;
+		var timer = metrics.timer( timerKey );
 		var respond = function() {
-			var envelope = new SocketEnvelope( topic, message, client );
+			var envelope = new SocketEnvelope( topic, message, client, timer );
 			if ( config && config.handleRouteErrors ) {
 				try {
 					action.handle.apply( resource, [ envelope ] );
-				} catch (err) {
-					metrics.meter( errors ).record();
+				} catch ( err ) {
+					errors.record();
 					client.publish( data.replyTo || topic, 'Server error at topic ' + topic );
 				}
 			} else {
 				action.handle.apply( resource, [ envelope ] );
 			}
-			metrics.timer( timerKey ).record();
+
 		};
 		if ( authStrategy ) {
 			checkPermissionFor( client.user, {}, alias )
 				.then( function( pass ) {
 					if ( pass ) {
+						metrics.authorizationGrants.record();
 						debug( 'WS activation of action %s for %s granted', alias, getUserString( client.user ) );
 						respond();
 					} else {
+						metrics.authorizationRejections.record();
 						debug( 'User %s was denied WS activation of action %s', getUserString( client.user ), alias );
 						client.publish( data.replyTo || topic, 'User lacks sufficient permissions' );
-						metrics.timer( timerKey ).record();
 					}
 				} );
 		} else {
@@ -95,11 +99,10 @@ function wireupAction( resource, actionName, action, meta ) {
 	} );
 }
 
-module.exports = function( cfg, auth, sock, meter ) {
+module.exports = function( cfg, auth, sock ) {
 	config = cfg;
 	authStrategy = auth;
 	socket = sock;
-	metrics = meter;
 	SocketEnvelope = require( './socketEnvelope.js' );
 	return wrapper;
 };

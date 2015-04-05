@@ -2,31 +2,29 @@ var _ = require( 'lodash' );
 var when = require( 'when' );
 var passport = require( 'passport' );
 var debug = require( 'debug' )( 'autohost:passport' );
+var metrics = require( '../metrics' );
 var noOp = function() {
 	return when( true );
 };
 var userCountCheck = noOp;
-var authorizationErrorCount = 'autohost.authorization.errors';
-var authorizationErrorRate = 'autohost.authorization.error.rate';
-var authenticationTimer = 'autohost.authentication.timer';
-var authorizationTimer = 'autohost.authorization.timer';
 var passportInitialize;
 var passportSession;
 var authProvider;
 var anonPaths;
-var metrics;
 
 reset();
 
-function authConditionally( req, res, next ) {  
+function authConditionally( req, res, next ) {
 	// if previous middleware has said to skip auth OR
 	// a user was attached from a session, skip authenticating
 	if ( req.skipAuth || req.user ) {
+		metrics.authenticationSkips.record();
 		next();
 	} else {
-		metrics.timer( authenticationTimer ).start();
+		metrics.authenticationAttempts.record();
+		var timer = metrics.authenticationTimer();
 		authProvider.authenticate( req, res, next );
-		metrics.timer( authenticationTimer ).record();
+		timer.record();
 	}
 }
 
@@ -44,30 +42,29 @@ function getAuthMiddleware( uri ) {
 	return list;
 }
 
-function getRoles( req, res, next ) {  
+function getRoles( req, res, next ) {
 	var userName = _.isObject( req.user.name ) ? req.user.name.name : req.user.name;
 	if ( userName === 'anonymous' ) {
 		req.user.roles = [ 'anonymous' ];
 		next();
 	} else {
-		metrics.timer( authorizationTimer ).start();
+		var timer = metrics.authorizationTimer();
 		authProvider.getUserRoles( req.user, req.context )
 			.then( null, function( err ) {
-				metrics.counter( authorizationErrorCount ).incr();
-				metrics.meter( authorizationErrorRate ).record();
-				metrics.timer( authorizationTimer ).record();
+				metrics.authorizationErrors.record();
+				timer.record();
 				debug( 'Failed to get roles for %s with %s', getUserString( req.user ), err.stack );
 				// during a socket connection, express is not fully initialized and this call fails ... hard
 				try {
 					res.status( 500 ).send( 'Could not determine user permissions' );
-				} catch (err) {
+				} catch ( err ) {
 					return [];
 				}
 			} )
 			.then( function( roles ) {
 				debug( 'Got roles [ %s ] for %s', roles, req.user );
 				req.user.roles = roles;
-				metrics.timer( authorizationTimer ).record();
+				timer.record();
 				next();
 			} );
 	}
@@ -77,24 +74,24 @@ function getSocketRoles( user ) {
 	if ( user.name === 'anonymous' ) {
 		return when( [ 'anonymous' ] );
 	} else {
-		metrics.timer( authorizationTimer ).start();
+		metrics.authorizationChecks.record();
+		var timer = metrics.authorizationTimer();
 		return authProvider.getUserRoles( user, {} )
 			.then( null, function( err ) {
-				metrics.counter( authorizationErrorCount ).incr();
-				metrics.meter( authorizationErrorRate ).record();
-				metrics.timer( authorizationTimer ).record();
+				metrics.authorizationErrors.record();
+				timer.record();
 				debug( 'Failed to get roles for %s with %s', getUserString( user ), err.stack );
 				return [];
 			} )
 			.then( function( roles ) {
 				debug( 'Got roles [ %s ] for %s', roles, getUserString( user ) );
-				metrics.timer( authorizationTimer ).record();
+				timer.record();
 				return roles;
 			} );
 	}
 }
 
-function getUserString( user ) {  
+function getUserString( user ) {
 	return user.name ? user.name : JSON.stringify( user );
 }
 
@@ -103,14 +100,13 @@ function reset() {
 	passportSession = passport.session();
 	authProvider = undefined;
 	anonPaths = undefined;
-	metrics = undefined;
 }
 
 function resetUserCount() {
 	userCountCheck = authProvider.hasUsers;
 }
 
-function skipAuthentication( req, res, next ) {  
+function skipAuthentication( req, res, next ) {
 	req.skipAuth = true;
 	if ( !req.user ) {
 		debug( 'Skipping authentication and assigning user anonymous to request %s %s', req.method, req.url );
@@ -123,7 +119,7 @@ function skipAuthentication( req, res, next ) {
 	next();
 }
 
-function whenNoUsers( req, res, next ) {  
+function whenNoUsers( req, res, next ) {
 	userCountCheck()
 		.then( function( hasUsers ) {
 			if ( hasUsers ) {
@@ -142,11 +138,10 @@ function withAuthLib( authProvider ) {
 	} );
 }
 
-module.exports = function( config, authPlugin, meter, resetState ) {
+module.exports = function( config, authPlugin, resetState ) {
 	if ( resetState ) {
 		reset();
 	}
-	metrics = meter;
 	authProvider = authPlugin;
 	authProvider.initPassport( passport );
 	passport.serializeUser( authProvider.serializeUser );

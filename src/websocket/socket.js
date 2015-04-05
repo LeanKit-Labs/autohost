@@ -4,7 +4,7 @@ var postal = require( 'postal' );
 var eventChannel = postal.channel( 'events' );
 var debug = require( 'debug' )( 'autohost:ws-transport' );
 var uuid = require( 'node-uuid' );
-var wrapper, websocket, socketIO, metrics;
+var wrapper, websocket, socketIO;
 reset();
 
 function addClient( socket ) {
@@ -40,7 +40,6 @@ function onTopic( topic, handle /* context */ ) {
 			try {
 				handle( data, socket );
 			} catch ( err ) {
-				metrics.meter( errors ).record();
 				socket.publish( data.replyTo || topic, 'Server error at topic ' + topic );
 			}
 		} else {
@@ -132,11 +131,10 @@ function stop() {
 	}
 }
 
-module.exports = function( cfg, httpLib, metric, resetState ) {
+module.exports = function( cfg, httpLib, resetState ) {
 	if ( resetState ) {
 		reset();
 	}
-	metrics = metric;
 	config = cfg;
 	http = httpLib;
 	return wrapper;

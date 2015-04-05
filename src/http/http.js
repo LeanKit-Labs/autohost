@@ -10,7 +10,7 @@ var regex = require( './regex.js' );
 var Router = express.Router;
 var expreq = express.request;
 var expres = express.response;
-var middleware, userMiddleware, routes, paths, request, config, metrics, middlewareLib;
+var middleware, userMiddleware, routes, paths, request, config, middlewareLib;
 
 var wrapper;
 reset();
@@ -19,7 +19,7 @@ function buildUrl() {
 	var idx = 0,
 		cleaned = [],
 		segment;
-	while (idx < arguments.length) {
+	while ( idx < arguments.length ) {
 		segment = arguments[ idx ];
 		if ( segment.substr( 0, 1 ) === '/' ) {
 			segment = segment.substr( 1 );
@@ -204,8 +204,7 @@ function registerRoute( url, method, callback ) {
 			if ( config && config.handleRouteErrors ) {
 				try {
 					callback( req, res );
-				} catch (err) {
-					metrics.meter( errors ).record();
+				} catch ( err ) {
 					debug( 'ERROR! route: %s %s failed with %s', method.toUpperCase(), url, err.stack );
 					res.status( 500 ).send( 'Server error at ' + method.toUpperCase() + ' ' + url );
 				}
@@ -289,11 +288,10 @@ function reset() {
 	paths = [];
 }
 
-module.exports = function( req, mw, metric, resetState ) {
+module.exports = function( req, mw, resetState ) {
 	if ( resetState ) {
 		reset();
 	}
-	metrics = metric;
 	request = req;
 	middlewareLib = mw;
 

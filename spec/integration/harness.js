@@ -10,7 +10,6 @@ var defaults = {
 module.exports = function setup( config ) {
 	config = _.defaults( config, defaults );
 	var requestor = require( 'request' ).defaults( { jar: false } );
-	var metrics = require( 'cluster-metrics' );
 
 	var authProvider;
 	var hasAuth = !config.noAuth;
@@ -24,12 +23,12 @@ module.exports = function setup( config ) {
 		}
 	}
 
-	var middleware = require( '../../src/http/middleware.js' )( metrics );
+	var middleware = require( '../../src/http/middleware.js' )();
 	middleware.configure( config );
-	var http = require( '../../src/http/http.js' )( requestor, middleware, metrics, true );
-	var httpAdapter = require( '../../src/http/adapter.js' )( config, authProvider, http, requestor, metrics );
-	var socket = require( '../../src/websocket/socket.js' )( config, http, metrics, true );
-	var socketAdapter = require( '../../src/websocket/adapter.js' )( config, authProvider, socket, metrics );
+	var http = require( '../../src/http/http.js' )( requestor, middleware, true );
+	var httpAdapter = require( '../../src/http/adapter.js' )( config, authProvider, http, requestor );
+	var socket = require( '../../src/websocket/socket.js' )( config, http, true );
+	var socketAdapter = require( '../../src/websocket/adapter.js' )( config, authProvider, socket );
 
 	var actionRoles = function( action, roles ) {
 		if ( authProvider ) {
@@ -165,7 +164,7 @@ module.exports = function setup( config ) {
 		getWSClient: getWSClient,
 		http: http,
 		httpAdapter: httpAdapter,
-		metrics: metrics,
+		metrics: require( '../../src/metrics' ),
 		middleware: middleware,
 		setActionRoles: actionRoles,
 		setUserRoles: userRoles,

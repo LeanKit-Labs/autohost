@@ -10,7 +10,7 @@ function parseCookies( socket ) {
 	}, {} );
 }
 
-function SocketEnvelope( topic, message, socket ) {
+function SocketEnvelope( topic, message, socket, timer ) {
 	this.transport = 'websocket';
 	this.context = socket.context;
 	this.data = message.data || message || {};
@@ -21,6 +21,7 @@ function SocketEnvelope( topic, message, socket ) {
 	this.replyTo = this.data.replyTo || topic;
 	this.responseStream = new SocketStream( this.replyTo || topic, socket );
 	this.session = socket.session;
+	this.timer = timer;
 	this.topic = topic;
 	this.logout = function() {
 		socket.logout();
@@ -32,10 +33,12 @@ function SocketEnvelope( topic, message, socket ) {
 }
 
 SocketEnvelope.prototype.forwardTo = function( /* options */ ) {
+	this.timer.record();
 	this.reply( { data: 'The API call \'' + this.topic + '\' is not supported via websockets. Sockets do not support proxying via forwardTo.' } );
 };
 
 SocketEnvelope.prototype.redirect = function( /* options */ ) {
+	this.timer.record();
 	this.reply( { data: 'The resource you are trying to reach has moved.' } );
 	throw new Error( 'Sockets do not support redirection.' );
 };
@@ -49,11 +52,13 @@ SocketEnvelope.prototype.reply = function( envelope ) {
 		publish._headers = envelope.headers;
 	}
 	this._original.socket.publish( this.replyTo, publish );
+	this.timer.record();
 };
 
 SocketEnvelope.prototype.replyWithFile = function( contentType, fileName, fileStream ) {
 	this._original.socket.publish( this.replyTo, { start: true, fileName: fileName, contentType: contentType } );
 	fileStream.pipe( this.responseStream );
+	this.timer.record();
 };
 
 module.exports = SocketEnvelope;

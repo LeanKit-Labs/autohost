@@ -1,5 +1,4 @@
 var path = require( 'path' );
-var metrics = require( 'cluster-metrics' );
 var request = require( 'request' );
 var when = require( 'when' );
 var httpFn = require( './http/http.js' );
@@ -12,17 +11,17 @@ var eventChannel = postal.channel( 'events' );
 var internalFount = require( 'fount' );
 var httpAdapter, socketAdapter;
 var initialized, api;
-var middleware = middlewareLib( metrics );
+var middleware = middlewareLib();
 var wrapper = {
 	actions: undefined,
 	auth: undefined,
 	config: undefined,
 	fount: internalFount,
 	init: initialize,
-	metrics: metrics,
 	request: request,
 	meta: undefined,
-	http: httpFn( request, middleware, metrics ),
+	metrics: require( './metrics' ),
+	http: httpFn( request, middleware ),
 	socket: undefined,
 	session: middleware.sessionLib,
 	on: onEvent
@@ -60,7 +59,7 @@ function setup( authProvider ) {
 	var metrics = wrapper.metrics;
 	var apiPrefix = config.apiPrefix === undefined ? '/api' : config.apiPrefix;
 
-	httpAdapter = httpAdapterFn( config, authProvider, wrapper.http, request, metrics );
+	httpAdapter = httpAdapterFn( config, authProvider, wrapper.http, request );
 	api.addAdapter( httpAdapter );
 	wrapper.passport = httpAdapter.passport;
 
@@ -75,8 +74,8 @@ function setup( authProvider ) {
 		} );
 	}
 
-	wrapper.socket = socketFn( config, wrapper.http, metrics );
-	socketAdapter = socketAdapterFn( config, authProvider, wrapper.socket, metrics );
+	wrapper.socket = socketFn( config, wrapper.http );
+	socketAdapter = socketAdapterFn( config, authProvider, wrapper.socket );
 	api.addAdapter( socketAdapter );
 
 	return api.start( config.resources || path.join( process.cwd(), './resource' ), authProvider )

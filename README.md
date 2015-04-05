@@ -423,7 +423,17 @@ To end a session:
  * `logout` on the request in any middleware
 
 ## Metrics
-Autohost collects a good bit of metrics. It measures action activation as well as authorization and authentication calls so that you can get detailed information on where time is being spent in the stack at a high level. The metrics also include memory utlization as well as system memory and process load. You can access them from `host.metrics`.
+Autohost collects a good bit of metrics. It measures action activation as well as authorization and authentication calls so that you can get detailed information on where time is being spent in the stack at a high level. The metrics also include memory utlization as well as system memory and process load.
+
+Autohost exposes the [metronics](https://github.com/LeanKit-Labs/metronics) API via `host.metrics`. Metrics are not captured locally by default, this can be opted into with the `useLocalAdapter` call.
+
+```javascript
+// turns on local metrics capture
+host.metrics.useLocalAdapter();
+
+// gets a report object
+most.metrics.getReport();
+```
 
 ## Metadata
 Autohost provides metadata to describe the routes and topic available via an OPTIONS to api:
@@ -464,18 +474,23 @@ You can get a lot of visibility into what's happening in autohost in real-time b
 
 ## Dependencies
 autohost would not exist without the following libraries:
+
+ * debug 			1.0.4
  * express 			4.7.2
- * socket.io 		1.0.6
- * websocket-node 	1.0.8
- * passport 		0.2.0
- * postal			0.10.1
- * request			2.39.0
- * when 			3.4.2
+ * express-session 	1.7.2
+ * fount 			0.0.6
  * lodash 			2.4.1
+ * metronic 		0.1.1
+ * multer 			0.1.3
+ * passport 		0.2.0
+ * postal 			0.10.1
+ * request 			2.51.0
+ * socket.io 		1.3.2
+ * websocket 		1.0.17
+ * when 			3.4.2
 
 ## TO DO
  * Add ability to define message middleware
- * Add support for clustering (multiple listening processes)
 
 ## Contributing
 There are a lot of places you can contribute to autohost. Here are just some ideas:
@@ -483,9 +498,6 @@ There are a lot of places you can contribute to autohost. Here are just some ide
 ### Designers
  * Better designs for both the general dashboard and auth dashboard
  * Logo
-
-### Developers
- * A clustering feature that would handle setting up a cluster of N nodes
 
 ### Op/Sec
 I would be interested in seeing if particular Passport strategies and how they're being wired in would be subject to any exploits. Knowing this in general would be great, but especially if I'm doing something ignorant with how it's all being handled and introducing new attack vectors, I'd like to find out what those are so they can be addressed.

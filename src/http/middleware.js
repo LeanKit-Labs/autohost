@@ -2,6 +2,7 @@ var bodyParser = require( 'body-parser' );
 var cookies = require( 'cookie-parser' );
 var sessionLib = require( 'express-session' );
 var multer = require( 'multer' );
+var metrics = require( '../metrics' );
 var wrapper = {
 	attach: applyMiddelware,
 	configure: configure,
@@ -9,7 +10,8 @@ var wrapper = {
 	useSession: applySessionMiddleware,
 	sessionLib: sessionLib
 };
-var config, metrics, session, cookieParser;
+var _ = require( 'lodash' );
+var config, session, cookieParser;
 
 function applyCookieMiddleware( attach ) {
 	if ( !config.noCookies ) {
@@ -73,16 +75,16 @@ function configure( cfg ) {
 function requestMetrics( req, res, next ) {
 	req.context = {};
 	res.setMaxListeners( 0 );
-	var timerKey = [ 'autohost', 'perf', req.method.toUpperCase() + ' ' + req.url ].join( '.' );
-	metrics.timer( timerKey ).start();
+	var segments = _.filter( req.url.split( '/' ) );
+	var timerKey = [ 'http', req.method.toLowerCase() ].concat( segments, 'duration' );
+	var timer = metrics.timer( timerKey );
 	res.once( 'finish', function() {
-		metrics.timer( timerKey ).record();
+		timer.record();
 	} );
 	next();
 }
 
-module.exports = function( meter ) {
-	metrics = meter;
+module.exports = function() {
 	cookieParser = cookies();
 	return wrapper;
 };

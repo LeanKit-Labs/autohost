@@ -14,6 +14,7 @@ describe( 'AH Resource', function() {
 
 	before( function() {
 		harness = require( './harness.js' )( config );
+		harness.metrics.useLocalAdapter();
 		var testCall = function( env ) {
 			env.reply( { data: 'hello' } );
 		};
@@ -88,9 +89,15 @@ describe( 'AH Resource', function() {
 		} );
 
 		it( 'should contain metrics under expected namespaces', function() {
-			metrics[ 'autohost.perf' ][ 'GET /api/test/call' ].should.exist; // jshint ignore:line
-			metrics[ 'autohost.perf' ][ 'GET /api/test/err' ].should.exist; // jshint ignore:line
-			metrics[ 'autohost.errors' ][ 'GET /api/test/err' ].should.exist; // jshint ignore:line
+			metrics.should.have.all.keys( [
+				'autohost.ahspec.authentication',
+				'autohost.ahspec.authorization',
+				'autohost.ahspec.http.get.api.test.err',
+				'autohost.ahspec.http.get.api.test.call',
+				'autohost.ahspec.resource.http.test.call',
+				'autohost.ahspec.resource.http.test.error'
+
+			] );
 		} );
 	} );
 
@@ -123,10 +130,21 @@ describe( 'AH Resource', function() {
 		} );
 
 		it( 'should contain metrics under expected namespaces', function() {
-			metrics[ 'autohost.perf' ][ 'test:call' ].should.exist; // jshint ignore:line
-			metrics[ 'autohost.perf' ][ 'test:logout' ].should.exist; // jshint ignore:line
-			metrics[ 'autohost.perf' ][ 'test:err' ].should.exist; // jshint ignore:line
-			metrics[ 'autohost.errors' ][ 'test:err' ].should.exist; // jshint ignore:line
+			metrics.should.have.any.keys( [
+				'autohost.ahspec.authentication',
+				'autohost.ahspec.authorization',
+				'autohost.ahspec.http.get.api._ah.ah.metrics',
+				'autohost.ahspec.http.get.api.test.call',
+				'autohost.ahspec.http.get.api.test.err',
+				'autohost.ahspec.http.get.api.test.logout',
+				'autohost.ahspec.resource.http.ah.metrics',
+				'autohost.ahspec.resource.http.test.call',
+				'autohost.ahspec.resource.http.test.error',
+				'autohost.ahspec.resource.http.test.logout',
+				'autohost.ahspec.resource.ws.test.call',
+				'autohost.ahspec.resource.ws.test.err',
+				'autohost.ahspec.resource.ws.test.logout'
+			] );
 		} );
 	} );
 
