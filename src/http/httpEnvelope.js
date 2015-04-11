@@ -1,21 +1,22 @@
 var request;
 var _ = require( 'lodash' );
 
-function HttpEnvelope( req, res ) {
+function HttpEnvelope( req, res, metricKey ) {
 	this.transport = 'http';
 	this.context = req.context;
-	this.data = req.body || {};
-	this.path = this.url = req.url;
 	this.cookies = req.cookies;
-	this.headers = req.headers;
-	this.params = {};
+	this.data = req.body || {};
 	this.files = req.files;
-	this.user = req.user;
-	this.session = req.session;
-	this.responseStream = res;
+	this.headers = req.headers;
 	this.logout = function() {
 		req.logout();
 	};
+	this.metricKey = metricKey;
+	this.params = {};
+	this.path = this.url = req.url;
+	this.responseStream = res;
+	this.session = req.session;
+	this.user = req.user;
 	this._original = {
 		req: req,
 		res: res

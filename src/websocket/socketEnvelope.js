@@ -10,22 +10,23 @@ function parseCookies( socket ) {
 	}, {} );
 }
 
-function SocketEnvelope( topic, message, socket, timer ) {
+function SocketEnvelope( topic, message, socket, metricKey, timer ) {
 	this.transport = 'websocket';
 	this.context = socket.context;
 	this.data = message.data || message || {};
 	this.cookies = socket.cookies || parseCookies( socket );
 	this.headers = socket.headers;
+	this.logout = function() {
+		socket.logout();
+	};
+	this.metricKey = metricKey;
 	this.params = {};
-	this.user = socket.user;
 	this.replyTo = this.data.replyTo || topic;
 	this.responseStream = new SocketStream( this.replyTo || topic, socket );
 	this.session = socket.session;
 	this.timer = timer;
 	this.topic = topic;
-	this.logout = function() {
-		socket.logout();
-	};
+	this.user = socket.user;
 	this._original = {
 		message: message,
 		socket: socket
@@ -33,12 +34,16 @@ function SocketEnvelope( topic, message, socket, timer ) {
 }
 
 SocketEnvelope.prototype.forwardTo = function( /* options */ ) {
-	this.timer.record();
+	this.recordTime();
 	this.reply( { data: 'The API call \'' + this.topic + '\' is not supported via websockets. Sockets do not support proxying via forwardTo.' } );
 };
 
-SocketEnvelope.prototype.redirect = function( /* options */ ) {
+SocketEnvelope.prototype.recordTime = function() {
 	this.timer.record();
+};
+
+SocketEnvelope.prototype.redirect = function( /* options */ ) {
+	this.recordTime();
 	this.reply( { data: 'The resource you are trying to reach has moved.' } );
 	throw new Error( 'Sockets do not support redirection.' );
 };
@@ -52,13 +57,13 @@ SocketEnvelope.prototype.reply = function( envelope ) {
 		publish._headers = envelope.headers;
 	}
 	this._original.socket.publish( this.replyTo, publish );
-	this.timer.record();
+	this.recordTime();
 };
 
 SocketEnvelope.prototype.replyWithFile = function( contentType, fileName, fileStream ) {
 	this._original.socket.publish( this.replyTo, { start: true, fileName: fileName, contentType: contentType } );
 	fileStream.pipe( this.responseStream );
-	this.timer.record();
+	this.recordTime();
 };
 
 module.exports = SocketEnvelope;

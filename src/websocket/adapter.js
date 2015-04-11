@@ -3,8 +3,9 @@ var authStrategy;
 var socket;
 var SocketEnvelope;
 var _ = require( 'lodash' );
-var metrics = require( '../metrics' );
-var debug = require( 'debug' )( 'autohost:websocket-adapter' );
+var metronic = require( '../metrics' );
+var log = require( '../log' )( 'autohost.websocket.adapter' );
+var metrics;
 var wrapper = {
 	name: 'http',
 	action: wireupAction,
@@ -22,10 +23,10 @@ function buildActionTopic( resourceName, action ) {
 }
 
 function checkPermissionFor( user, context, action ) {
-	debug( 'Checking %s\'s permissions for %s', getUserString( user ), action );
+	log.debug( 'Checking %s\'s permissions for %s', getUserString( user ), action );
 	return authStrategy.checkPermission( user, action, context )
 		.then( null, function( err ) {
-			debug( 'Error during check permissions: %s', err.stack );
+			log.debug( 'Error during check permissions: %s', err.stack );
 			return false;
 		} )
 		.then( function( granted ) {
@@ -56,18 +57,15 @@ function wireupResource( resource ) {
 function wireupAction( resource, actionName, action, meta ) {
 	var topic = buildActionTopic( resource.name, action );
 	var alias = buildActionAlias( resource.name, actionName );
-
-	var baseMetricNamespace = [ 'resource', 'ws', topic ];
-	var errors = metrics.meter( baseMetricNamespace.concat( 'error' ) );
-	var timerKey = baseMetricNamespace.concat( 'duration' );
-
+	var errors = metrics.meter( [ topic, 'error' ] );
+	var metricKey = [ metrics.prefix, [ resource.name, actionName ].join( '-' ), 'ws' ];
 	meta.topics[ actionName ] = { topic: topic };
-	debug( 'Mapping resource \'%s\' action \'%s\' to topic %s', resource.name, actionName, alias );
+	log.debug( 'Mapping resource \'%s\' action \'%s\' to topic %s', resource.name, actionName, alias );
 	socket.on( topic, function( message, client ) {
 		var data = message.data || message;
-		var timer = metrics.timer( timerKey );
+		var resourceTimer = metrics.timer( [ resource.name + '-' + actionName, 'ws', 'duration' ] );
 		var respond = function() {
-			var envelope = new SocketEnvelope( topic, message, client, timer );
+			var envelope = new SocketEnvelope( topic, message, client, metricKey, resourceTimer );
 			if ( config && config.handleRouteErrors ) {
 				try {
 					action.handle.apply( resource, [ envelope ] );
@@ -85,11 +83,11 @@ function wireupAction( resource, actionName, action, meta ) {
 				.then( function( pass ) {
 					if ( pass ) {
 						metrics.authorizationGrants.record();
-						debug( 'WS activation of action %s for %s granted', alias, getUserString( client.user ) );
+						log.debug( 'WS activation of action %s for %s granted', alias, getUserString( client.user ) );
 						respond();
 					} else {
 						metrics.authorizationRejections.record();
-						debug( 'User %s was denied WS activation of action %s', getUserString( client.user ), alias );
+						log.debug( 'User %s was denied WS activation of action %s', getUserString( client.user ), alias );
 						client.publish( data.replyTo || topic, 'User lacks sufficient permissions' );
 					}
 				} );
@@ -101,6 +99,7 @@ function wireupAction( resource, actionName, action, meta ) {
 
 module.exports = function( cfg, auth, sock ) {
 	config = cfg;
+	metrics = metronic( cfg );
 	authStrategy = auth;
 	socket = sock;
 	SocketEnvelope = require( './socketEnvelope.js' );

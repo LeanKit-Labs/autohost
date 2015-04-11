@@ -2,7 +2,8 @@ var bodyParser = require( 'body-parser' );
 var cookies = require( 'cookie-parser' );
 var sessionLib = require( 'express-session' );
 var multer = require( 'multer' );
-var metrics = require( '../metrics' );
+var metronic = require( '../metrics' );
+var os = require( 'os' );
 var wrapper = {
 	attach: applyMiddelware,
 	configure: configure,
@@ -10,8 +11,9 @@ var wrapper = {
 	useSession: applySessionMiddleware,
 	sessionLib: sessionLib
 };
-var _ = require( 'lodash' );
-var config, session, cookieParser;
+var config, session, cookieParser, metrics;
+var hostName = os.hostname();
+var log = require( '../log' )( 'autohost.access' );
 
 function applyCookieMiddleware( attach ) {
 	if ( !config.noCookies ) {
@@ -73,18 +75,69 @@ function configure( cfg ) {
 }
 
 function requestMetrics( req, res, next ) {
+	var ip;
+	// for some edge cases, trying to access the ip/ips property
+	// throws an exception, this work-around appears to avoid the
+	// need to rely on try/catch
+	if ( req.app ) {
+		ip = req.ips.length ? req.ips[ 0 ] : req.ip ;
+	} else {
+		ip = req.headers[ 'X-Forwarded-For' ] || req.socket.remoteAddress;
+	}
 	req.context = {};
 	res.setMaxListeners( 0 );
-	var segments = _.filter( req.url.split( '/' ) );
-	var timerKey = [ 'http', req.method.toLowerCase() ].concat( segments, 'duration' );
-	var timer = metrics.timer( timerKey );
+	var urlKey = req.url.slice( 1 ).replace( /[\/]/g, '-' ) + '-' + req.method.toLowerCase();
+	var timer = metrics.timer( [ urlKey, 'http', 'duration' ] );
+
 	res.once( 'finish', function() {
-		timer.record();
+		var user = req.authenticatedUser;
+		var method = req.method.toUpperCase();
+		var read = req.connection.bytesRead;
+		var readKB = read / 1024;
+		var code = res.statusCode;
+		var message = res.statusMessage;
+		var sent = req.connection._bytesDispatched;
+		var sentKB = sent ? sent / 1024 : 0;
+		var url = req.url;
+		var elapsed = timer.record();
+
+		var metricKey = req._metricKey;
+		if ( metricKey ) {
+			var resourceRequests = metrics.meter( 'requests', metricKey );
+			var resourceIngress = metrics.meter( 'ingress', metricKey );
+			var resourceEgress = metrics.meter( 'egress', metricKey );
+			resourceRequests.record();
+			resourceIngress.record( readKB );
+			resourceEgress.record( sentKB );
+		} else {
+			var httpRequests = metrics.meter( [ urlKey, 'requests' ] );
+			var httpIngress = metrics.meter( [ urlKey, 'ingress' ] );
+			var httpEgress = metrics.meter( [ urlKey, 'egress' ] );
+			httpRequests.record();
+			httpIngress.record( readKB );
+			httpEgress.record( sentKB );
+			timer.record();
+		}
+
+		log.info( '%s@%s %s (%d ms) [%s] %s %s (%d bytes) %s %s (%d bytes)',
+			process.title,
+			hostName,
+			ip,
+			elapsed,
+			user || 'anonymous',
+			method,
+			url,
+			read,
+			code,
+			message || '',
+			sent
+		);
 	} );
 	next();
 }
 
 module.exports = function() {
+	metrics = metronic();
 	cookieParser = cookies();
 	return wrapper;
 };

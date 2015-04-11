@@ -8,6 +8,8 @@ var config = {
 	defaultUser: true,
 	handleRouteErrors: true
 };
+var os = require( 'os' );
+var hostName = os.hostname();
 
 describe( 'AH Resource', function() {
 	var harness, loggedOut;
@@ -62,7 +64,7 @@ describe( 'AH Resource', function() {
 				url: 'http://localhost:8988/api/test/err'
 			},
 			{
-				url: 'http://localhost:8988/api/_ah/ah/metrics'
+				url: 'http://localhost:8988/api/ah/metrics'
 			},
 			{
 				url: 'http://localhost:8988/api/test/logout'
@@ -89,14 +91,15 @@ describe( 'AH Resource', function() {
 		} );
 
 		it( 'should contain metrics under expected namespaces', function() {
-			metrics.should.have.all.keys( [
-				'autohost.ahspec.authentication',
-				'autohost.ahspec.authorization',
-				'autohost.ahspec.http.get.api.test.err',
-				'autohost.ahspec.http.get.api.test.call',
-				'autohost.ahspec.resource.http.test.call',
-				'autohost.ahspec.resource.http.test.error'
-
+			metrics.should.have.any.keys( [
+				hostName + '.ahspec',
+				'derp',
+				hostName + '.ahspec.api-test-call-get',
+				hostName + '.ahspec.api-test-call-get.http',
+				hostName + '.ahspec.api-test-err-get',
+				hostName + '.ahspec.api-test-err-get.http',
+				hostName + '.ahspec.test-call.http',
+				hostName + '.ahspec.test-error.http'
 			] );
 		} );
 	} );
@@ -110,13 +113,13 @@ describe( 'AH Resource', function() {
 				setTimeout( function() {
 					requestor.get(
 						{
-							url: 'http://localhost:8988/api/_ah/ah/metrics',
+							url: 'http://localhost:8988/api/ah/metrics',
 							headers: { 'Authorization': 'Bearer one' }
 						}, function( err, resp ) {
 							metrics = JSON.parse( resp.body );
 							done();
 						} );
-				}, 100 );
+				}, 200 );
 			} );
 
 			io.once( 'connect', function() {
@@ -131,19 +134,24 @@ describe( 'AH Resource', function() {
 
 		it( 'should contain metrics under expected namespaces', function() {
 			metrics.should.have.any.keys( [
-				'autohost.ahspec.authentication',
-				'autohost.ahspec.authorization',
-				'autohost.ahspec.http.get.api._ah.ah.metrics',
-				'autohost.ahspec.http.get.api.test.call',
-				'autohost.ahspec.http.get.api.test.err',
-				'autohost.ahspec.http.get.api.test.logout',
-				'autohost.ahspec.resource.http.ah.metrics',
-				'autohost.ahspec.resource.http.test.call',
-				'autohost.ahspec.resource.http.test.error',
-				'autohost.ahspec.resource.http.test.logout',
-				'autohost.ahspec.resource.ws.test.call',
-				'autohost.ahspec.resource.ws.test.err',
-				'autohost.ahspec.resource.ws.test.logout'
+				hostName + '.ahspec',
+				hostName + '.ahspec.api-ah-metrics-get',
+				hostName + '.ahspec.api-test-call-get',
+				hostName + '.ahspec.api-test-err-get',
+				hostName + '.ahspec.api-test-logout-get',
+				hostName + '.ahspec.api-test-call-get.http',
+				hostName + '.ahspec.api-test-err-get.http',
+				hostName + '.ahspec.api-test-logout-get.http',
+				hostName + '.ahspec.api-ah-metrics-get.http',
+				hostName + '.ahspec.ah-metrics.http',
+				hostName + '.ahspec.test-call.http',
+				hostName + '.ahspec.test-error.http',
+				hostName + '.ahspec.test-logout.http',
+				hostName + '.ahspec.test-call.ws',
+				hostName + '.ahspec.test-logout.ws',
+				hostName + '.ahspec.test-call',
+				hostName + '.ahspec.test-logout',
+				hostName + '.ahspec.test.err'
 			] );
 		} );
 	} );

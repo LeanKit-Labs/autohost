@@ -5,7 +5,7 @@ var qs = require( 'qs' );
 var queryparse = qs.parse;
 var express = require( 'express' );
 var http = require( 'http' );
-var debug = require( 'debug' )( 'autohost:http-transport' );
+var log = require( '../log' )( 'autohost.http.transport' );
 var regex = require( './regex.js' );
 var Router = express.Router;
 var expreq = express.request;
@@ -173,7 +173,7 @@ function queryParser( req, res, next ) {
 
 function registerMiddleware( filter, callback ) {
 	var fn = function( router ) {
-		debug( 'MIDDLEWARE: %s mounted at %s', ( callback.name || 'anonymous' ), filter );
+		log.debug( 'MIDDLEWARE: %s mounted at %s', ( callback.name || 'anonymous' ), filter );
 		router.use( filter, callback );
 	};
 	if ( wrapper.app ) {
@@ -184,7 +184,7 @@ function registerMiddleware( filter, callback ) {
 
 function registerUserMiddleware( filter, callback ) {
 	var fn = function( router ) {
-		debug( 'MIDDLEWARE: %s mounted at %s', ( callback.name || 'anonymous' ), filter );
+		log.debug( 'MIDDLEWARE: %s mounted at %s', ( callback.name || 'anonymous' ), filter );
 		router.use( filter, callback );
 	};
 	if ( wrapper.app ) {
@@ -196,16 +196,15 @@ function registerUserMiddleware( filter, callback ) {
 function registerRoute( url, method, callback ) {
 	method = method.toLowerCase();
 	method = method === 'all' || method === 'any' ? 'all' : method;
-	var errors = [ 'autohost', 'errors', method.toUpperCase() + ' ' + url ].join( '.' );
 	var fn = function() {
 		url = prefix( url );
-		debug( 'ROUTE: %s %s -> %s', method, url, ( callback.name || 'anonymous' ) );
+		log.debug( 'ROUTE: %s %s -> %s', method, url, ( callback.name || 'anonymous' ) );
 		wrapper.app[ method ]( url, function( req, res ) {
 			if ( config && config.handleRouteErrors ) {
 				try {
 					callback( req, res );
 				} catch ( err ) {
-					debug( 'ERROR! route: %s %s failed with %s', method.toUpperCase(), url, err.stack );
+					log.debug( 'ERROR! route: %s %s failed with %s', method.toUpperCase(), url, err.stack );
 					res.status( 500 ).send( 'Server error at ' + method.toUpperCase() + ' ' + url );
 				}
 			} else {
@@ -226,7 +225,7 @@ function registerStaticPath( url, opt ) {
 	var fn = function() {
 		url = prefix( url );
 		var target = path.resolve( filePath );
-		debug( 'STATIC: %s -> %s', url, target );
+		log.debug( 'STATIC: %s -> %s', url, target );
 		wrapper.app.use( url, express.static( target, options ) );
 	};
 	paths.push( fn );

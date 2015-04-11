@@ -2,7 +2,6 @@ module.exports = function( host ) {
 	return {
 		name: "ah",
 		resources: "./public",
-		urlPrefix: "/_ah",
 		actions: {
 			"metrics": {
 				url: "/metrics",

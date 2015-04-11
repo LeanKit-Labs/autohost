@@ -164,7 +164,7 @@ module.exports = function setup( config ) {
 		getWSClient: getWSClient,
 		http: http,
 		httpAdapter: httpAdapter,
-		metrics: require( '../../src/metrics' ),
+		metrics: require( '../../src/metrics' )( config.metrics ),
 		middleware: middleware,
 		setActionRoles: actionRoles,
 		setUserRoles: userRoles,

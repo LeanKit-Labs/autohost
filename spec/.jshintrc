@@ -100,6 +100,7 @@
 		"sinon",
 		"fs",
 		"lift",
+		"sinon",
 		"transformResponse",
 		"onError"
 	],

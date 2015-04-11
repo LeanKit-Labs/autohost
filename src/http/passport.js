@@ -1,8 +1,8 @@
 var _ = require( 'lodash' );
 var when = require( 'when' );
 var passport = require( 'passport' );
-var debug = require( 'debug' )( 'autohost:passport' );
-var metrics = require( '../metrics' );
+var log = require( '../log' )( 'autohost.passport' );
+var metronic = require( '../metrics' );
 var noOp = function() {
 	return when( true );
 };
@@ -11,6 +11,7 @@ var passportInitialize;
 var passportSession;
 var authProvider;
 var anonPaths;
+var metrics;
 
 reset();
 
@@ -44,6 +45,7 @@ function getAuthMiddleware( uri ) {
 
 function getRoles( req, res, next ) {
 	var userName = _.isObject( req.user.name ) ? req.user.name.name : req.user.name;
+	req.authenticatedUser = userName || req.user.id || 'anonymous';
 	if ( userName === 'anonymous' ) {
 		req.user.roles = [ 'anonymous' ];
 		next();
@@ -53,7 +55,7 @@ function getRoles( req, res, next ) {
 			.then( null, function( err ) {
 				metrics.authorizationErrors.record();
 				timer.record();
-				debug( 'Failed to get roles for %s with %s', getUserString( req.user ), err.stack );
+				log.debug( 'Failed to get roles for %s with %s', getUserString( req.user ), err.stack );
 				// during a socket connection, express is not fully initialized and this call fails ... hard
 				try {
 					res.status( 500 ).send( 'Could not determine user permissions' );
@@ -62,7 +64,7 @@ function getRoles( req, res, next ) {
 				}
 			} )
 			.then( function( roles ) {
-				debug( 'Got roles [ %s ] for %s', roles, req.user );
+				log.debug( 'Got roles [ %s ] for %s', roles, req.user );
 				req.user.roles = roles;
 				timer.record();
 				next();
@@ -74,17 +76,16 @@ function getSocketRoles( user ) {
 	if ( user.name === 'anonymous' ) {
 		return when( [ 'anonymous' ] );
 	} else {
-		metrics.authorizationChecks.record();
 		var timer = metrics.authorizationTimer();
 		return authProvider.getUserRoles( user, {} )
 			.then( null, function( err ) {
 				metrics.authorizationErrors.record();
 				timer.record();
-				debug( 'Failed to get roles for %s with %s', getUserString( user ), err.stack );
+				log.debug( 'Failed to get roles for %s with %s', getUserString( user ), err.stack );
 				return [];
 			} )
 			.then( function( roles ) {
-				debug( 'Got roles [ %s ] for %s', roles, getUserString( user ) );
+				log.debug( 'Got roles [ %s ] for %s', roles, getUserString( user ) );
 				timer.record();
 				return roles;
 			} );
@@ -109,7 +110,7 @@ function resetUserCount() {
 function skipAuthentication( req, res, next ) {
 	req.skipAuth = true;
 	if ( !req.user ) {
-		debug( 'Skipping authentication and assigning user anonymous to request %s %s', req.method, req.url );
+		log.debug( 'Skipping authentication and assigning user anonymous to request %s %s', req.method, req.url );
 		req.user = {
 			id: 'anonymous',
 			name: 'anonymous',
@@ -142,6 +143,7 @@ module.exports = function( config, authPlugin, resetState ) {
 	if ( resetState ) {
 		reset();
 	}
+	metrics = metronic();
 	authProvider = authPlugin;
 	authProvider.initPassport( passport );
 	passport.serializeUser( authProvider.serializeUser );
