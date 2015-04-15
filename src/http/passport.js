@@ -46,49 +46,58 @@ function getAuthMiddleware( uri ) {
 function getRoles( req, res, next ) {
 	var userName = _.isObject( req.user.name ) ? req.user.name.name : req.user.name;
 	req.authenticatedUser = userName || req.user.id || 'anonymous';
+
+	function onError( err ) {
+		metrics.authorizationErrors.record();
+		req.user.roles = [];
+		timer.record();
+		log.debug( 'Failed to get roles for %s with %s', getUserString( req.user ), err.stack );
+		// during a socket connection, express is not fully initialized and this call fails ... hard
+		try {
+			res.status( 500 ).send( 'Could not determine user permissions' );
+		} catch ( err ) {
+			log.warn( 'Could not reply with user permission error to request before express is fully initialized.' );
+		}
+		next();
+	}
+
+	function onRoles( roles ) {
+		log.debug( 'Got roles [ %s ] for %s', roles, req.user );
+		req.user.roles = roles;
+		timer.record();
+		next();
+	}
+
 	if ( userName === 'anonymous' ) {
 		req.user.roles = [ 'anonymous' ];
 		next();
 	} else {
 		var timer = metrics.authorizationTimer();
 		authProvider.getUserRoles( req.user, req.context )
-			.then( null, function( err ) {
-				metrics.authorizationErrors.record();
-				timer.record();
-				log.debug( 'Failed to get roles for %s with %s', getUserString( req.user ), err.stack );
-				// during a socket connection, express is not fully initialized and this call fails ... hard
-				try {
-					res.status( 500 ).send( 'Could not determine user permissions' );
-				} catch ( err ) {
-					return [];
-				}
-			} )
-			.then( function( roles ) {
-				log.debug( 'Got roles [ %s ] for %s', roles, req.user );
-				req.user.roles = roles;
-				timer.record();
-				next();
-			} );
+			.then( onRoles, onError );
 	}
 }
 
 function getSocketRoles( user ) {
+	function onError( err ) {
+		metrics.authorizationErrors.record();
+		timer.record();
+		log.debug( 'Failed to get roles for %s with %s', getUserString( user ), err.stack );
+		return [];
+	}
+
+	function onRoles( roles ) {
+		log.debug( 'Got roles [ %s ] for %s', roles, getUserString( user ) );
+		timer.record();
+		return roles;
+	}
+
 	if ( user.name === 'anonymous' ) {
 		return when( [ 'anonymous' ] );
 	} else {
 		var timer = metrics.authorizationTimer();
 		return authProvider.getUserRoles( user, {} )
-			.then( null, function( err ) {
-				metrics.authorizationErrors.record();
-				timer.record();
-				log.debug( 'Failed to get roles for %s with %s', getUserString( user ), err.stack );
-				return [];
-			} )
-			.then( function( roles ) {
-				log.debug( 'Got roles [ %s ] for %s', roles, getUserString( user ) );
-				timer.record();
-				return roles;
-			} );
+			.then( onRoles, onError );
 	}
 }
 
