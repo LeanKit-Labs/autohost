@@ -30,7 +30,7 @@ var wrapper = {
 function initialize( cfg, authProvider, fount ) {
 	wrapper.fount = fount || cfg.fount || internalFount;
 	require( './log' )( cfg.logging || {} );
-	wrapper.metrics = cfg.metrics || require( './metrics' )( cfg.metrics || {} );
+	wrapper.metrics = require( './metrics' )( cfg.metrics || {} );
 	api = require( './api.js' )( wrapper, cfg );
 	if ( initialized ) {
 		api.startAdapters();

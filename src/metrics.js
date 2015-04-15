@@ -4,8 +4,8 @@ var metrics = {};
 module.exports = function( config ) {
 	if ( config || !metrics.instrument ) {
 		var instance;
-		if ( config && config.metrics ) {
-			instance = config.metrics;
+		if ( config && config.instrument ) {
+			instance = config;
 		} else {
 			instance = require( 'metronic' )( config );
 		}
