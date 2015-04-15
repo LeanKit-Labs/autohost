@@ -21,13 +21,17 @@ function configure( config ) {
 }
 
 function createLog( topic ) {
-	var log = logger( topic );
-	if ( log[ topic ] ) {
-		log[ topic ].reset();
+	if ( !_.contains( topics, topic ) ) {
+		var log = logger( topic );
+		if ( logs[ topic ] ) {
+			logs[ topic ].reset();
+		}
+		topics.push( log );
+		logs[ topic ] = log;
+		return log;
+	} else {
+		return logs[ topic ];
 	}
-	topics.push( log );
-	log = log;
-	return log;
 }
 
 module.exports = function( config, ns ) {
