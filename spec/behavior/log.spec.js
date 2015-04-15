@@ -2,22 +2,14 @@ require( '../setup' );
 var logFn = require( '../../src/log' );
 var mockLog = require( '../mockLogger' )();
 
-function stubOutput() {
-	// the DEBUG library uses stderr or stdout
-	// but not console.log
-	var stdout = process.stderr;
-	return sinon.stub( stdout, 'write' );
-}
-
 describe( 'when configuring log', function() {
 	describe( 'before initialization', function() {
-		var spy, log;
+		var log;
 		before( function() {
 			log = logFn( 'test' );
 		} );
 
 		it( 'should not throw exceptions', function() {
-			spy = stubOutput();
 			should.not.throw( function() {
 				log.debug( 'one' );
 			} );
@@ -31,22 +23,12 @@ describe( 'when configuring log', function() {
 				log.error( 'four' );
 			} );
 		} );
-
-		it( 'should not call adapters', function() {
-			spy.callCount.should.equal( 0 );
-		} );
-
-		after( function() {
-			spy.restore();
-		} );
 	} );
 
 	describe( 'with debug env set', function() {
 		var original = process.env.DEBUG;
-		var spy, log;
+		var log;
 		before( function() {
-			var stdout = process.stderr;
-			spy = sinon.stub( stdout, 'write' );
 			process.env.DEBUG = 'test';
 			log = logFn( {
 				adapters: {
@@ -65,19 +47,14 @@ describe( 'when configuring log', function() {
 			expect( mockLog.test ).to.be.undefined;
 		} );
 
-		it( 'should log to console', function() {
-			spy.callCount.should.equal( 4 );
-		} );
-
 		after( function() {
-			spy.restore();
 			process.env.DEBUG = original;
 		} );
 	} );
 
 	describe( 'without debug', function() {
 		var original = process.env.DEBUG;
-		var spy, log;
+		var log;
 		before( function() {
 			delete process.env.DEBUG;
 			log = logFn( {
@@ -87,7 +64,7 @@ describe( 'when configuring log', function() {
 					}
 				}
 			}, 'test' );
-			spy = stubOutput();
+
 			log.debug( 'debug' );
 			log.info( 'info' );
 			log.warn( 'warn' );
@@ -103,13 +80,8 @@ describe( 'when configuring log', function() {
 			} );
 		} );
 
-		it( 'should not log to debug adapter', function() {
-			spy.callCount.should.equal( 0 );
-		} );
-
 		after( function() {
 			process.env.DEBUG = original;
-			spy.restore();
 		} );
 	} );
 } );
