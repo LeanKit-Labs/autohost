@@ -6,6 +6,7 @@ Primary motivation here is to begin work on a version of autohost that will work
  * Use whistlepunk for logging
  * Add access logging
  * Improve metrics collection
+ * Update load of relative module paths to resolve against process current working directory
 
 ### prerelease 25
  * Updated two remaining areas where apiPrefix wouldn't be honored if empty
