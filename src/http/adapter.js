@@ -1,12 +1,13 @@
 var path = require( 'path' );
 var _ = require( 'lodash' );
 var regex = require( './regex.js' );
-var debug = require( 'debug' )( 'autohost:http-adapter' );
+var log = require( '../log' )( 'autohost.http.adapter' );
 var passportFn = require( './passport.js' );
+var metronic = require( '../metrics' );
+var metrics;
 var HttpEnvelope;
 var http;
 var config;
-var metrics;
 var authStrategy;
 var passport;
 
@@ -57,35 +58,41 @@ function buildPath( pathSpec ) {
 }
 
 function checkPermissionFor( user, context, action ) {
-	debug( 'Checking %s\'s permissions for %s', getUserString( user ), action );
+	log.debug( 'Checking %s\'s permissions for %s', getUserString( user ), action );
+	metrics.authorizationAttempts.record();
+	var timer = metrics.authorizationTimer();
+	function onError( err ) {
+		log.error( 'Error during check permissions: %s', err.stack );
+		metrics.authorizationErrors.record();
+		timer.record();
+		return false;
+	}
+	function onPermission( granted ) {
+		timer.record();
+		return granted;
+	}
 	return authStrategy.checkPermission( user, action, context )
-		.then( null, function( err ) {
-			debug( 'Error during check permissions: %s', err.stack );
-			return false;
-		} )
-		.then( function( granted ) {
-			return granted;
-		} );
+		.then( onPermission, onError );
 }
 
-function getUserString( user ) {  
+function getUserString( user ) {
 	return user.name ? user.name : JSON.stringify( user );
 }
 
-function hasPrefix( url ) {  
+function hasPrefix( url ) {
 	var prefix = http.buildUrl( config.urlPrefix || '', config.apiPrefix || '' );
 	return url.indexOf( prefix ) === 0;
 }
 
-function start() {  
+function start() {
 	http.start( config, passport );
 }
 
-function stop() {  
+function stop() {
 	http.stop();
 }
 
-function wireupResource( resource, basePath, resources ) {  
+function wireupResource( resource, basePath, resources ) {
 	var meta = { routes: {} };
 	var static = resource.static || resource.resources;
 	if ( static ) {
@@ -100,24 +107,32 @@ function wireupResource( resource, basePath, resources ) {
 	return meta;
 }
 
-function wireupAction( resource, actionName, action, meta, resources ) {  
+function wireupAction( resource, actionName, action, meta, resources ) {
 	var url = buildActionUrl( resource.name, actionName, action, resource, resources );
 	var alias = buildActionAlias( resource.name, actionName );
-	var errors = [ 'autohost', 'errors', action.method.toUpperCase() + ' ' + url ].join( '.' );
+	var resourceKey = [ [ resource.name, actionName ].join( '-' ), 'http' ];
+	var metricKey = [ metrics.prefix ].concat( resourceKey );
+	var errors = metrics.meter( resourceKey.concat( 'error' ) );
 	meta.routes[ actionName ] = { method: action.method, url: url };
-	debug( 'Mapping resource \'%s\' action \'%s\' to %s %s', resource.name, actionName, action.method, url );
+	log.debug( 'Mapping resource \'%s\' action \'%s\' to %s %s', resource.name, actionName, action.method, url );
+
 	http.route( url, action.method, function( req, res ) {
+		req._metricKey = metricKey;
 		req._resource = resource.name;
 		req._action = actionName;
 		req._checkPermission = authStrategy ? checkPermissionFor.bind( undefined, req.user, req.context ) : undefined;
+		var timer = metrics.timer( resourceKey.concat( 'duration' ) );
+		res.once( 'finish', function() {
+			timer.record();
+		} );
 		var respond = function() {
-			var envelope = new HttpEnvelope( req, res );
+			var envelope = new HttpEnvelope( req, res, metricKey );
 			if ( config && config.handleRouteErrors ) {
 				try {
 					action.handle.apply( resource, [ envelope ] );
-				} catch (err) {
-					metrics.meter( errors ).record();
-					debug( 'ERROR! route: %s %s failed with %s', action.method.toUpperCase(), action.url, err.stack );
+				} catch ( err ) {
+					errors.record();
+					log.debug( 'ERROR! route: %s %s failed with %s', action.method.toUpperCase(), action.url, err.stack );
 					res.status( 500 ).send( 'Server error at ' + action.method.toUpperCase() + ' ' + action.url );
 				}
 			} else {
@@ -125,13 +140,16 @@ function wireupAction( resource, actionName, action, meta, resources ) {
 			}
 		};
 		if ( authStrategy ) {
+			metrics.authorizationAttempts.record();
 			checkPermissionFor( req.user, req.context, alias )
 				.then( function onPermission( pass ) {
 					if ( pass ) {
-						debug( 'HTTP activation of action %s (%s %s) for %s granted', alias, action.method, url, getUserString( req.user ) );
+						metrics.authorizationGrants.record();
+						log.debug( 'HTTP activation of action %s (%s %s) for %s granted', alias, action.method, url, getUserString( req.user ) );
 						respond();
 					} else {
-						debug( 'User %s was denied HTTP activation of action %s (%s %s)', getUserString( req.user ), alias, action.method, url );
+						metrics.authorizationRejections.record();
+						log.debug( 'User %s was denied HTTP activation of action %s (%s %s)', getUserString( req.user ), alias, action.method, url );
 						if ( !res._headerSent ) {
 							res.status( 403 ).send( 'User lacks sufficient permissions' );
 						}
@@ -143,15 +161,15 @@ function wireupAction( resource, actionName, action, meta, resources ) {
 	} );
 }
 
-module.exports = function( cfg, auth, httpLib, req, meter ) {
+module.exports = function( cfg, auth, httpLib, req ) {
 	config = cfg;
+	metrics = metronic( cfg );
 	authStrategy = auth;
 	if ( auth ) {
-		passport = passportFn( cfg, auth, meter );
+		passport = passportFn( cfg, auth );
 		wrapper.passport = passport;
 	}
 	http = httpLib;
-	metrics = meter;
 	HttpEnvelope = require( './httpEnvelope.js' )( req );
 	return wrapper;
 };

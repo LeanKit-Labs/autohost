@@ -56,7 +56,7 @@ describe( 'API', function() {
 			// argument from resource function calls with dependencies
 			fount.register( 'durp1', 'hello' );
 			fount.register( 'durp2', 'goodbye' );
-			api = require( '../../src/api.js' )( host, { modules: [ '../spec/misc/anresource.js' ] } );
+			api = require( '../../src/api.js' )( host, { modules: [ './spec/misc/anresource.js' ] } );
 			api.addAdapter( adapter );
 		} );
 

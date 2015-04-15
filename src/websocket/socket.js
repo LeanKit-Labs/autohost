@@ -2,9 +2,9 @@ var config, socketIO, websocket, http;
 var _ = require( 'lodash' );
 var postal = require( 'postal' );
 var eventChannel = postal.channel( 'events' );
-var debug = require( 'debug' )( 'autohost:ws-transport' );
+var log = require( '../log' )( 'autohost.ws.transport' );
 var uuid = require( 'node-uuid' );
-var wrapper, websocket, socketIO, metrics;
+var wrapper, websocket, socketIO;
 reset();
 
 function addClient( socket ) {
@@ -26,21 +26,19 @@ function socketIdentified( id, socket ) {
 }
 
 function notifyClients( message, data ) {
-	debug( 'Notifying %d clients: %s %s', wrapper.clients.length, message, JSON.stringify( data ) );
+	log.debug( 'Notifying %d clients: %s %s', wrapper.clients.length, message, JSON.stringify( data ) );
 	_.each( wrapper.clients, function( client ) {
 		client.publish( message, data );
 	} );
 }
 
 function onTopic( topic, handle /* context */ ) {
-	debug( 'TOPIC: %s -> %s', topic, ( handle.name || 'anonymous' ) );
-	var errors = [ 'autohost', 'errors ', topic.replace( '.', ':' ) ].join( '.' );
+	log.debug( 'TOPIC: %s -> %s', topic, ( handle.name || 'anonymous' ) );
 	var safe = function( data, socket ) {
 		if ( config && config.handleRouteErrors ) {
 			try {
 				handle( data, socket );
 			} catch ( err ) {
-				metrics.meter( errors ).record();
 				socket.publish( data.replyTo || topic, 'Server error at topic ' + topic );
 			}
 		} else {
@@ -90,7 +88,7 @@ function reset() {
 }
 
 function sendToClient( id, message, data ) {
-	debug( 'Sending to clients %s: %s %s', id, message, JSON.stringify( data ) );
+	log.debug( 'Sending to clients %s: %s %s', id, message, JSON.stringify( data ) );
 	var sockets = wrapper.clients.lookup[ id ];
 	if ( !sockets ) {
 		sockets = _.where( wrapper.clients, function( client ) {
@@ -132,11 +130,10 @@ function stop() {
 	}
 }
 
-module.exports = function( cfg, httpLib, metric, resetState ) {
+module.exports = function( cfg, httpLib, resetState ) {
 	if ( resetState ) {
 		reset();
 	}
-	metrics = metric;
 	config = cfg;
 	http = httpLib;
 	return wrapper;

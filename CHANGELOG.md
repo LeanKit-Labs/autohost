@@ -1,6 +1,13 @@
 ## 0.3.0
 Primary motivation here is to begin work on a version of autohost that will work well with a hypermedia library ( [hyped](https://github.com/leankit-labs/hyped) ). This is a breaking change because of several structural and naming changes to how resources get modeled.
 
+### 0.3.0
+ * Use metronic for metrics
+ * Use whistlepunk for logging
+ * Add access logging
+ * Improve metrics collection
+ * Update load of relative module paths to resolve against process current working directory
+
 ### prerelease 25
  * Updated two remaining areas where apiPrefix wouldn't be honored if empty
  * Add ability to override apiPrefix for a resource

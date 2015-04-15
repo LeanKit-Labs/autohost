@@ -6,14 +6,14 @@ var config;
 var _ = require( 'lodash' );
 var WS = require ( 'websocket' ).server;
 var ServerResponse = require( 'http' ).ServerResponse;
-var debug = require( 'debug' )( 'autohost:websocket' );
+var log = require( '../log' )( 'autohost.websocket' );
 
 function allowOrigin( origin ) {
 	return ( config.origin && origin === config.origin ) || !config.origin;
 }
 
 function acceptSocketRequest( request ) {
-	debug( 'Processing websocket connection attempt' );
+	log.debug( 'Processing websocket connection attempt' );
 
 	var protocol = request.requestedProtocols[ 0 ];
 	var socket = request.accept( protocol, request.origin );
@@ -55,7 +55,7 @@ function acceptSocketRequest( request ) {
 
 	var originalClose = socket.close;
 	socket.close = function() {
-		debug( 'Closing websocket client (user: %s)', JSON.stringify( socket.user ) );
+		log.debug( 'Closing websocket client (user: %s)', JSON.stringify( socket.user ) );
 		socket.removeAllListeners();
 		originalClose();
 		registry.remove( socket );
@@ -84,10 +84,10 @@ function acceptSocketRequest( request ) {
 
 	socket.publish( 'server.connected', { user: socket.user } );
 	socket.on( 'close', function() {
-		debug( 'websocket client disconnected (user: %s)', JSON.stringify( socket.user ) );
+		log.debug( 'websocket client disconnected (user: %s)', JSON.stringify( socket.user ) );
 		registry.remove( socket );
 	} );
-	debug( 'Finished processing websocket connection attempt' );
+	log.debug( 'Finished processing websocket connection attempt' );
 }
 
 function configureWebsocket( http ) {
@@ -111,16 +111,16 @@ function handle( topic, callback ) {
 	} );
 }
 
-function handleWebSocketRequest( request ) {  
+function handleWebSocketRequest( request ) {
 	// if this doesn't end in websocket, we should ignore the request, it isn't for this lib
 	if ( !/websocket[\/]?$/.test( request.resourceURL.path ) ) {
-		debug( 'Websocket connection attempt (%s) does not match allowed URL /websocket', request.resourceURL.path );
+		log.debug( 'Websocket connection attempt (%s) does not match allowed URL /websocket', request.resourceURL.path );
 		return;
 	}
 
 	// check origin
 	if ( !allowOrigin( request.origin ) ) {
-		debug( 'Websocket origin (%s) does not match allowed origin %s', request.origin, config.origin );
+		log.debug( 'Websocket origin (%s) does not match allowed origin %s', request.origin, config.origin );
 		request.reject();
 		return;
 	}
@@ -131,10 +131,10 @@ function handleWebSocketRequest( request ) {
 		middleware
 			.handle( request.httpRequest, response, function( err ) {
 				if ( err || !request.httpRequest.user ) {
-					debug( 'Websocket connection rejected: authentication required' );
+					log.debug( 'Websocket connection rejected: authentication required' );
 					request.reject( 401, 'Authentication Required', { 'WWW-Authenticate': 'Basic' } );
 				} else {
-					debug( 'Websocket connection accepted as user %s', JSON.stringify( request.httpRequest.user ) );
+					log.debug( 'Websocket connection accepted as user %s', JSON.stringify( request.httpRequest.user ) );
 					request.user = request.httpRequest.user;
 					request.session = request.httpRequest.session;
 					request.cookies = request.httpRequest.cookies;

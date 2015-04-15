@@ -7,7 +7,8 @@ global.when = require( 'when' );
 global.lift = require( 'when/node' ).lift;
 global.seq = require( 'when/sequence' );
 global.fs = require( 'fs' );
-
+global.sinon = require( 'sinon' );
+process.title = 'ahspec';
 
 function transformResponse() {
 	var props = Array.prototype.slice.call( arguments, 0 );
@@ -44,8 +45,8 @@ global.transformResponse = transformResponse;
 global.onError = onError;
 
 var _log = console.log;
-console.log = function () {
-	if ( typeof arguments[0] === 'string' && /autohost listening/.test( arguments[0] ) ) {
+console.log = function() {
+	if ( typeof arguments[ 0 ] === 'string' && /^[a-zA-Z]/.test( arguments[ 0 ] ) ) {
 		return; // swallow this message
 	} else {
 		_log.apply( console, arguments );

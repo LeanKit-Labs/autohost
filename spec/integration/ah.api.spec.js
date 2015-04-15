@@ -8,12 +8,15 @@ var config = {
 	defaultUser: true,
 	handleRouteErrors: true
 };
+var os = require( 'os' );
+var hostName = os.hostname();
 
 describe( 'AH Resource', function() {
 	var harness, loggedOut;
 
 	before( function() {
 		harness = require( './harness.js' )( config );
+		harness.metrics.useLocalAdapter();
 		var testCall = function( env ) {
 			env.reply( { data: 'hello' } );
 		};
@@ -61,7 +64,7 @@ describe( 'AH Resource', function() {
 				url: 'http://localhost:8988/api/test/err'
 			},
 			{
-				url: 'http://localhost:8988/api/_ah/ah/metrics'
+				url: 'http://localhost:8988/api/ah/metrics'
 			},
 			{
 				url: 'http://localhost:8988/api/test/logout'
@@ -88,9 +91,16 @@ describe( 'AH Resource', function() {
 		} );
 
 		it( 'should contain metrics under expected namespaces', function() {
-			metrics[ 'autohost.perf' ][ 'GET /api/test/call' ].should.exist; // jshint ignore:line
-			metrics[ 'autohost.perf' ][ 'GET /api/test/err' ].should.exist; // jshint ignore:line
-			metrics[ 'autohost.errors' ][ 'GET /api/test/err' ].should.exist; // jshint ignore:line
+			metrics.should.have.any.keys( [
+				hostName + '.ahspec',
+				'derp',
+				hostName + '.ahspec.api-test-call-get',
+				hostName + '.ahspec.api-test-call-get.http',
+				hostName + '.ahspec.api-test-err-get',
+				hostName + '.ahspec.api-test-err-get.http',
+				hostName + '.ahspec.test-call.http',
+				hostName + '.ahspec.test-error.http'
+			] );
 		} );
 	} );
 
@@ -103,13 +113,13 @@ describe( 'AH Resource', function() {
 				setTimeout( function() {
 					requestor.get(
 						{
-							url: 'http://localhost:8988/api/_ah/ah/metrics',
+							url: 'http://localhost:8988/api/ah/metrics',
 							headers: { 'Authorization': 'Bearer one' }
 						}, function( err, resp ) {
 							metrics = JSON.parse( resp.body );
 							done();
 						} );
-				}, 100 );
+				}, 200 );
 			} );
 
 			io.once( 'connect', function() {
@@ -123,10 +133,26 @@ describe( 'AH Resource', function() {
 		} );
 
 		it( 'should contain metrics under expected namespaces', function() {
-			metrics[ 'autohost.perf' ][ 'test:call' ].should.exist; // jshint ignore:line
-			metrics[ 'autohost.perf' ][ 'test:logout' ].should.exist; // jshint ignore:line
-			metrics[ 'autohost.perf' ][ 'test:err' ].should.exist; // jshint ignore:line
-			metrics[ 'autohost.errors' ][ 'test:err' ].should.exist; // jshint ignore:line
+			metrics.should.have.any.keys( [
+				hostName + '.ahspec',
+				hostName + '.ahspec.api-ah-metrics-get',
+				hostName + '.ahspec.api-test-call-get',
+				hostName + '.ahspec.api-test-err-get',
+				hostName + '.ahspec.api-test-logout-get',
+				hostName + '.ahspec.api-test-call-get.http',
+				hostName + '.ahspec.api-test-err-get.http',
+				hostName + '.ahspec.api-test-logout-get.http',
+				hostName + '.ahspec.api-ah-metrics-get.http',
+				hostName + '.ahspec.ah-metrics.http',
+				hostName + '.ahspec.test-call.http',
+				hostName + '.ahspec.test-error.http',
+				hostName + '.ahspec.test-logout.http',
+				hostName + '.ahspec.test-call.ws',
+				hostName + '.ahspec.test-logout.ws',
+				hostName + '.ahspec.test-call',
+				hostName + '.ahspec.test-logout',
+				hostName + '.ahspec.test.err'
+			] );
 		} );
 	} );
 

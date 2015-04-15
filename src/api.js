@@ -4,7 +4,7 @@ var path = require( 'path' );
 var when = require( 'when' );
 var nodeWhen = require( 'when/node' );
 var fs = require( 'fs' );
-var debug = require( 'debug' )( 'autohost:api' );
+var log = require( './log' )( 'autohost.api' );
 var readDirectory = nodeWhen.lift( fs.readdir );
 var resources = {};
 var wrapper = {
@@ -92,7 +92,7 @@ function loadAll( resourcePath ) {
 	var loadActions = [ loadResources( resourcePath ) ] || [];
 	if ( config.modules ) {
 		_.each( config.modules, function( mod ) {
-			var modPath = require.resolve( mod );
+			var modPath = require.resolve( path.resolve( process.cwd(), mod ) );
 			loadActions.push( loadModule( modPath ) );
 		} );
 	}
@@ -126,7 +126,7 @@ function loadModule( resourcePath ) {
 			attachPath( mod, resourcePath );
 			return when( mod );
 		}
-	} catch (err) {
+	} catch ( err ) {
 		console.error( 'Error loading resource module at %s with: %s', resourcePath, err.stack );
 		return when( [] );
 	}
@@ -157,7 +157,7 @@ function processModule( mod ) {
 	if ( mod && mod.name ) {
 		return processResource( mod, path.dirname( mod._path ) );
 	} else {
-		debug( 'Skipping resource at %s - no valid metadata provided', mod._path );
+		log.debug( 'Skipping resource at %s - no valid metadata provided', mod._path );
 		return when( [] );
 	}
 }

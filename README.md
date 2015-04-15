@@ -9,7 +9,7 @@ As more services are introduced to a system, the tedium of fitting together all 
  * adds inertia across multiple projects
  * increases the surface area for defects and maintenance
 
-I created autohost so we could have a consistent, reliable and extendible way to create HTTP/socket powered sites and services. Autohost also attempts to introduce some conventions and structure to projects so that express routes don't end up all over the place and mixed with application logic.
+I created autohost so we could have a consistent, reliable and extendible way to create HTTP/socket powered sites and services. By introducing conventions and structure to projects, route definitions and handlers aren't scattered throughout the source and mixed with application logic.
 
 ## Features
 
@@ -38,7 +38,7 @@ host.init( {}, authProvider );
 Before diving into how to add resources, take a look at the init call and its arguments to understand what's available.
 
 ### init( config, authProvider, [fount] )
-Let's take a look at each argument you can pass to autohost's init call to understand what each one does.
+Refer to the section below for a list of available configuration properties and default values.
 
 ### Configuration
 The object literal follows the format:
@@ -52,18 +52,25 @@ The object literal follows the format:
 	port: 8800, // what port to host at
 	allowedOrigin: 'leankit.com', // used to filter incoming web socket connections based on origin
 	urlPrefix: undefined, // applies a global prefix to all routes - for use behind reverse proxy
-	apiPrefix: '/api', // allows you to change the prefix for resource action URLs only
+	apiPrefix: '/api', // changes the prefix for resource action URLs only
 	socketIO: false, // enables socket.io,
 	websocket: false, // enables websockets
 	noSession: false, // disables sessions
 	noCookie: false, // disables cookies
 	noBody: false, // disables body parsing
 	noCrossOrigin: false, // disables cross origin
-	noOptions: false, // disables automatic options middleware, use this when providing your own
+	noOptions: false, // disables automatic options middleware
 	parseAhead: false, // parses path parameters before application middleware
 	handleRouteErrors: false, // wrap routes in try/catch
 	urlStrategy: undefined // a function that generates the URL per resource action
-	anonymous: [] // add paths or url patterns that bypass authentication and authorization
+	anonymous: [], // add paths or url patterns that bypass authentication and authorization,
+	logging: {}, // configuration passed to autohost's whistlepunk instance
+	fount: undefined, // another way to pass a fount instance in to autohost
+	metrics: { // configuration for or instance of metronic
+		delimiter: '.',
+		prefix: undefined,
+		units: 'ms',
+	}
 }
 ```
 
@@ -88,7 +95,7 @@ There are already two available auth provider libraries available:
  * [autohost-riak-auth](https://github.com/LeanKit-Labs/autohost-riak-auth)
  * [autohost-nedb-auth](https://github.com/LeanKit-Labs/autohost-nedb-auth)
 
-You can NPM install either of these and easily drop them into your project to get going. Each library supports all optional features and can be managed from the [admin add-on](https://github.com/LeanKit-Labs/autohost-admin).
+Each library supports all optional features and can be managed from the [admin add-on](https://github.com/LeanKit-Labs/autohost-admin).
 
 	Note: the authProvider passed in can be an unresolved promise, autohost will handle it
 
@@ -96,13 +103,13 @@ Planned support for:
  * MS SQL server
 
 ### fount
-[fount](https://github.com/LeanKit-Labs/fount) is a dependency injection library for Node. If your application is using fount, you can provide the instance at the end of the init call so that your resources will have access to the same fount instance from the `host.fount` property within the resource callback.
+[fount](https://github.com/LeanKit-Labs/fount) is a dependency injection library for Node. If the application is using fount, the application's instance can be provided at the end of the init call so that resources will have access to the same fount instance the application is using. The fount instance in use by `autohost` is available via `host.fount`.
 
 ## Resources
-Resources are expected to be simple modules containing a factory method that return one or more resource definitions. Autohost now supports dependency resolution by argument in these factory methods. All arguments after the first (`host`) will be checked against autohost's fount instance. This is especially useful when you need to take a dependency on a promise or asynchronous function - fount will only invoke your resource's factory once all dependnecies are available eliminating the need to handle these concerns with callbacks or promises in your resource's implementation. See the Asynchronous Module example under the Module section.
+Resources are expected to be simple modules containing a factory method that return one or more resource definitions. Dependency resolution by argument is supported in these resource factory methods. All arguments after the first (`host`) will be checked against autohost's fount instance. This is especially useful when taking a dependency on a promise or asynchronous function. Fount will only invoke the resource's factory once all dependnecies are available, eliminating dependency callbacks or promises in the resource's implementation. See the Asynchronous Module example under the Module section.
 
 ### Path conventions
-Autohost expects to find all your resources under one folder (`./resource` by default) and your shared static resources under one folder (`./public` by default). Each resource should have its own sub-folder and contain a `resource.js` file that contains a module defining the resource.
+All resources must be placed under a top level folder (`./resource` by default) and shared static resources under a top level folder (`./public` by default). Each resource should have its own sub-folder and contain a `resource.js` file that contains a module defining the resource.
 
 ####Folder structure
 	-myProject
@@ -144,7 +151,10 @@ module.exports = function( host ) {
 ```
 
 __Asynchronous Module - Fount Dependencies__
-This example assumes that you have either provided your own fount instance to autohost or defined dependencies via autohost's fount instance before calling autohost's `init` call.
+This example assumes that either:
+
+ * the application fount instance was plugged into autohost or
+ * all defined dependencies were made with autohost's fount instance before calling autohost's `init` call.
 
 ```js
 // example using autohost's fount instance
@@ -186,7 +196,7 @@ The resource name is pre-pended to the action's alias to create a globally uniqu
 	topic: {resource-name}.{action-topic|action-alias}
 
 
-	Note: If you are defining resources for use with [hyped](https://github.com/leankit-labs/hyped) - you will need to provide the resource in the url property. Autohost will not add the resource name as a prefix if it's already present.
+	Note: If defining resources for use with [hyped](https://github.com/leankit-labs/hyped) - the resource name is not automatically pre-pended to the url.
 
 ### resources
 You can host nested static files under a resource using this property. The directory and its contents found at the path will be hosted after the resource name in the URL.
@@ -223,7 +233,7 @@ The `url` can also be defined as a regular expression that will be evaluated aga
 Query parameters behave exactly like path variables. They are available on the `params` property of the envelope and copied to the `envelope.data` hash if they wouldn't collide with an existing property.
 
 #### custom url strategy
-Autohost allows you to provide a function during configuration that will determine the url assigned to an action. The function should take the form:
+A function can be provided during configuration that will determine the url assigned to an action. The function should take the form:
 
 ```javascript
 function myStrategy( resourceName, actionName, action, resourceList ) { ... }
@@ -236,7 +246,7 @@ The handle is a callback that will be invoked if the caller has adequate permiss
 
 > **FOOD FOR THOUGHT**
 
-> You should not include your application logic in a resource file. The resource is there as a means to 'plug' your application logic into HTTP and websocket transports. Keeping behavior in a separate module will make it easy for you to test your code apart from autohost.
+> You should not include application logic in a resource file. The resource is there as a means to 'plug' application logic into HTTP and websocket transports. Keeping behavior in a separate module will make it easy to test application behavior apart from autohost.
 
 ## Envelope
 Envelopes are an abstraction around the incoming message or request. They are intended to help normalize interactions with a client despite the transport being used.
@@ -246,14 +256,15 @@ Envelopes are an abstraction around the incoming message or request. They are in
 {
 	context: // metadata added by middleware
 	cookies: // cookies on the request
-	session: // session hash
 	data: // the request/message body
 	headers: // request or message headers
-	path: // url of the request (minus protocol/domain/port) OR message topic
-	responseStream: // a write stream for streaming a response back to the client
-	user: // the user attached to the request or socket
 	logout: // a method to end the current session
+	metricKey: // a key containing the resource-action namespace
+	path: // url of the request (minus protocol/domain/port) OR message topic
+	session: // session hash
+	responseStream: // a write stream for streaming a response back to the client
 	transport: // 'http' or 'websocket'
+	user: // the user attached to the request or socket
 	reply: function( envelope ) // responds to client
 	replyWithFile: function( contentType, fileName, fileStream ) // streams a file back to the client
 }
@@ -302,19 +313,19 @@ Forwards the request using the request library and returns the resulting stream.
 ```
 
 ## External Resources - Loading an NPM Resource Module
-Autohost allows you to specify a list of NPM modules that it will attempt to load as resources. This feature is intended to allow you to package a resource and its static files into an NPM module that can be shared. This may seem like an odd feature at first, but hopefully it will lead to some interesting sharing of common APIs and/or UIs for autohost based services. (example - realtime metrics dashboard)
+A list of NPM modules can be specified that will be loaded as resources. This feature is intended to support packages that supply a resource and static files as a sharable module. Hopefully it will lead to some interesting sharing of common APIs and/or UIs for autohost based services. (example - realtime metrics dashboard)
 
 ## HTTP Transport
-The http transport API has three methods you can call to add middleware, API routes and static content routes. While you should rely on resources to supply routes, it's very common to add your own middleware. Authost will always add your middleware *after* its standard middleware and passport (unless you have turned off specific middleware via configuration).
+The http transport API has three methods to add middleware, API routes and static content routes. While resources are the preferred means of adding static and API routes, it's very common to add application specific middleware. Custom middleware is added *after* standard middleware and passport (unless specific middleware was disabled via configuration).
 
  * `host.http.middleware( mountPath, callback )`
  * `host.http.route( url, callback )`
  * `host.http.static( url, filePath or options )` (See [static](#static) above for details on options)
 
-Keep in mind - most of the features you'll want to add beyond what autohost provides can probably be accomplished via middleware.
+> Note: when custom features are needed, middleware should be the preferred way to add them.
 
 ### Route prefixes
-Autohost's config provides two optional arguments you can use to control the HTTP routes that get created on your behalf.
+The config hash provides two optional properties to control how HTTP routes are created.
 
 #### apiPrefix
 By default autohost places all resource action routes behind `/api` to prevent any collisions with static routes. You can remove this entirely by providing an empty string or simply change it so something else.
@@ -324,37 +335,37 @@ By default autohost places all resource action routes behind `/api` to prevent a
 You can also override this setting per-resource by giving your resource an `apiPrefix` setting.
 
 #### urlPrefix
-In the rare event that you are using a reverse proxy in front of autohost that is routing requests from a path segment to your autohost service, you can use a urlPrefix to ensure that whatever leading path from the original url causes a redirection to your autohost service aligns with the routes supplied to express.
+In the event that a reverse proxy is in front of autohost that routes requests from a path segment to the service, use a urlPrefix to align the leading path from the original url with routes generated by autohost.
 
 __Example__
-You have a public HTTP endpoint that directs traffic to your primary application (`http://yourco.io`). You want to reverse proxy any request sent to the path `http://yourco.io/special/` to an interal application. The challenge is that all your static resources (html, css, js) that contain paths would normally expect that they could use absolute paths when referencing api routes or other static resources. ( examples: `/css/style.css`, `/js/lib/jquery.min.js`, `/api/thingy/10`) The problem is that the browser will make these requests which will be directed to your original application server since they don't begin with the `/special` path segment that is activating the reverse proxy to begin with. This will cause you to either activate routes in the original application (which will be incorrect) _or_ get a bunch of 404s back from your front-end application.
+You have a public HTTP endpoint that directs traffic to the primary application (`http://yourco.io`). You want to reverse proxy any request sent to the path `http://yourco.io/special/` to an interal application built with autohost. The challenge is that all static resources (html, css, js) that contain paths would normally use absolute paths when referencing api routes or other static resources. ( examples: `/css/style.css`, `/js/lib/jquery.min.js`, `/api/thingy/10`) The problem is that the browser will make these requests which will be directed to the original application server since instead of the `/special` path segment required to route to the autohost app via reverse proxy. This will either activate routes in the original application (which will be incorrect) _or_ get a bunch of 404s back from the front-end application.
 
-While you could simple prefix all of your absolute URLs in static resources with `/special' (in this example), this will cause your application to be unusable without a reverse proxy sitting in front of it since the browser would be making requests to a route that doesn't exist and nothing is there to intercept and strip away the `/special` path prefix. This makes integration testing and local development unecessarily painful.
+While all of the URLs in static resources in the previous example could be prefixed with `/special', this creates a tight coupling to a reverse proxy configured exactly like production. This makes integration testing and local development unecessarily difficult.
 
-The solution is to use `urlPrefix` set to 'special' and to either write all your URLs in static resources with the prefix (meh) OR use a build step that will find absolute paths in your static files and prefix them for you. Autohost will automatically apply this prefix to all routes in your service so that requests from the proxy align with the routes defined in your application consistently. This results in an application that remains usable outside of the reverse proxy and can even be built and deployed with different path prefixes (or no prefixes).
+The simpler solution is to use a `urlPrefix` set to 'special'. The prefix will automatically be applied to all routes in the service so that requests from the proxy align with the routes defined in the application consistently. This results in an application that remains usable outside of the reverse proxy and can even be built and deployed with different path prefixes (or no prefixes).
 
 ### parseAhead
-Normally, middleware can't have access to path variables that aren't defined as part of its mount point. This is because the sequential routing table doesn't know what path will eventually be resolved when it's processing general purpose middleware (e.g. mounted at `/`). Setting `parseAhead` to true in your configuration will add special middleware that does two things:
+Normally, middleware can't have access to path variables that aren't defined as part of its mount point. This is because the sequential routing table doesn't know what path will eventually be resolved when it's processing general purpose middleware (e.g. mounted at `/`). Setting `parseAhead` to true in configuration will add special middleware that does two things:
 
  * add a `preparams` property to the request with parameters from "future" matching routes
  * redefines the `req.param` function to check `preparams` before falling back to default
 
-The upside is that you can write general purpose middleware that can access path variables instead of having to write the same kind of middleware for a lot of different paths and then worry about keeping paths synchronized. The downside is that there is obviously a performance penalty for traversing the route stack like this.
+The upside is that general purpose middleware can access path variables instead of having to write the same kind of middleware for a lot of different paths and then worry about keeping paths synchronized. The downside is that there is obviously some performance penalty for traversing the route stack in advance like this.
 
 ## Web Socket Transport
-Autohost supports two socket libraries - socket.io for browser clients and websocket-node for programmatic/server clients.
+There are two socket libraries - socket.io for browser clients and websocket-node for programmatic/server clients.
 
 ### HTTP Middleware
 HTTP middleware runs during socket interactions as well. This ensures predictability in how any client is authenticated and what metadata is available within the context of activating resource actions.
 
 ### Authentication
-Autohost takes the unique approach of authenticating the HTTP upgrade request BEFORE the upgrade is established. This is preferable to the standard practice of allowing a socket connection to upgrade and then checking the request or performing some client-implemented handshake after the fact.
+The HTTP upgrade request is authenticated __before__ the upgrade is established. This is preferable to the standard practice of allowing a socket connection to upgrade and then checking the request or performing some client-implemented handshake after the fact.
 
 ### WebSocket-Node library
-When establishing a connection to autohost using the WebSocket-Node client, you'll need to append '/websocket' to the end of the URL.
+When establishing a connection to autohost using the WebSocket-Node client, append '/websocket' to the end of the URL.
 
 ### Uniform API
-Autohost normalizes the differences between each library with the same set of calls:
+The differences between each library are normalized with the same set of calls:
 
  * `socket.publish( topic, message )` - sends a message with the topic and message contents to the socket
  * `host.socket.send( id, topic, message )` - sends message to specific client via websocket (returns true if successful)
@@ -371,13 +382,13 @@ These events can be subscribed to via `host.on`:
 Authentication and authorization are supplied by an auth provider library that conforms to autohost's auth specifications. You can read more about that at [here](/blob/master/docs/authprovider.md).
 
 ### Programmatic control
-The auth library is available by reference via the auth property on the host object: `host.auth`. Whatever API methods have been implemented are callable by your application.
+The auth library is available by reference via the auth property on the host object: `host.auth`. Whatever API methods have been implemented are callable by the application.
 
 ### Authentication
-Autohost expects the auth provider to supply one or more Passport strategies.
+The auth provider should supply one or more Passport strategies.
 
 ### Authorization
-Autohost assigns roles to users and actions. If a user has a role that is in an action's list, the user can invoke that action via HTTP or a socket message. If the action has no roles assigned, there is no restriction and any authenticated user (including anonymous users) can activate the action.
+Roles are assigned to users and actions. If a user has a role that is in an action's list, the user can invoke that action via HTTP or a socket message. If the action has no roles assigned, there is no restriction and any authenticated user (including anonymous users) can activate the action.
 
 The general approach is this:
  1. every action in the system is made available to the auth provider library on start-up
@@ -388,10 +399,10 @@ The general approach is this:
    1. if the user has no roles that match any of the action's roles, the action is rejected (403)
    1. if the action has NO roles assigned to it, the user will be able to activate the action
 
-This basically goes against least-priviledge and is really only in place to prevent services from spinning up and rejecting everything. To prevent issues here, you should never expose a service publicly before configuring users, roles and actions.
+This basically goes against least-priviledge and is really only in place to prevent services from spinning up and rejecting everything. To prevent access issues, never expose a service publicly before configuring users, roles and actions.
 
 ### Session
-By default, Autohost uses [express session](https://github.com/expressjs/session) as the built in session provider. You can change several of the configuration settings for the session via Autohost's config hash:
+By default [express session](https://github.com/expressjs/session) is the session provider. Several of the configuration settings can be changed for the session via the config hash:
 
  * sessionId - provides a name for the session cookie. default: 'ah.sid'
  * sessionSecret - signs cookie with a secret to prevent tampering. default: 'autohostthing'
@@ -422,11 +433,88 @@ To end a session:
  * `logout` method on the envelope in a resource action handle
  * `logout` on the request in any middleware
 
+## Logging
+Logging is provided by [whistlepunk](https://github.com/LeanKit-Labs/whistlepunk) and can be controlled by the `logging` property of the config provided to the init call.
+
+### Access Log
+The access log uses the namespace `autohost.access` and logs at the `info` level. Below is a template and then an example entry:
+
+```shell
+{timestamp} autohost.access {processTitle}@{hostName} {clientIP} ({duration} ms) [{user}] {method} {requestURL} ({ingress} bytes) {statusCode} ({egress} bytes)
+
+
+```
+
+### Debugging
+A lot of visibility can be gained into what's happening in autohost in real-time by setting the DEBUG environment variable. To filter down to autohost debug entries only, use `autohost*` as the DEBUG value.
+
+```bash
+	DEBUG=autohost* node index.js
+```
+
 ## Metrics
-Autohost collects a good bit of metrics. It measures action activation as well as authorization and authentication calls so that you can get detailed information on where time is being spent in the stack at a high level. The metrics also include memory utlization as well as system memory and process load. You can access them from `host.metrics`.
+Metrics are collected for routes, resource actions, authentication, authorization and errors. The metrics also include memory utlization as well as system memory and process load.
+
+The [metronics](https://github.com/LeanKit-Labs/metronics) API is available via `host.metrics`. The `metrics` property will no be initialized until after the init call.
+
+Metrics are not captured locally by default, but this can be opted into with the `useLocalAdapter` call.
+
+```javascript
+// turns on local metrics capture
+host.metrics.useLocalAdapter();
+
+// gets a report object
+most.metrics.getReport();
+```
+
+### Metrics collected
+Being aware of the metric keys used is important.
+
+__System Level Metrics__
+
+* {prefix}.{hostName}.memory-total
+* {prefix}.{hostName}.memory-allocated
+* {prefix}.{hostName}.memory-free
+
+__Process Level Metrics__
+
+* {prefix}.{hostName}.{processTitle}.memory-physical
+* {prefix}.{hostName}.{processTitle}.memory-allocated
+* {prefix}.{hostName}.{processTitle}.memory-used
+* {prefix}.{hostName}.{processTitle}.core-#-load
+
+__Authentication & Authorization__
+
+* {prefix}.{hostName}.{processTitle}.authenticating
+* {prefix}.{hostName}.{processTitle}.authentication-attempted
+* {prefix}.{hostName}.{processTitle}.authentication-failed
+* {prefix}.{hostName}.{processTitle}.authentication-granted
+* {prefix}.{hostName}.{processTitle}.authentication-rejected
+* {prefix}.{hostName}.{processTitle}.authentication-skipped
+* {prefix}.{hostName}.{processTitle}.authorizing
+* {prefix}.{hostName}.{processTitle}.authorization-attempted
+* {prefix}.{hostName}.{processTitle}.authorization-failed
+* {prefix}.{hostName}.{processTitle}.authorization-granted
+* {prefix}.{hostName}.{processTitle}.authorization-rejected
+
+__Static Resources & Custom Routes__
+
+* {prefix}.{hostName}.{processTitle}.{url-verb}.ingress
+* {prefix}.{hostName}.{processTitle}.{url-verb}.egress
+* {prefix}.{hostName}.{processTitle}.{url-verb}.duration
+* {prefix}.{hostName}.{processTitle}.{url-verb}.errors
+* {prefix}.{hostName}.{processTitle}.{url-verb}.requests
+
+__Resource Actions__
+
+* {prefix}.{hostName}.{processTitle}.{resource-action}.{transport}.ingress
+* {prefix}.{hostName}.{processTitle}.{resource-action}.{transport}.egress
+* {prefix}.{hostName}.{processTitle}.{resource-action}.{transport}.duration
+* {prefix}.{hostName}.{processTitle}.{resource-action}.{transport}.errors
+* {prefix}.{hostName}.{processTitle}.{resource-action}.{transport}.requests
 
 ## Metadata
-Autohost provides metadata to describe the routes and topic available via an OPTIONS to api:
+Metadata describing the routes and topic are available via an OPTIONS to api:
 
 	OPTIONS http://{host}:{port}/api
 
@@ -457,25 +545,25 @@ The metadata follows this format:
 
 While this is useful, we have developed [hyped](https://github.com/LeanKit-Labs/hyped),a hypermedia library that bolts onto autohost, and [halon](https://github.com/LeanKit-Labs/halon), a browser/Node hypermedia client for consuming APIs built with `hyped`.
 
-## Debugging
-You can get a lot of visibility into what's happening in autohost in real-time by setting the DEBUG environment variable. If you _only_ want to see autohost debug entries, use autohost*.
-
-	DEBUG=autohost* node index.js
-
 ## Dependencies
 autohost would not exist without the following libraries:
+
  * express 			4.7.2
- * socket.io 		1.0.6
- * websocket-node 	1.0.8
- * passport 		0.2.0
- * postal			0.10.1
- * request			2.39.0
- * when 			3.4.2
+ * express-session 	1.7.2
+ * fount 			0.0.6
  * lodash 			2.4.1
+ * metronic 		0.1.6
+ * multer 			0.1.3
+ * passport 		0.2.0
+ * postal 			1.0.2
+ * request 			2.51.0
+ * socket.io 		1.3.2
+ * websocket 		1.0.17
+ * when 			3.4.2
+ * whistlepunk 		0.2.1
 
 ## TO DO
  * Add ability to define message middleware
- * Add support for clustering (multiple listening processes)
 
 ## Contributing
 There are a lot of places you can contribute to autohost. Here are just some ideas:
@@ -483,9 +571,6 @@ There are a lot of places you can contribute to autohost. Here are just some ide
 ### Designers
  * Better designs for both the general dashboard and auth dashboard
  * Logo
-
-### Developers
- * A clustering feature that would handle setting up a cluster of N nodes
 
 ### Op/Sec
 I would be interested in seeing if particular Passport strategies and how they're being wired in would be subject to any exploits. Knowing this in general would be great, but especially if I'm doing something ignorant with how it's all being handled and introducing new attack vectors, I'd like to find out what those are so they can be addressed.
