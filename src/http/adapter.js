@@ -61,17 +61,18 @@ function checkPermissionFor( user, context, action ) {
 	log.debug( 'Checking %s\'s permissions for %s', getUserString( user ), action );
 	metrics.authorizationAttempts.record();
 	var timer = metrics.authorizationTimer();
+	function onError( err ) {
+		log.error( 'Error during check permissions: %s', err.stack );
+		metrics.authorizationErrors.record();
+		timer.record();
+		return false;
+	}
+	function onPermission( granted ) {
+		timer.record();
+		return granted;
+	}
 	return authStrategy.checkPermission( user, action, context )
-		.then( null, function( err ) {
-			log.error( 'Error during check permissions: %s', err.stack );
-			metrics.authorizationErrors.record();
-			timer.record();
-			return false;
-		} )
-		.then( function( granted ) {
-			timer.record();
-			return granted;
-		} );
+		.then( onPermission, onError );
 }
 
 function getUserString( user ) {
