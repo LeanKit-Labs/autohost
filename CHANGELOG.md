@@ -1,7 +1,9 @@
-## 0.3.0
+## 0.3.x
 Primary motivation here is to begin work on a version of autohost that will work well with a hypermedia library ( [hyped](https://github.com/leankit-labs/hyped) ). This is a breaking change because of several structural and naming changes to how resources get modeled.
 
 ### Current
+
+### 0.3.1
  * Update metronic version to 0.2.0
  * Bug fix - resolving external resource modules should correctly differentiate between relative paths and NPM modules
 
