@@ -552,7 +552,7 @@ autohost would not exist without the following libraries:
  * express-session 	1.7.2
  * fount 			0.0.6
  * lodash 			2.4.1
- * metronic 		0.1.6
+ * metronic 		0.2.0
  * multer 			0.1.3
  * passport 		0.2.0
  * postal 			1.0.2
