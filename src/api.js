@@ -92,7 +92,12 @@ function loadAll( resourcePath ) {
 	var loadActions = [ loadResources( resourcePath ) ] || [];
 	if ( config.modules ) {
 		_.each( config.modules, function( mod ) {
-			var modPath = require.resolve( path.resolve( process.cwd(), mod ) );
+			var modPath;
+			if ( /[\/]/.test( mod ) ) {
+				modPath = require.resolve( path.resolve( process.cwd(), mod ) );
+			} else {
+				modPath = require.resolve( mod );
+			}
 			loadActions.push( loadModule( modPath ) );
 		} );
 	}
