@@ -99,7 +99,7 @@ function wireupAction( resource, actionName, action, meta ) {
 
 module.exports = function( cfg, auth, sock ) {
 	config = cfg;
-	metrics = metronic( cfg );
+	metrics = metronic();
 	authStrategy = auth;
 	socket = sock;
 	SocketEnvelope = require( './socketEnvelope.js' );

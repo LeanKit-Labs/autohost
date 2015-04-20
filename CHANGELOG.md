@@ -3,6 +3,8 @@ Primary motivation here is to begin work on a version of autohost that will work
 
 ### Current
 
+ * Bug fix - multiple modules were incorrectly passing config to metronic
+
 ### 0.3.1
  * Update metronic version to 0.2.0
  * Bug fix - resolving external resource modules should correctly differentiate between relative paths and NPM modules

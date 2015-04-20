@@ -163,7 +163,7 @@ function wireupAction( resource, actionName, action, meta, resources ) {
 
 module.exports = function( cfg, auth, httpLib, req ) {
 	config = cfg;
-	metrics = metronic( cfg );
+	metrics = metronic();
 	authStrategy = auth;
 	if ( auth ) {
 		passport = passportFn( cfg, auth );
