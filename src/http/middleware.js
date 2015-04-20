@@ -103,9 +103,9 @@ function requestMetrics( req, res, next ) {
 
 		var metricKey = req._metricKey;
 		if ( metricKey ) {
-			var resourceRequests = metrics.meter( 'requests', metricKey );
-			var resourceIngress = metrics.meter( 'ingress', metricKey );
-			var resourceEgress = metrics.meter( 'egress', metricKey );
+			var resourceRequests = metrics.meter( 'requests', 'count', metricKey );
+			var resourceIngress = metrics.meter( 'ingress', 'count', metricKey );
+			var resourceEgress = metrics.meter( 'egress', 'count', metricKey );
 			resourceRequests.record();
 			resourceIngress.record( readKB );
 			resourceEgress.record( sentKB );
