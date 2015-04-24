@@ -1,4 +1,3 @@
-var _ = require( 'lodash' );
 var path = require( 'path' );
 var port = 8988;
 var defaults = {
@@ -9,6 +8,7 @@ var defaults = {
 
 module.exports = function setup( config ) {
 	config = _.defaults( config, defaults );
+	var log = require( '../../src/log' )( config.log || {} );
 	var requestor = require( 'request' ).defaults( { jar: false } );
 
 	var authProvider;

@@ -21,7 +21,7 @@ function configure( config ) {
 }
 
 function createLog( topic ) {
-	if ( !_.contains( topics, topic ) ) {
+	if ( !_.contains( topics, topic ) && !logs[ topic ] ) {
 		var log = logger( topic );
 		if ( logs[ topic ] ) {
 			logs[ topic ].reset();
