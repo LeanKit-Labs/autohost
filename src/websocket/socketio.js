@@ -5,7 +5,6 @@ var authStrategy;
 var registry;
 var config;
 var io;
-var middleware;
 
 function acceptSocket( socket ) {
 	log.debug( 'Processing socket.io connection attempt' );
@@ -90,22 +89,16 @@ function acceptSocket( socket ) {
 	} );
 }
 
-function authSocketIO( req, allow ) {
-	var allowed;
+function authSocketIO( auth, req, allow ) {
 	if ( authStrategy ) {
-		middleware
-			.use( '/', function( hreq, hres, next ) {
-				log.debug( 'Setting socket.io connection user to %s', JSON.stringify( hreq.user ) );
-				allowed = hreq.user;
-				next();
-			} )
+		auth
 			.handle( req, req.res, function( err ) {
 				if ( err ) {
 					log.debug( 'Error in authenticating socket.io connection %s', err.stack );
 					allow( err );
 				} else {
-					log.debug( 'Authenticated socket.io connection as user %s', allowed );
-					allow( null, allowed );
+					log.debug( 'Authenticated socket.io connection as user %j', req.user );
+					allow( null, req.user );
 				}
 			} );
 	} else {
@@ -115,8 +108,12 @@ function authSocketIO( req, allow ) {
 
 function configureSocketIO( http ) {
 	io = socketio( http.server, { destroyUpgrade: false } );
-	middleware = http.getAuthMiddleware();
-	io.engine.allowRequest = authSocketIO;
+	var authStack = http.getAuthMiddleware()
+		.use( '/', function( hreq, hres, next ) {
+			log.debug( 'Setting socket.io connection user to %j', hreq.user );
+			next();
+		} );
+	io.engine.allowRequest = authSocketIO.bind( undefined, authStack );
 	io.on( 'connection', acceptSocket );
 }
 
