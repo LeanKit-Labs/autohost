@@ -1,41 +1,34 @@
+var _ = require( 'lodash' );
 var bodyParser = require( 'body-parser' );
 var cookies = require( 'cookie-parser' );
 var sessionLib = require( 'express-session' );
 var multer = require( 'multer' );
 var metronic = require( '../metrics' );
 var os = require( 'os' );
-var wrapper = {
-	attach: applyMiddelware,
-	configure: configure,
-	useCookies: applyCookieMiddleware,
-	useSession: applySessionMiddleware,
-	sessionLib: sessionLib
-};
-var config, session, cookieParser, metrics;
 var hostName = os.hostname();
 var log = require( '../log' )( 'autohost.access' );
 
-function applyCookieMiddleware( attach ) {
-	if ( !config.noCookies ) {
-		attach( '/', cookieParser );
+function applyCookieMiddleware( state, attach ) {
+	if ( !state.config.noCookies ) {
+		attach( '/', state.cookieParser );
 	}
 }
 
-function applyMiddelware( attach, hasAuth ) {
+function applyMiddelware( state, attach, hasAuth ) {
 	// add a timer to track ALL requests
-	attach( '/', requestMetrics );
+	attach( '/', requestMetrics.bind( undefined, state ) );
 
 	if ( !hasAuth ) {
 		applyCookieMiddleware( attach );
 	}
 
 	// turn on body parser unless turned off by the consumer
-	if ( !config.noBody ) {
+	if ( !state.config.noBody ) {
 		attach( '/', bodyParser.urlencoded( { extended: false } ) );
 		attach( '/', bodyParser.json() );
 		attach( '/', bodyParser.json( { type: 'application/vnd.api+json' } ) );
 		attach( '/', multer( {
-			dest: config.tmp
+			dest: state.config.tmp
 		} ) );
 	}
 
@@ -44,15 +37,15 @@ function applyMiddelware( attach, hasAuth ) {
 	}
 
 	// turn on cross origin unless turned off by the consumer
-	if ( !config.noCrossOrigin ) {
+	if ( !state.config.noCrossOrigin ) {
 		attach( '/', crossOrigin );
 	}
 }
 
-function applySessionMiddleware( attach ) {
+function applySessionMiddleware( state, attach ) {
 	// turn on sessions unless turned off by the consumer
-	if ( !config.noSession ) {
-		attach( '/', session );
+	if ( !state.config.noSession ) {
+		attach( '/', state.session );
 	}
 }
 
@@ -62,19 +55,29 @@ function crossOrigin( req, res, next ) {
 	next();
 }
 
-function configure( cfg ) {
-	config = cfg;
-	cfg.sessionStore = cfg.sessionStore || new sessionLib.MemoryStore();
-	session = sessionLib( {
-		name: config.sessionId || 'ah.sid',
-		secret: config.sessionSecret || 'authostthing',
-		saveUninitialized: true,
+function configure( state, cfg ) {
+	state.config = cfg;
+	var cookieDefaults = {
+		path: '/',
+		secure: false,
+		maxAge: null
+	};
+	var sessionDefaults = {
+		name: 'ah.sid',
+		secret: 'autohostthing',
 		resave: true,
-		store: cfg.sessionStore
-	} );
+		store: new sessionLib.MemoryStore(),
+		saveUninitialized: true,
+		rolling: false
+	};
+
+	var cookieConfig = _.defaults( state.config.cookie || {}, cookieDefaults );
+	var sessionConfig = _.defaults( state.config.session || {}, sessionDefaults );
+	sessionConfig.cookie = cookieConfig;
+	state.session = sessionLib( sessionConfig );
 }
 
-function requestMetrics( req, res, next ) {
+function requestMetrics( state, req, res, next ) {
 	var ip;
 	// for some edge cases, trying to access the ip/ips property
 	// throws an exception, this work-around appears to avoid the
@@ -87,7 +90,7 @@ function requestMetrics( req, res, next ) {
 	req.context = {};
 	res.setMaxListeners( 0 );
 	var urlKey = req.url.slice( 1 ).replace( /[\/]/g, '-' ) + '-' + req.method.toLowerCase();
-	var timer = metrics.timer( [ urlKey, 'http', 'duration' ] );
+	var timer = state.metrics.timer( [ urlKey, 'http', 'duration' ] );
 
 	res.once( 'finish', function() {
 		var user = req.authenticatedUser;
@@ -103,16 +106,16 @@ function requestMetrics( req, res, next ) {
 
 		var metricKey = req._metricKey;
 		if ( metricKey ) {
-			var resourceRequests = metrics.meter( 'requests', 'count', metricKey );
-			var resourceIngress = metrics.meter( 'ingress', 'count', metricKey );
-			var resourceEgress = metrics.meter( 'egress', 'count', metricKey );
+			var resourceRequests = state.metrics.meter( 'requests', 'count', metricKey );
+			var resourceIngress = state.metrics.meter( 'ingress', 'count', metricKey );
+			var resourceEgress = state.metrics.meter( 'egress', 'count', metricKey );
 			resourceRequests.record();
 			resourceIngress.record( readKB );
 			resourceEgress.record( sentKB );
 		} else {
-			var httpRequests = metrics.meter( [ urlKey, 'requests' ] );
-			var httpIngress = metrics.meter( [ urlKey, 'ingress' ] );
-			var httpEgress = metrics.meter( [ urlKey, 'egress' ] );
+			var httpRequests = state.metrics.meter( [ urlKey, 'requests' ] );
+			var httpIngress = state.metrics.meter( [ urlKey, 'ingress' ] );
+			var httpEgress = state.metrics.meter( [ urlKey, 'egress' ] );
 			httpRequests.record();
 			httpIngress.record( readKB );
 			httpEgress.record( sentKB );
@@ -137,7 +140,17 @@ function requestMetrics( req, res, next ) {
 }
 
 module.exports = function() {
-	metrics = metronic();
-	cookieParser = cookies();
-	return wrapper;
+	var state = {};
+	_.merge( state, {
+		config: undefined,
+		session: undefined,
+		cookieParser: cookies(),
+		metrics: metronic(),
+		attach: applyMiddelware.bind( undefined, state ),
+		configure: configure.bind( undefined, state ),
+		useCookies: applyCookieMiddleware.bind( undefined, state ),
+		useSession: applySessionMiddleware.bind( undefined, state ),
+		sessionLib: sessionLib
+	} );
+	return state;
 };

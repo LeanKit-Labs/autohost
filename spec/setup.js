@@ -8,6 +8,9 @@ global.lift = require( 'when/node' ).lift;
 global.seq = require( 'when/sequence' );
 global.fs = require( 'fs' );
 global.sinon = require( 'sinon' );
+global.proxyquire = require( 'proxyquire' ).noPreserveCache();
+var sinonChai = require( 'sinon-chai' );
+chai.use( sinonChai );
 process.title = 'ahspec';
 
 function transformResponse() {

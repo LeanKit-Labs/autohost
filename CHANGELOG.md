@@ -1,7 +1,13 @@
+## 0.4.x
+
+### 0.4.0
+
+ * Improve control over session and session cookie configuration
+
 ## 0.3.x
 Primary motivation here is to begin work on a version of autohost that will work well with a hypermedia library ( [hyped](https://github.com/leankit-labs/hyped) ). This is a breaking change because of several structural and naming changes to how resources get modeled.
 
-### Current
+### 0.3.2
 
  * Bug fix - multiple modules were incorrectly passing config to metronic
 

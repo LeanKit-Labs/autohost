@@ -70,7 +70,34 @@ The object literal follows the format:
 		delimiter: '.',
 		prefix: undefined,
 		units: 'ms',
-	}
+	},
+	session: // session configuration
+	cookie: // session cookie configuration
+}
+```
+
+#### Session Configuration
+To change any settings for how the session is configured, provide a hash with values for any of the properties shown below. Default values are displayed.
+
+```javascript
+{
+	name: 'ah.sid',
+	secret: 'autohostthing',
+	resave: true,
+	store: new sessionLib.MemoryStore(),
+	saveUninitialized: true,
+	rolling: false
+}
+```
+
+#### Session Cookie Configuration
+To change any settings for how the session **cookie** is configured, provide a hash with values for any of the properties shown below. Default values are displayed.
+
+```javascript
+{
+	path: '/',
+	secure: false,
+	maxAge: null
 }
 ```
 
