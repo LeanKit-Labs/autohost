@@ -10,10 +10,6 @@ var regex = require( './regex.js' );
 var Router = express.Router;
 var expreq = express.request;
 var expres = express.response;
-var middleware, userMiddleware, routes, paths, request, config, middlewareLib;
-
-var wrapper;
-reset();
 
 function buildUrl() {
 	var idx = 0,
@@ -35,26 +31,26 @@ function buildUrl() {
 	return cleaned.length ? '/' + cleaned.join( '/' ) : '';
 }
 
-function createMiddlewareStack() {
+function createMiddlewareStack( state ) {
 	var router = new Router();
 	router
 		.use( expressInit )
 		.use( queryParser );
-	_.each( middleware, function( m ) {
+	_.each( state.systemMiddleware, function( m ) {
 		m( router );
 	} );
-	_.each( userMiddleware, function( m ) {
+	_.each( state.userMiddleware, function( m ) {
 		m( router );
 	} );
 	return router;
 }
 
-function createAuthMiddlewareStack() {
+function createAuthMiddlewareStack( state ) {
 	var router = new Router().use( expressInit ).use( queryParser );
-	_.each( middleware, function( m ) {
+	_.each( state.systemMiddleware, function( m ) {
 		m( router );
 	} );
-	_.each( userMiddleware, function( m ) {
+	_.each( state.userMiddleware, function( m ) {
 		m( router );
 	} );
 	return router;
@@ -76,34 +72,34 @@ function expressInit( req, res, next ) {
 	next();
 }
 
-function initialize() {
+function initialize( state ) {
 	var cwd = process.cwd();
-	config.tmp = path.resolve( cwd, ( config.temp || './tmp' ) );
+	state.config.tmp = path.resolve( cwd, ( state.config.temp || './tmp' ) );
 
-	_.each( middleware, function( m ) {
-		m( wrapper.app );
+	_.each( state.systemMiddleware, function( m ) {
+		m( state.app );
 	} );
 	// apply user-supplied middleware
-	_.each( userMiddleware, function( m ) {
-		m( wrapper.app );
+	_.each( state.userMiddleware, function( m ) {
+		m( state.app );
 	} );
-	_.each( routes, function( r ) {
+	_.each( state.routes, function( r ) {
 		r();
 	} );
-	_.each( paths, function( p ) {
+	_.each( state.paths, function( p ) {
 		p();
 	} );
 }
 
-function initializePublicRoute() {
+function initializePublicRoute( state ) {
 	var cwd = process.cwd();
 	var publicRoute;
 
-	if ( config.static !== false ) {
-		publicRoute = config.static || './public';
+	if ( state.config.static !== false ) {
+		publicRoute = state.config.static || './public';
 		publicRoute = typeof publicRoute === 'string' ? { path: publicRoute } : publicRoute;
 		publicRoute.path = path.resolve( cwd, publicRoute.path );
-		wrapper.static( '/', publicRoute );
+		state.static( '/', publicRoute );
 	}
 }
 
@@ -136,13 +132,13 @@ function parseAhead( router, req, done ) {
 }
 
 // apply prefix to url if one exists
-function prefix( url ) {
-	if ( config.urlPrefix ) {
+function prefix( state, url ) {
+	if ( state.config.urlPrefix ) {
 		if ( _.isRegExp( url ) ) {
-			return regex.prefix( config.urlPrefix, url );
+			return regex.prefix( state.config.urlPrefix, url );
 		} else {
-			var prefixIndex = url.indexOf( config.urlPrefix );
-			var appliedPrefix = prefixIndex === 0 ? '' : config.urlPrefix;
+			var prefixIndex = url.indexOf( state.config.urlPrefix );
+			var appliedPrefix = prefixIndex === 0 ? '' : state.config.urlPrefix;
 			return buildUrl( appliedPrefix, url );
 		}
 	} else {
@@ -150,8 +146,8 @@ function prefix( url ) {
 	}
 }
 
-function preprocessPathVariables( req, res, next ) {
-	parseAhead( wrapper.app._router, req, function( params ) {
+function preprocessPathVariables( state, req, res, next ) {
+	parseAhead( state.app._router, req, function( params ) {
 		var original = req.param;
 		req.preparams = params;
 		req.param = function( name, dflt ) {
@@ -171,36 +167,36 @@ function queryParser( req, res, next ) {
 	next();
 }
 
-function registerMiddleware( filter, callback ) {
+function registerMiddleware( state, filter, callback ) {
 	var fn = function( router ) {
 		log.debug( 'MIDDLEWARE: %s mounted at %s', ( callback.name || 'anonymous' ), filter );
 		router.use( filter, callback );
 	};
-	if ( wrapper.app ) {
-		fn( wrapper.app );
+	if ( state.app ) {
+		fn( state.app );
 	}
-	middleware.push( fn );
+	state.systemMiddleware.push( fn );
 }
 
-function registerUserMiddleware( filter, callback ) {
+function registerUserMiddleware( state, filter, callback ) {
 	var fn = function( router ) {
 		log.debug( 'MIDDLEWARE: %s mounted at %s', ( callback.name || 'anonymous' ), filter );
 		router.use( filter, callback );
 	};
-	if ( wrapper.app ) {
-		fn( wrapper.app );
+	if ( state.app ) {
+		fn( state.app );
 	}
-	userMiddleware.push( fn );
+	state.userMiddleware.push( fn );
 }
 
-function registerRoute( url, method, callback ) {
+function registerRoute( state, url, method, callback ) {
 	method = method.toLowerCase();
 	method = method === 'all' || method === 'any' ? 'all' : method;
 	var fn = function() {
-		url = prefix( url );
+		url = prefix( state, url );
 		log.debug( 'ROUTE: %s %s -> %s', method, url, ( callback.name || 'anonymous' ) );
-		wrapper.app[ method ]( url, function( req, res ) {
-			if ( config && config.handleRouteErrors ) {
+		state.app[ method ]( url, function( req, res ) {
+			if ( state.config && state.config.handleRouteErrors ) {
 				try {
 					callback( req, res );
 				} catch ( err ) {
@@ -212,87 +208,89 @@ function registerRoute( url, method, callback ) {
 			}
 		} );
 	};
-	if ( wrapper.app ) {
-		fn( wrapper.app );
+	if ( state.app ) {
+		fn( state.app );
 	}
-	routes.push( fn );
+	state.routes.push( fn );
 }
 
-function registerStaticPath( url, opt ) {
+function registerStaticPath( state, url, opt ) {
 	var filePath = opt.path || opt;
 	var options = typeof opt === 'string' ? {} : _.omit( opt, 'path' );
 
 	var fn = function() {
-		url = prefix( url );
+		url = prefix( state, url );
 		var target = path.resolve( filePath );
 		log.debug( 'STATIC: %s -> %s', url, target );
-		wrapper.app.use( url, express.static( target, options ) );
+		state.app.use( url, express.static( target, options ) );
 	};
-	paths.push( fn );
-	if ( wrapper.app ) {
+	state.paths.push( fn );
+	if ( state.app ) {
 		fn();
 	}
 }
 
-function start( cfg, pass ) {
-	config = cfg;
-	wrapper.passport = pass;
-	if ( cfg.parseAhead ) {
-		registerMiddleware( '/', preprocessPathVariables );
+function start( state, config, passport ) {
+	state.config = config;
+	state.passport = passport;
+	if ( config.parseAhead ) {
+		registerMiddleware( state, '/', preprocessPathVariables.bind( undefined, state ) );
 	}
 	// if using an auth strategy, move cookie and session middleware before passport middleware
 	// to take advantage of sessions/cookies and avoid authenticating on every request
-	if ( pass ) {
-		middlewareLib.useCookies( registerMiddleware );
-		middlewareLib.useSession( registerMiddleware );
-		_.each( wrapper.passport.getMiddleware( '/' ), function( m ) {
-			registerMiddleware( m.path, m.fn );
+	if ( passport ) {
+		state.middlewareLib.useCookies( state.middleware );
+		state.middlewareLib.useSession( state.middleware );
+		_.each( passport.getMiddleware( '/' ), function( m ) {
+			state.middleware( m.path, m.fn );
 		} );
 	}
 	// prime middleware with defaults
-	middlewareLib.attach( registerMiddleware, pass !== undefined );
+	state.middlewareLib.attach( state.middleware, passport !== undefined );
 
-	initializePublicRoute();
-	wrapper.app = express();
-	initialize();
-	wrapper.server = http.createServer( wrapper.app );
-	wrapper.server.listen( config.port || 8800 );
+	initializePublicRoute( state );
+	state.app = express();
+	initialize( state );
+	state.server = http.createServer( state.app );
+	state.server.listen( config.port || 8800 );
 	console.log( 'autohost listening on port ', ( config.port || 8800 ) );
 }
 
-function stop() {
-	if ( wrapper.server ) {
-		wrapper.server.close();
-		wrapper.server = undefined;
+function stop( state ) {
+	if ( state.server ) {
+		state.server.close();
+		state.server = undefined;
 	}
 }
 
-function reset() {
-	wrapper = {
-		buildUrl: buildUrl,
-		getMiddleware: createMiddlewareStack,
-		getAuthMiddleware: createAuthMiddlewareStack,
-		middleware: registerUserMiddleware,
-		route: registerRoute,
-		start: start,
-		static: registerStaticPath,
-		server: undefined,
+function reset( state ) {
+	state.paths = [];
+	state.routes = [];
+	state.systemMmiddleware = [];
+	state.userMiddleware = [];
+}
+
+module.exports = function( request, middleware ) {
+	var state = {};
+	_.merge( state, {
 		app: undefined,
+		buildUrl: buildUrl,
+		getMiddleware: createMiddlewareStack.bind( undefined, state ),
+		getAuthMiddleware: createAuthMiddlewareStack.bind( undefined, state ),
+		middleware: registerUserMiddleware.bind( undefined, state ),
+		middlewareLib: middleware,
 		passport: undefined,
-		stop: stop
-	};
-	middleware = [];
-	userMiddleware = [];
-	routes = [];
-	paths = [];
-}
-
-module.exports = function( req, mw, resetState ) {
-	if ( resetState ) {
-		reset();
-	}
-	request = req;
-	middlewareLib = mw;
-
-	return wrapper;
+		paths: [],
+		reset: reset.bind( undefined, state ),
+		request: request,
+		route: registerRoute.bind( undefined, state ),
+		routes: [],
+		server: undefined,
+		start: start.bind( undefined, state ),
+		static: registerStaticPath.bind( undefined, state ),
+		stop: stop.bind( undefined, state ),
+		systemMiddleware: [],
+		userMiddleware: []
+	} );
+	return state;
 };
