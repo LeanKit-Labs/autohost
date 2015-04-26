@@ -89,6 +89,10 @@ function initialize( state ) {
 	_.each( state.paths, function( p ) {
 		p();
 	} );
+
+	if ( !state.config.noProxy ) {
+		state.app.enable( 'trust proxy' );
+	}
 }
 
 function initializePublicRoute( state ) {
@@ -271,26 +275,27 @@ function reset( state ) {
 }
 
 module.exports = function( request, middleware ) {
-	var state = {};
-	_.merge( state, {
+	var state = {
 		app: undefined,
+		middlewareLib: middleware,
+		passport: undefined,
+		paths: [],
+		request: request,
+		routes: [],
+		server: undefined,
+		systemMiddleware: [],
+		userMiddleware: []
+	};
+	_.merge( state, {
 		buildUrl: buildUrl,
 		getMiddleware: createMiddlewareStack.bind( undefined, state ),
 		getAuthMiddleware: createAuthMiddlewareStack.bind( undefined, state ),
 		middleware: registerUserMiddleware.bind( undefined, state ),
-		middlewareLib: middleware,
-		passport: undefined,
-		paths: [],
 		reset: reset.bind( undefined, state ),
-		request: request,
 		route: registerRoute.bind( undefined, state ),
-		routes: [],
-		server: undefined,
 		start: start.bind( undefined, state ),
 		static: registerStaticPath.bind( undefined, state ),
 		stop: stop.bind( undefined, state ),
-		systemMiddleware: [],
-		userMiddleware: []
 	} );
 	return state;
 };

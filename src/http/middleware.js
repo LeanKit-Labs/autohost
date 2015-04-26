@@ -19,7 +19,7 @@ function applyMiddelware( state, attach, hasAuth ) {
 	attach( '/', requestMetrics.bind( undefined, state ) );
 
 	if ( !hasAuth ) {
-		applyCookieMiddleware( attach );
+		applyCookieMiddleware( state, attach );
 	}
 
 	// turn on body parser unless turned off by the consumer
@@ -33,7 +33,7 @@ function applyMiddelware( state, attach, hasAuth ) {
 	}
 
 	if ( !hasAuth ) {
-		applySessionMiddleware( attach );
+		applySessionMiddleware( state, attach );
 	}
 
 	// turn on cross origin unless turned off by the consumer
@@ -55,8 +55,8 @@ function crossOrigin( req, res, next ) {
 	next();
 }
 
-function configure( state, cfg ) {
-	state.config = cfg;
+function configure( state, config ) {
+	state.config = config;
 	var cookieDefaults = {
 		path: '/',
 		secure: false,
@@ -70,7 +70,6 @@ function configure( state, cfg ) {
 		saveUninitialized: true,
 		rolling: false
 	};
-
 	var cookieConfig = _.defaults( state.config.cookie || {}, cookieDefaults );
 	var sessionConfig = _.defaults( state.config.session || {}, sessionDefaults );
 	sessionConfig.cookie = cookieConfig;
@@ -140,17 +139,18 @@ function requestMetrics( state, req, res, next ) {
 }
 
 module.exports = function() {
-	var state = {};
-	_.merge( state, {
+	var state = {
 		config: undefined,
-		session: undefined,
 		cookieParser: cookies(),
 		metrics: metronic(),
+		session: undefined,
+		sessionLib: sessionLib
+	};
+	_.merge( state, {
 		attach: applyMiddelware.bind( undefined, state ),
 		configure: configure.bind( undefined, state ),
 		useCookies: applyCookieMiddleware.bind( undefined, state ),
 		useSession: applySessionMiddleware.bind( undefined, state ),
-		sessionLib: sessionLib
 	} );
 	return state;
 };
