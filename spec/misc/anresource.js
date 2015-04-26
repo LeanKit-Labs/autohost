@@ -1,4 +1,4 @@
-module.exports = function( autohost ) {
+module.exports = function( host ) {
 	return [
 		{
 			name: 'three',
