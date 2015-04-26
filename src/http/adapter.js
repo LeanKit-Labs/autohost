@@ -22,7 +22,7 @@ function buildActionUrl( state, resourceName, actionName, action, resource, reso
 		);
 	} else if ( state.config.urlStrategy ) {
 		var url = state.config.urlStrategy( resourceName, actionName, action, resources );
-		prefix = hasPrefix( url ) ? '' : prefix;
+		prefix = hasPrefix( state, url ) ? '' : prefix;
 		return state.http.buildUrl( prefix, url );
 	} else {
 		var resourceIndex = action.url.indexOf( resourceName );
@@ -115,6 +115,35 @@ function hasPrefix( state, url ) {
 	return url.indexOf( prefix ) === 0;
 }
 
+function respond( state, meta, req, res, resource, action ) {
+	var envelope = meta.getEnvelope( req, res );
+	var result;
+	if ( meta.handleErrors ) {
+		try {
+			result = action.handle.apply( resource, [ envelope ] );
+		} catch ( err ) {
+			meta.errorCount.record();
+			log.debug( 'ERROR! route: %s %s failed with %s',
+				action.method.toUpperCase(), action.url, err.stack );
+			res.status( 500 ).send(
+				'Server error at ' + action.method.toUpperCase() + ' ' + action.url
+			);
+		}
+	} else {
+		result = action.handle.apply( resource, [ envelope ] );
+	}
+	if ( result ) {
+		if ( result.then ) {
+			var onResult = function onResult( x ) {
+				envelope.handleReturn( state.config, resource, action, x );
+			};
+			result.then( onResult, onResult );
+		} else {
+			envelope.handleReturn( state.config, resource, action, result );
+		}
+	}
+}
+
 function setupPassport( config, auth ) {
 	if ( auth ) {
 		return passportFn( config, auth );
@@ -158,32 +187,16 @@ function wireupAction( state, resource, actionName, action, metadata, resources 
 		res.once( 'finish', function() {
 			timer.record();
 		} );
-		var respond = function() {
-			var envelope = meta.getEnvelope( req, res );
-			if ( meta.handleErrors ) {
-				try {
-					action.handle.apply( resource, [ envelope ] );
-				} catch ( err ) {
-					meta.errorCount.record();
-					log.debug( 'ERROR! route: %s %s failed with %s',
-						action.method.toUpperCase(), action.url, err.stack );
-					res.status( 500 ).send(
-						'Server error at ' + action.method.toUpperCase() + ' ' + action.url
-					);
-				}
-			} else {
-				action.handle.apply( resource, [ envelope ] );
-			}
-		};
+
 		if ( state.auth ) {
 			meta.authAttempted();
 			checkPermissionFor( state, req.user, req.context, meta.alias )
 				.then( function onPermission( pass ) {
 					if ( pass ) {
 						meta.authGranted();
-						log.debug( 'HTTP activation of action %s (%s %s) for %s granted',
+						log.debug( 'HTTP activation of action %s (%s %s) for %j granted',
 							meta.alias, action.method, meta.url, getUserString( req.user ) );
-						respond();
+						respond( state, meta, req, res, resource, action );
 					} else {
 						meta.authRejected();
 						log.debug( 'User %s was denied HTTP activation of action %s (%s %s)',
@@ -194,21 +207,22 @@ function wireupAction( state, resource, actionName, action, metadata, resources 
 					}
 				} );
 		} else {
-			respond();
+			respond( state, meta, req, res, resource, action );
 		}
 	} );
 }
 
 module.exports = function( config, auth, http, req ) {
-	var state = {};
-	_.merge( state, {
+	var state = {
 		auth: auth,
 		config: config,
 		http: http,
 		name: 'http',
+		metrics: metronic()
+	};
+	_.merge( state, {
 		Envelope: require( './httpEnvelope.js' )( req ),
 		action: wireupAction.bind( undefined, state ),
-		metrics: metronic(),
 		passport: setupPassport( config, auth ),
 		resource: wireupResource.bind( undefined, state ),
 		start: start.bind( undefined, state ),
