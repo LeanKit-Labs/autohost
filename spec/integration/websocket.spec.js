@@ -23,7 +23,7 @@ describe( 'Websocket', function() {
 		harness = require( './harness.js' )( config );
 		cookieExpiresAt = new Date( Date.now() + 60000 );
 		var argsCall = function( env ) {
-			env.reply( {
+			return {
 				data: [ env.data.one, env.data.two, env.data.three, env.data.four, env.params.three, env.params.four, env.extension, env.preparsed ],
 				headers: { 'test-header': 'look a header value!' },
 				cookies: { 'an-cookies': {
@@ -34,7 +34,7 @@ describe( 'Websocket', function() {
 							domain: 'autohost.com'
 						}
 					} }
-			} );
+			};
 		};
 
 		var anonProxy = function( env ) {
