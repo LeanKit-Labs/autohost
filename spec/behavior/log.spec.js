@@ -2,7 +2,7 @@ require( '../setup' );
 var logFn = require( '../../src/log' );
 var mockLog = require( '../mockLogger' )();
 
-describe( 'when configuring log', function() {
+describe( 'Logging', function() {
 	describe( 'before initialization', function() {
 		var log;
 		before( function() {

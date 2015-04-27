@@ -99,7 +99,7 @@ describe( 'Socket Management', function() {
 
 			before( function( done ) {
 				function check() {
-					if ( ioMessages.length && wsMessages.length ) {
+					if ( ioMessages.length && wsMessages.length === 2 ) {
 						done();
 					}
 				}
@@ -125,7 +125,10 @@ describe( 'Socket Management', function() {
 
 			it( 'should send messages to all connected clients', function() {
 				ioMessages.should.eql( [ { message: 'sent to userone' } ] );
-				wsMessages.should.eql( [ { message: 'sent to usertwo' } ] );
+				wsMessages.should.eql( [
+					{ message: 'sent to userone' },
+					{ message: 'sent to usertwo' }
+				] );
 			} );
 		} );
 

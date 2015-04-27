@@ -81,6 +81,54 @@ HttpEnvelope.prototype.reply = function( envelope ) {
 	this._original.res.status( code ).send( envelope.data );
 };
 
+HttpEnvelope.prototype.handleReturn = function( host, resource, action, result ) {
+	if ( result instanceof Error ) {
+		this.renderError( host, resource, action, result );
+	} else {
+		if ( result.file ) {
+			this.replyWithFile( result.file.type, result.file.name, result.file.stream );
+		} else if ( result.forward ) {
+			this.forwardTo( result.forward );
+		} else if ( result.redirect ) {
+			this.redirect( result.redirect.status || 302, result.redirect.url );
+		} else {
+			this.reply( this.render( host, resource, action, result ) );
+		}
+	}
+};
+
+HttpEnvelope.prototype.render = function( host, resource, action, result ) {
+	var envelope = { status: 200 };
+	if ( result.data || result.status ) {
+		_.merge( envelope, result );
+	} else {
+		envelope.data = result;
+	}
+	return envelope;
+};
+
+HttpEnvelope.prototype.renderError = function( host, resource, action, error ) {
+	var defaultStrategy = {
+		status: 500,
+		body: error.message
+	};
+	var hostError = host.errors ? host.errors[ error.name ] : undefined;
+	var resourceError = resource.errors ? resource.errors[ error.name ] : undefined;
+	var actionError = action.errors ? action.errors[ error.name ] : undefined;
+	var strategy = _.merge(
+		defaultStrategy,
+		hostError,
+		resourceError,
+		actionError
+	);
+
+	var reply = {
+		status: strategy.status,
+		data: strategy.reply ? strategy.reply( error, this ) : strategy.body
+	};
+	this.reply( reply );
+};
+
 HttpEnvelope.prototype.replyWithFile = function( contentType, fileName, fileStream ) {
 	this._original.res.set( {
 		'Content-Disposition': 'attachment; filename="' + fileName + '"',

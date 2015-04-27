@@ -1,92 +1,100 @@
+var _ = require( 'lodash' );
 var path = require( 'path' );
 var request = require( 'request' );
 var when = require( 'when' );
-var httpFn = require( './http/http.js' );
-var httpAdapterFn = require( './http/adapter.js' );
-var socketFn = require( './websocket/socket.js' );
-var socketAdapterFn = require( './websocket/adapter.js' );
-var middlewareLib = require( './http/middleware.js' );
+var httpFn = require( './http/http' );
+var httpAdapterFn = require( './http/adapter' );
+var socketFn = require( './websocket/socket' );
+var socketAdapterFn = require( './websocket/adapter' );
+var middlewareLib = require( './http/middleware' );
 var postal = require( 'postal' );
 var eventChannel = postal.channel( 'events' );
 var internalFount = require( 'fount' );
-var httpAdapter, socketAdapter;
-var initialized, api;
-var middleware = middlewareLib();
-var wrapper = {
-	actions: undefined,
-	auth: undefined,
-	config: undefined,
-	fount: internalFount,
-	init: initialize,
-	request: request,
-	meta: undefined,
-	metrics: undefined,
-	http: httpFn( request, middleware ),
-	socket: undefined,
-	session: middleware.sessionLib,
-	on: onEvent
-};
 
-function initialize( cfg, authProvider, fount ) {
-	wrapper.fount = fount || cfg.fount || internalFount;
-	require( './log' )( cfg.logging || {} );
-	wrapper.metrics = require( './metrics' )( cfg.metrics || {} );
-	api = require( './api.js' )( wrapper, cfg );
-	if ( initialized ) {
-		api.startAdapters();
-		return when( api.resources );
-	} else {
-		wrapper.config = cfg;
-		wrapper.stop = api.stop;
-		middleware.configure( cfg );
-		if ( when.isPromiseLike( authProvider ) ) {
-			return authProvider
-				.then( function( result ) {
-					wrapper.auth = result;
-					return setup( result );
-				} );
-		} else {
-			wrapper.auth = authProvider;
-			return setup( authProvider );
-		}
+function initialize( config, authProvider, fount ) {
+	var middleware = middlewareLib();
+	require( './log' )( config.logging || {} );
+
+	var state = {
+		actions: undefined,
+		auth: undefined,
+		config: config,
+		fount: fount || config.fount || internalFount,
+		http: httpFn( request, middleware ),
+		meta: undefined,
+		metrics: require( './metrics' )( config.metrics || {} ),
+		request: request,
+		resources: {},
+		socket: undefined,
+		session: middleware.sessionLib
+	};
+	var transport = require( './transport' )( state, config );
+	function onResources( x ) {
+		process.nextTick( function() {
+			eventChannel.publish( 'resources.loaded', x.resources );
+		} );
 	}
+	_.merge( state, {
+		on: onEvent,
+		onResources: onEvent.bind( undefined, 'resources.loaded' ),
+		start: function() {
+			transport.startAdapters();
+			when( transport.resources )
+				.then( onResources );
+		},
+		stop: transport.stop
+	} );
+
+	middleware.configure( config );
+	if ( when.isPromiseLike( authProvider ) ) {
+		authProvider
+			.then( function( auth ) {
+				state.auth = auth;
+				setup( state, transport, auth )
+					.then( onResources );
+			} );
+	} else {
+		state.auth = authProvider;
+		setup( state, transport, authProvider )
+			.then( onResources );
+	}
+	return state;
 }
 
 function onEvent( topic, handle ) {
-	eventChannel.subscribe( topic, handle );
+	return eventChannel.subscribe( topic, handle );
 }
 
-function setup( authProvider ) {
-	var config = wrapper.config;
-	var metrics = wrapper.metrics;
-	var apiPrefix = config.apiPrefix === undefined ? '/api' : config.apiPrefix;
+function setup( state, transport, authProvider ) {
+	var config = state.config;
+	var transportPrefix = config.transportPrefix === undefined ? '/api' : config.transportPrefix;
 
-	httpAdapter = httpAdapterFn( config, authProvider, wrapper.http, request );
-	api.addAdapter( httpAdapter );
-	wrapper.passport = httpAdapter.passport;
+	var httpAdapter = httpAdapterFn( config, authProvider, state.http, request );
+	transport.addAdapter( httpAdapter );
+	state.passport = httpAdapter.passport;
 
 	// API metadata
 	if ( !config.noOptions ) {
-		wrapper.http.middleware( apiPrefix, function( req, res, next ) {
+		state.http.middleware( transportPrefix, function( req, res, next ) {
 			if ( req.method === 'OPTIONS' || req.method === 'options' ) {
-				res.status( 200 ).send( wrapper.meta );
+				res.status( 200 ).send( state.meta );
 			} else {
 				next();
 			}
 		} );
 	}
 
-	wrapper.socket = socketFn( config, wrapper.http );
-	socketAdapter = socketAdapterFn( config, authProvider, wrapper.socket );
-	api.addAdapter( socketAdapter );
+	state.socket = socketFn( config, state.http );
+	var socketAdapter = socketAdapterFn( config, authProvider, state.socket );
+	transport.addAdapter( socketAdapter );
 
-	return api.start( config.resources || path.join( process.cwd(), './resource' ), authProvider )
+	return transport.start( config.resources || path.join( process.cwd(), './resource' ), authProvider )
 		.then( function( meta ) {
-			meta.prefix = apiPrefix;
-			wrapper.meta = meta;
-			initialized = true;
-			return api.resources;
+			meta.prefix = transportPrefix;
+			state.meta = meta;
+			state.resources = transport.resources;
+			return state;
 		} );
 }
 
-module.exports = wrapper;
+module.exports = initialize;

@@ -1,9 +1,10 @@
 var _ = require( 'lodash' );
 var metrics = {};
 
-module.exports = function( config ) {
+function configure( config ) {
 	if ( config || !metrics.instrument ) {
 		var instance;
+		metrics = {};
 		if ( config && config.instrument ) {
 			instance = config;
 		} else {
@@ -29,4 +30,6 @@ module.exports = function( config ) {
 		_.merge( metrics, instance, api );
 	}
 	return metrics;
-};
+}
+
+module.exports = configure;

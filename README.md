@@ -28,49 +28,111 @@ I created autohost so we could have a consistent, reliable and extendible way to
 
 #### ./index.js - the most boring app ever
 ```js
-var host = require( 'autohost' ),
-	authProvider = require( 'autohost-nedb-auth' )( {} );
-host.init( {}, authProvider );
+var autohost = require( 'autohost' );
+var authProvider = require( 'autohost-nedb-auth' )( {} );
+var host = autohost( {}, authProvider );
 ```
 
 	node index.js
 
-Before diving into how to add resources, take a look at the init call and its arguments to understand what's available.
-
-### init( config, authProvider, [fount] )
+## autohost( config, [authProvider] )
 Refer to the section below for a list of available configuration properties and default values.
 
 ### Configuration
 The object literal follows the format:
 
 ```js
-// default values shown for each property
+// default shown for each property
 {
-	static: './public', // where to host static resources from
+	static: './public', 	// where to host static resources from
+	anonymous: [], 			// add paths or url patterns that bypass authentication and authorization,
+
+	port: 8800, 			// host port
+	urlPrefix: undefined, 	// applies a global prefix to all routes - for use behind reverse proxy
+	apiPrefix: '/api', 		// changes the prefix for resource action URLs only
+
 	resources: './resource', // where to load resource modules from
-	modules: [], // list of npm resource modules to load
-	port: 8800, // what port to host at
-	allowedOrigin: 'leankit.com', // used to filter incoming web socket connections based on origin
-	urlPrefix: undefined, // applies a global prefix to all routes - for use behind reverse proxy
-	apiPrefix: '/api', // changes the prefix for resource action URLs only
-	socketIO: false, // enables socket.io,
-	websocket: false, // enables websockets
-	noSession: false, // disables sessions
-	noCookie: false, // disables cookies
-	noBody: false, // disables body parsing
-	noCrossOrigin: false, // disables cross origin
-	noOptions: false, // disables automatic options middleware
-	parseAhead: false, // parses path parameters before application middleware
-	handleRouteErrors: false, // wrap routes in try/catch
-	urlStrategy: undefined // a function that generates the URL per resource action
-	anonymous: [], // add paths or url patterns that bypass authentication and authorization,
-	logging: {}, // configuration passed to autohost's whistlepunk instance
-	fount: undefined, // another way to pass a fount instance in to autohost
-	metrics: { // configuration for or instance of metronic
+	modules: [], 			// list of npm resource modules to load
+
+	allowedOrigin: , 		// used to filter incoming web socket connections based on origin
+	socketIO: false, 		// enables socket.io,
+	websocket: false, 		// enables websockets
+
+	noBody: false, 			// disables body parsing
+	noCookie: false, 		// disables cookies
+	noCrossOrigin: false, 	// disables cross origin
+	noOptions: false, 		// disables automatic options middleware
+	noProxy: false, 		// disables trusted proxies
+	noSession: false, 		// disables sessions
+
+	session: 				// session configuration
+	cookie: 				// session cookie configuration
+
+	logging: {}, 			// configuration passed to autohost's whistlepunk instance
+	fount: undefined, 		// pass the app's fount instance to autohost
+	metrics: { 				// configuration for or instance of metronic
 		delimiter: '.',
 		prefix: undefined,
 		units: 'ms',
 	}
+
+	parseAhead: false, 			// parses path parameters before application middleware
+	handleRouteErrors: false, 	// wrap routes in try/catch
+	urlStrategy: undefined 		// a function that generates the URL per resource action
+}
+```
+
+#### Session Configuration
+By default [express session](https://github.com/expressjs/session) is the session provider. To change any settings for how the session is configured, provide a hash with values for any of the properties shown below.
+
+```javascript
+// default shown for each property
+{
+	name: 'ah.sid',
+	secret: 'autohostthing',
+	resave: true,
+	store: new sessionLib.MemoryStore(),
+	saveUninitialized: true,
+	rolling: false
+}
+```
+
+This example demonstrates using the redis and connect-redis libraries to create a redis-backed session store.
+```javascript
+var autohost = require( 'autohost' );
+var authProvider = require( 'autohost-nedb-auth' )( {} );
+
+var redis = require( 'redis' ).createClient( port, address );
+var RedisStore = require( 'connect-redis' )( host.session );
+var store = new RedisStore( {
+		client: redis,
+		prefix: 'ah:'
+	} );
+
+host = autohost( {
+	session: {
+		name: 'myapp.sid',
+		secret: 'youdontevenknow',
+		store: store
+	}
+}, authProvider );
+```
+
+#### Ending a session
+To end a session:
+
+ * `logout` method on the envelope in a resource action handle
+ * `logout` on the request in any middleware
+
+#### Session Cookie Configuration
+To change any settings for how the session **cookie** is configured, provide a hash with values for any of the properties shown below.
+
+```javascript
+// default shown for each property
+{
+	path: '/',
+	secure: false,
+	maxAge: null
 }
 ```
 
@@ -87,8 +149,6 @@ The static option supports either a path, an options hash, or `false`. Currently
 	}
 }
 ```
-
-Please refer to the [session](#session) section for information on additional configuration options that control how the session is configured.
 
 ### AuthProvider
 There are already two available auth provider libraries available:
@@ -242,9 +302,38 @@ function myStrategy( resourceName, actionName, action, resourceList ) { ... }
 The string returned will be the URL used to route requests to this action. Proceed with extreme caution.
 
 ### handle
-The handle is a callback that will be invoked if the caller has adequate permissions. Read the section on envelopes to understand how to communicate results back to the caller.
+The handle is a callback that will be invoked if the caller has adequate permissions. The handle call can return a hash (or a promise that resolve to one) with the following properties:
 
-> **FOOD FOR THOUGHT**
+> Note: `data`, `file`, `forward` and `redirect` are mutually exclusive. Websockets only supports `data` and `file`.
+
+```javascript
+// defaults shown
+{
+	status: 200,
+	data: undefined,
+	file: { // only used when replying with file
+		name: , // the file name for the response
+		type: , // the content-type
+		stream: // a file stream to pipe to the response
+	},
+	forward: { // only used if forwarding the request
+		url: , // the url to forward to
+		method: , // if unspecified, copies headers in the original request
+		headers: , // if unspecified, copies headers in the original request
+		body: // use if changing the body contents
+	},
+	redirect: { // only used when redirecting
+		status: 302, // use to set a status other than 302
+		url: // the URL to redirect to
+	}
+}
+```
+
+
+#### Tighter Response Control
+Read the section on envelopes for details on data available and alternate ways to produce a response.
+
+> **Recommendation**
 
 > You should not include application logic in a resource file. The resource is there as a means to 'plug' application logic into HTTP and websocket transports. Keeping behavior in a separate module will make it easy to test application behavior apart from autohost.
 
@@ -290,6 +379,7 @@ Sends a reply back to the requestor via HTTP or web socket. Response envelope is
  * `statusCode`: defaults to 200
  * `headers`: a hash of headers to set on the response
  * `cookies`: a hash of cookies to set on the response. The value is an object with a `value` and `options` property.
+ * `data`: content of the response body
 
 ```javascript
 	envelope.reply( { data: { something: 'interesting' }, statusCode: 200 } );
@@ -400,38 +490,6 @@ The general approach is this:
    1. if the action has NO roles assigned to it, the user will be able to activate the action
 
 This basically goes against least-priviledge and is really only in place to prevent services from spinning up and rejecting everything. To prevent access issues, never expose a service publicly before configuring users, roles and actions.
-
-### Session
-By default [express session](https://github.com/expressjs/session) is the session provider. Several of the configuration settings can be changed for the session via the config hash:
-
- * sessionId - provides a name for the session cookie. default: 'ah.sid'
- * sessionSecret - signs cookie with a secret to prevent tampering. default: 'autohostthing'
- * sessionStore - the session store interface/instance to use for persisting session. default: in memory store
-
-This example demonstrates using the redis and connect-redis libraries to create a redis-backed session store.
-```javascript
-var host = require( 'autohost' );
-var authProvider = require( 'autohost-nedb-auth' )( {} );
-
-var redis = require( 'redis' ).createClient( port, address );
-var RedisStore = require( 'connect-redis' )( host.session );
-var store = new RedisStore( {
-		client: redis,
-		prefix: 'ah:'
-	} );
-
-host.init( {
-	sessionId: 'myapp.sid',
-	sessionSecret: 'youdontevenknow',
-	sessionStore: store,
-}, authProvider );
-```
-
-#### Ending a session
-To end a session:
-
- * `logout` method on the envelope in a resource action handle
- * `logout` on the request in any middleware
 
 ## Logging
 Logging is provided by [whistlepunk](https://github.com/LeanKit-Labs/whistlepunk) and can be controlled by the `logging` property of the config provided to the init call.
@@ -548,19 +606,24 @@ While this is useful, we have developed [hyped](https://github.com/LeanKit-Labs/
 ## Dependencies
 autohost would not exist without the following libraries:
 
- * express 			4.7.2
- * express-session 	1.7.2
- * fount 			0.0.6
- * lodash 			2.4.1
- * metronic 		0.2.0
- * multer 			0.1.3
- * passport 		0.2.0
+ * body-parser 		1.12.3
+ * cookie-parser 	1.3.4
+ * express 			4.12.3
+ * express-session 	1.11.1
+ * fount 			0.1.0
+ * lodash 			3.7.0
+ * metronic 		0.2.1
+ * multer 			0.1.8
+ * node-uuid 		1.4.3
+ * parseurl 		1.3.0
+ * passport 		0.2.1
  * postal 			1.0.2
- * request 			2.51.0
- * socket.io 		1.3.2
- * websocket 		1.0.17
- * when 			3.4.2
- * whistlepunk 		0.2.1
+ * qs 				2.4.1
+ * request 			2.55.0
+ * socket.io 		1.3.5
+ * websocket 		1.0.18
+ * when 			3.7.2
+ * whistlepunk 		0.3.0
 
 ## TO DO
  * Add ability to define message middleware

@@ -97,11 +97,11 @@
 		"_",
 		"when",
 		"seq",
-		"sinon",
 		"fs",
 		"lift",
-		"sinon",
+		"expect",
 		"transformResponse",
+		"proxyquire",
 		"onError"
 	],
 

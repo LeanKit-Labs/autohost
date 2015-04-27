@@ -1,4 +1,3 @@
-var _ = require( 'lodash' );
 var path = require( 'path' );
 var port = 8988;
 var defaults = {
@@ -9,6 +8,7 @@ var defaults = {
 
 module.exports = function setup( config ) {
 	config = _.defaults( config, defaults );
+	require( '../../src/log' )( config.log || {} );
 	var requestor = require( 'request' ).defaults( { jar: false } );
 
 	var authProvider;
@@ -25,9 +25,9 @@ module.exports = function setup( config ) {
 
 	var middleware = require( '../../src/http/middleware.js' )();
 	middleware.configure( config );
-	var http = require( '../../src/http/http.js' )( requestor, middleware, true );
+	var http = require( '../../src/http/http.js' )( requestor, middleware );
 	var httpAdapter = require( '../../src/http/adapter.js' )( config, authProvider, http, requestor );
-	var socket = require( '../../src/websocket/socket.js' )( config, http, true );
+	var socket = require( '../../src/websocket/socket.js' )( config, http );
 	var socketAdapter = require( '../../src/websocket/adapter.js' )( config, authProvider, socket );
 
 	var actionRoles = function( action, roles ) {

@@ -1,0 +1,634 @@
+require( '../setup' );
+var envelopeFn = require( '../../src/http/httpEnvelope.js' );
+var util = require( 'util' );
+var lastRequest;
+
+describe( 'HTTP Envelope', function() {
+
+	describe( 'when handling return', function() {
+
+		describe( 'with host defined custom error', function() {
+			var envelope, req, res, request, host;
+			before( function() {
+				res = createResponse();
+				req = createRequest();
+				request = stubRequest();
+				envelope = new ( envelopeFn( request ))( req, res, 'test' );
+				host = {
+					errors: {
+						'MyCustom': {
+							reply: function( error ) {
+								return util.format( '%s: %s', error.name, error.message );
+							}
+						}
+					}
+				};
+				envelope.handleReturn( host, {}, {}, new MyCustomError( 'test' ) );
+			} );
+
+			it( 'should use 500 status and create body from reply method', function() {
+				res.sent.should.eql( {
+					status: 500,
+					body: 'MyCustom: test'
+				} );
+			} );
+		} );
+
+		describe( 'with resource defined custom error', function() {
+			var envelope, req, res, request, resource;
+			before( function() {
+				res = createResponse();
+				req = createRequest();
+				request = stubRequest();
+				envelope = new ( envelopeFn( request ))( req, res, 'test' );
+				resource = {
+					errors: {
+						'MyCustom': {
+							status: 404,
+							body: 'NEVER EVER'
+						}
+					}
+				};
+				envelope.handleReturn( {}, resource, {}, new MyCustomError( 'test' ) );
+			} );
+
+			it( 'should use custom status and custom body', function() {
+				res.sent.should.eql( {
+					status: 404,
+					body: 'NEVER EVER'
+				} );
+			} );
+		} );
+
+		describe( 'with action defined custom error', function() {
+			var envelope, req, res, request, action;
+			before( function() {
+				res = createResponse();
+				req = createRequest();
+				request = stubRequest();
+				envelope = new ( envelopeFn( request ))( req, res, 'test' );
+				action = {
+					errors: {
+						'MyCustom': {
+							status: 401
+						}
+					}
+				};
+				envelope.handleReturn( {}, {}, action, new MyCustomError( 'a test' ) );
+			} );
+
+			it( 'should use custom status and error message as body', function() {
+				res.sent.should.eql( {
+					status: 401,
+					body: 'a test'
+				} );
+			} );
+		} );
+
+		describe( 'with undefined custom error', function() {
+			var envelope, req, res, request;
+			before( function() {
+				res = createResponse();
+				req = createRequest();
+				request = stubRequest();
+				envelope = new ( envelopeFn( request ))( req, res, 'test' );
+				envelope.handleReturn( {}, {}, {}, new MyCustomError( 'no support' ) );
+			} );
+
+			it( 'should default to 500 status and error message as body', function() {
+				res.sent.should.eql( {
+					status: 500,
+					body: 'no support'
+				} );
+			} );
+		} );
+
+		describe( 'with string result', function() {
+			var envelope, req, res, request;
+			before( function() {
+				res = createResponse();
+				req = createRequest();
+				request = stubRequest();
+				envelope = new ( envelopeFn( request ))( req, res, 'test' );
+				envelope.handleReturn( {}, {}, {}, 'just a simple string' );
+			} );
+
+			it( 'should send string as body', function() {
+				res.sent.should.eql( {
+					status: 200,
+					body: 'just a simple string'
+				} );
+			} );
+		} );
+
+		describe( 'with string result and status code', function() {
+			var envelope, req, res, request;
+			before( function() {
+				res = createResponse();
+				req = createRequest();
+				request = stubRequest();
+				envelope = new ( envelopeFn( request ))( req, res, 'test' );
+				envelope.handleReturn( {}, {}, {}, { status: 202, data: 'For me? Well I accept you!' } );
+			} );
+
+			it( 'should send data as body', function() {
+				res.sent.should.eql( {
+					status: 202,
+					body: 'For me? Well I accept you!'
+				} );
+			} );
+		} );
+
+		describe( 'with json result', function() {
+			var envelope, req, res, request;
+			before( function() {
+				res = createResponse();
+				req = createRequest();
+				request = stubRequest();
+				envelope = new ( envelopeFn( request ))( req, res, 'test' );
+				envelope.handleReturn( {}, {}, {}, { a: 1, b: 2, c: 3 } );
+			} );
+
+			it( 'should send json as body', function() {
+				res.sent.should.eql( {
+					status: 200,
+					body: { a: 1, b: 2, c: 3 }
+				} );
+			} );
+		} );
+
+		describe( 'with explicit data property on result', function() {
+			var envelope, req, res, request;
+			before( function() {
+				res = createResponse();
+				req = createRequest();
+				request = stubRequest();
+				envelope = new ( envelopeFn( request ))( req, res, 'test' );
+				envelope.handleReturn( {}, {}, {}, { data: { a: 1, b: 2, c: 3 } } );
+			} );
+
+			it( 'should strip data property and use as response body', function() {
+				res.sent.should.eql( {
+					status: 200,
+					body: { a: 1, b: 2, c: 3 }
+				} );
+			} );
+		} );
+
+		describe( 'with cookies and headers on result', function() {
+			var envelope, req, res, request;
+			before( function() {
+				res = createResponse();
+				req = createRequest();
+				request = stubRequest();
+				envelope = new ( envelopeFn( request ))( req, res, 'test' );
+				envelope.handleReturn( {}, {}, {}, {
+					cookies: { 'one': {
+							value: 'test',
+							options: {}
+						} },
+					headers: {
+						h1: 'this is a header',
+						h2: 'so is this'
+					},
+					data: { a: 1, b: 2, c: 3 },
+				} );
+			} );
+
+			it( 'should strip data property and use as response body', function() {
+				res.sent.should.eql( {
+					status: 200,
+					body: { a: 1, b: 2, c: 3 }
+				} );
+			} );
+
+			it( 'should include cookies', function() {
+				res.cookies.should.eql(
+					{
+						'one': {
+							value: 'test',
+							options: {}
+						}
+					}
+				);
+			} );
+
+			it( 'should include headers', function() {
+				res.headers.should.eql(
+					{
+						h1: 'this is a header',
+						h2: 'so is this'
+					}
+				);
+			} );
+		} );
+
+		describe( 'with simple forward', function() {
+			var envelope, req, res, request;
+			before( function() {
+				res = createResponse();
+				req = createRequest();
+				req.method = 'GET';
+				req.headers = [];
+				request = stubRequest();
+				envelope = new ( envelopeFn( request ))( req, res, 'test' );
+				envelope.handleReturn( {}, {}, {}, {
+					forward: {
+						url: 'http://testing.com/forwarded'
+					}
+				} );
+			} );
+
+			it( 'forward original request to new url', function() {
+				lastRequest.opts.should.eql( {
+					headers: [],
+					method: 'GET',
+					url: 'http://testing.com/forwarded'
+				} );
+
+				lastRequest.piped.should.equal( res );
+			} );
+		} );
+
+		describe( 'with forward and custom method', function() {
+			var envelope, req, res, request;
+			before( function() {
+				res = createResponse();
+				req = createRequest();
+				req.method = 'PUT';
+				req.headers = [];
+				req.body = { something: 'important' };
+				request = stubRequest();
+				envelope = new ( envelopeFn( request ))( req, res, 'test' );
+				envelope.handleReturn( {}, {}, {}, {
+					forward: {
+						method: 'POST',
+						url: 'http://testing.com/forwarded'
+					}
+				} );
+			} );
+
+			it( 'forward original request to new url', function() {
+				lastRequest.opts.should.eql( {
+					headers: [],
+					method: 'POST',
+					url: 'http://testing.com/forwarded',
+					json: true,
+					body: { something: 'important' }
+				} );
+
+				lastRequest.piped.should.equal( res );
+			} );
+		} );
+
+		describe( 'with forward and custom headers', function() {
+			var envelope, req, res, request;
+			before( function() {
+				res = createResponse();
+				req = createRequest();
+				req.method = 'PUT';
+				req.headers = [];
+				request = stubRequest();
+				envelope = new ( envelopeFn( request ))( req, res, 'test' );
+				envelope.handleReturn( {}, {}, {}, {
+					forward: {
+						headers: {
+							'test': 'a test'
+						},
+						method: 'POST',
+						url: 'http://testing.com/forwarded'
+					}
+				} );
+			} );
+
+			it( 'forward original request to new url', function() {
+				lastRequest.opts.should.eql( {
+					headers: {
+						'test': 'a test'
+					},
+					method: 'POST',
+					url: 'http://testing.com/forwarded'
+				} );
+
+				lastRequest.piped.should.equal( res );
+			} );
+		} );
+
+		describe( 'with forward and custom body', function() {
+			var envelope, req, res, request;
+			before( function() {
+				res = createResponse();
+				req = createRequest();
+				req.method = 'PUT';
+				req.headers = [];
+				req.body = { something: 'important' };
+				request = stubRequest();
+				envelope = new ( envelopeFn( request ))( req, res, 'test' );
+				envelope.handleReturn( {}, {}, {}, {
+					forward: {
+						method: 'POST',
+						url: 'http://testing.com/forwarded',
+						body: { custom: { something: 'else' } }
+					}
+				} );
+			} );
+
+			it( 'forward original request to new url', function() {
+				lastRequest.opts.should.eql( {
+					headers: [],
+					method: 'POST',
+					url: 'http://testing.com/forwarded',
+					json: true,
+					body: { custom: { something: 'else' } }
+				} );
+
+				lastRequest.piped.should.equal( res );
+			} );
+		} );
+
+		describe( 'with redirect and default status', function() {
+			var envelope, req, res, request;
+			before( function() {
+				res = createResponse();
+				req = createRequest();
+				request = stubRequest();
+				envelope = new ( envelopeFn( request ))( req, res, 'test' );
+				envelope.handleReturn( {}, {}, {}, {
+					redirect: {
+						url: 'http://testing.com/redirect'
+					}
+				} );
+			} );
+
+			it( 'should respond with 302 and url', function() {
+				res.sent.should.eql( {
+					status: 302,
+					url: 'http://testing.com/redirect'
+				} );
+			} );
+		} );
+
+		describe( 'with redirect', function() {
+			var envelope, req, res, request;
+			before( function() {
+				res = createResponse();
+				req = createRequest();
+				request = stubRequest();
+				envelope = new ( envelopeFn( request ))( req, res, 'test' );
+				envelope.handleReturn( {}, {}, {}, {
+					redirect: {
+						status: 301,
+						url: 'http://testing.com/redirect'
+					}
+				} );
+			} );
+
+			it( 'should respond with 301 and url', function() {
+				res.sent.should.eql( {
+					status: 301,
+					url: 'http://testing.com/redirect'
+				} );
+			} );
+		} );
+
+		describe( 'with file', function() {
+			var envelope, req, res, request, fauxStream;
+			before( function() {
+				res = createResponse();
+				req = createRequest();
+				request = stubRequest();
+				fauxStream = {
+					stream: undefined,
+					pipe: function( stream ) {
+						this.stream = stream;
+					}
+				};
+				envelope = new ( envelopeFn( request ))( req, res, 'test' );
+				envelope.handleReturn( {}, {}, {}, {
+					file: {
+						type: 'text/plain',
+						name: 'afile.txt',
+						stream: fauxStream
+					}
+				} );
+			} );
+
+			it( 'should set headers', function() {
+				res.headers.should.eql( {
+					'Content-Disposition': 'attachment; filename="afile.txt"',
+					'Content-Type': 'text/plain'
+				} );
+			} );
+
+			it( 'should pipe stream to response', function() {
+				fauxStream.stream.should.equal( res );
+			} );
+		} );
+
+		describe( 'with overridden render', function() {
+			var envelope, req, res, request;
+			before( function() {
+				res = createResponse();
+				req = createRequest();
+				req.extendHttp = {
+					render: function() {
+						return { status: 203, data: 'I do what I want!' };
+					}
+				};
+				request = stubRequest();
+				envelope = new ( envelopeFn( request ))( req, res, 'test' );
+				envelope.handleReturn( {}, {}, {}, 'just a simple string' );
+			} );
+
+			it( 'should send string as body', function() {
+				res.sent.should.eql( {
+					status: 203,
+					body: 'I do what I want!'
+				} );
+			} );
+		} );
+	} );
+
+	describe( 'when parsing incoming request', function() {
+		describe( 'with query parameters', function() {
+			var envelope, req, res, request;
+			before( function() {
+				res = createResponse();
+				req = createRequest();
+				req.query = {
+					one: 1,
+					two: 2
+				};
+				request = stubRequest();
+				envelope = new ( envelopeFn( request ))( req, res, 'test' );
+			} );
+
+			it( 'should place query parameters on envelope data', function() {
+				envelope.data.should.eql( {
+					one: 1,
+					two: 2
+				} );
+			} );
+		} );
+		describe( 'with path variables', function() {
+			var envelope, req, res, request;
+			before( function() {
+				res = createResponse();
+				req = createRequest();
+				req.params = {
+					one: 1,
+					two: 2
+				};
+				request = stubRequest();
+				envelope = new ( envelopeFn( request ))( req, res, 'test' );
+			} );
+
+			it( 'should place query parameters on envelope data', function() {
+				envelope.data.should.eql( {
+					one: 1,
+					two: 2
+				} );
+			} );
+		} );
+		describe( 'with query parameters and path variables', function() {
+			var envelope, req, res, request;
+			before( function() {
+				res = createResponse();
+				req = createRequest();
+				req.params = {
+					one: 1,
+					two: 2
+				};
+				req.query = {
+					one: 3,
+					two: 4
+				};
+				request = stubRequest();
+				envelope = new ( envelopeFn( request ))( req, res, 'test' );
+			} );
+
+			it( 'should not override path variables with query parameters', function() {
+				envelope.data.should.eql( {
+					one: 1,
+					two: 2
+				} );
+			} );
+
+			it( 'should write query parameters to params on envelope', function() {
+				envelope.params.should.eql( {
+					one: 3,
+					two: 4
+				} );
+			} );
+		} );
+
+		describe( 'with query parameters and path variables and body properties', function() {
+			var envelope, req, res, request;
+			before( function() {
+				res = createResponse();
+				req = createRequest();
+				req.body = {
+					one: 'one',
+					two: 'two'
+				};
+				req.params = {
+					one: 1,
+					two: 2
+				};
+				req.query = {
+					one: 3,
+					two: 4
+				};
+				request = stubRequest();
+				envelope = new ( envelopeFn( request ))( req, res, 'test' );
+			} );
+
+			it( 'should not override body properties', function() {
+				envelope.data.should.eql( {
+					one: 'one',
+					two: 'two'
+				} );
+			} );
+
+			it( 'should write query parameters to params on envelope', function() {
+				envelope.params.should.eql( {
+					one: 3,
+					two: 4
+				} );
+			} );
+		} );
+	} );
+} );
+
+function stubRequest() {
+	return function( opts ) {
+		var r = {
+			opts: opts,
+			piped: undefined,
+		};
+		_.merge( r, {
+			pipe: function( stream ) {
+				this.piped = stream;
+			}.bind( r )
+		} );
+		lastRequest = r;
+		return r;
+	};
+}
+
+function createRequest() {
+	return {
+		params: {},
+		query: {}
+	};
+}
+
+function createResponse() {
+	var res = {
+		headers: {},
+		cookies: {},
+		sent: {}
+	};
+	_.merge( res, {
+		cookie: function( k, c, o ) {
+			this.cookies[ k ] = {
+				value: c,
+				options: o
+			};
+		},
+		pipe: function( r ) {
+			return r;
+		},
+		redirect: function( code, url ) {
+			this.sent.status = code;
+			this.sent.url = url;
+		}.bind( res ),
+		send: function( data ) {
+			this.sent.body = data;
+			return this;
+		}.bind( res ),
+		set: function( k, v ) {
+			if ( _.isObject( k ) ) {
+				_.each( k, function( val, h ) {
+					this.headers[ h ] = val;
+				}.bind( this ) );
+			} else {
+				this.headers[ k ] = v;
+			}
+		}.bind( res ),
+		status: function( code ) {
+			this.sent.status = code;
+			return this;
+		}.bind( res )
+	} );
+
+	return res;
+}
+
+function MyCustomError( message ) {
+	this.message = message || ':(';
+	this.name = 'MyCustom';
+}
+
+MyCustomError.prototype = Object.create( Error.prototype );
+MyCustomError.constructor = MyCustomError;

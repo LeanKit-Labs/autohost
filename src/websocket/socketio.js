@@ -1,13 +1,8 @@
 var _ = require( 'lodash' );
 var socketio = require( 'socket.io' );
 var log = require( '../log' )( 'autohost.socketio' );
-var authStrategy;
-var registry;
-var config;
-var io;
-var middleware;
 
-function acceptSocket( socket ) {
+function acceptSocket( state, socket ) {
 	log.debug( 'Processing socket.io connection attempt' );
 
 	var request = socket.request;
@@ -31,8 +26,8 @@ function acceptSocket( socket ) {
 	}
 
 	// attach roles to user on socket
-	if ( authStrategy ) {
-		authStrategy.getSocketRoles( socket.user )
+	if ( state.authProvider ) {
+		state.authProvider.getSocketRoles( socket.user )
 			.then( null, function( /* err */ ) {
 				return [];
 			} )
@@ -51,10 +46,10 @@ function acceptSocket( socket ) {
 
 	// add a way to close a socket
 	socket.close = function() {
-		log.debug( 'Closing socket.io client (user: %s)', JSON.stringify( socket.user ) );
+		log.debug( 'Closing socket.io client (user: %j)', socket.user );
 		socket.removeAllListeners();
 		socket.disconnect( true );
-		registry.remove( socket );
+		state.registry.remove( socket );
 	};
 
 	// add a way to end session
@@ -65,16 +60,16 @@ function acceptSocket( socket ) {
 
 	// if client identifies itself, register id
 	socket.on( 'client.identity', function( data ) {
-		log.debug( 'Client sent identity %s', JSON.stringify( data ) );
+		log.debug( 'Client sent identity %j', data );
 		socket.id = data.id;
-		registry.identified( data.id, socket );
+		state.registry.identified( data.id, socket );
 	} );
 
 	// add anonymous socket
-	registry.add( socket );
+	state.registry.add( socket );
 
 	// subscribe to registered topics
-	_.each( registry.topics, function( callback, topic ) {
+	_.each( state.registry.topics, function( callback, topic ) {
 		if ( callback ) {
 			socket.on( topic, function( data ) {
 				callback( data, socket );
@@ -84,28 +79,22 @@ function acceptSocket( socket ) {
 
 	socket.publish( 'server.connected', { user: socket.user } );
 	socket.on( 'disconnect', function() {
-		log.debug( 'socket.io client disconnected (user: %s)', JSON.stringify( socket.user ) );
+		log.debug( 'socket.io client disconnected (user: %j)', socket.user );
 		socket.removeAllListeners();
-		registry.remove( socket );
+		state.registry.remove( socket );
 	} );
 }
 
-function authSocketIO( req, allow ) {
-	var allowed;
-	if ( authStrategy ) {
-		middleware
-			.use( '/', function( hreq, hres, next ) {
-				log.debug( 'Setting socket.io connection user to %s', JSON.stringify( hreq.user ) );
-				allowed = hreq.user;
-				next();
-			} )
+function authSocketIO( state, auth, req, allow ) {
+	if ( state.authProvider ) {
+		auth
 			.handle( req, req.res, function( err ) {
 				if ( err ) {
 					log.debug( 'Error in authenticating socket.io connection %s', err.stack );
 					allow( err );
 				} else {
-					log.debug( 'Authenticated socket.io connection as user %s', allowed );
-					allow( null, allowed );
+					log.debug( 'Authenticated socket.io connection as user %j', req.user );
+					allow( null, req.user );
 				}
 			} );
 	} else {
@@ -113,15 +102,19 @@ function authSocketIO( req, allow ) {
 	}
 }
 
-function configureSocketIO( http ) {
-	io = socketio( http.server, { destroyUpgrade: false } );
-	middleware = http.getAuthMiddleware();
-	io.engine.allowRequest = authSocketIO;
-	io.on( 'connection', acceptSocket );
+function configureSocketIO( state, http ) {
+	var io = state.io = socketio( http.server, { destroyUpgrade: false } );
+	var authStack = http.getAuthMiddleware()
+		.use( '/', function( hreq, hres, next ) {
+			log.debug( 'Setting socket.io connection user to %j', hreq.user );
+			next();
+		} );
+	io.on( 'connection', acceptSocket.bind( undefined, state ) );
+	io.engine.allowRequest = authSocketIO.bind( undefined, state, authStack );
 }
 
-function handle( topic, callback ) {
-	_.each( registry.clients, function( client ) {
+function handle( state, topic, callback ) {
+	_.each( state.registry.clients, function( client ) {
 		if ( client.type === 'socketio' ) {
 			client.on( topic, function( data ) {
 				callback( data, client );
@@ -130,18 +123,21 @@ function handle( topic, callback ) {
 	} );
 }
 
-function stop() {
-	io.engine.removeAllListeners();
-	io.engine.close();
+function stop( state ) {
+	state.io.engine.removeAllListeners();
+	state.io.engine.close();
 }
 
-module.exports = function( cfg, reg, auth ) {
-	config = cfg;
-	authStrategy = auth;
-	registry = reg;
-	return {
-		config: configureSocketIO,
-		on: handle,
-		stop: stop
+module.exports = function( config, registry, authProvider ) {
+	var state = {
+		authProvider: authProvider,
+		config: config,
+		registry: registry
 	};
+	_.merge( state, {
+		configure: configureSocketIO.bind( undefined, state ),
+		on: handle.bind( undefined, state ),
+		stop: stop.bind( undefined, state )
+	} );
+	return state;
 };

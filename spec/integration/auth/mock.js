@@ -1,12 +1,9 @@
 // this mock is intended to support tests as well as provide a memory-based implementation
 // example for the full authProvider spec for autohost
-
-var _ = require( 'lodash' );
-var when = require( 'when' );
 var Basic = require( 'passport-http' ).BasicStrategy;
 var Bearer = require( 'passport-http-bearer' ).Strategy;
 var Query = require( './queryStrategy.js' );
-var debug = require( 'debug' )( 'autohost:auth.mock' );
+var log = require( '../../../src/log' )( 'autohost.auth.mock' );
 var bearerAuth;
 var basicAuth;
 var queryAuth;
@@ -28,21 +25,21 @@ function authenticateCredentials( userName, password, done ) {
 	var user = _.where( wrapper.users, function( o, u ) {
 		return u === userName && o.password === password;
 	} );
-	debug( 'credentials %s:%s resulted in', userName, password, user, 'amongst', _.keys( wrapper.users ) );
+	log.debug( 'credentials %s:%s resulted in', userName, password, user, 'amongst', _.keys( wrapper.users ) );
 	done( null, ( user.length ? user[ 0 ] : user ) || false );
 }
 
 function authenticateToken( token, done ) {
 	var userName = wrapper.tokens[ token ],
 		user = userName ? wrapper.users[ userName ] : false;
-	debug( 'bearer token %s resulted in', token, user, 'amongst', _.keys( wrapper.users ) );
+	log.debug( 'bearer token %s resulted in', token, user, 'amongst', _.keys( wrapper.users ) );
 	done( null, user );
 }
 
 function authenticateQuery( token, done ) {
 	var userName = wrapper.tokens[ token ];
 	var user = userName ? wrapper.users[ userName ] : false;
-	debug( 'query token %s resulted in', token, user, 'amongst', _.keys( wrapper.users ) );
+	log.debug( 'query token %s resulted in', token, user, 'amongst', _.keys( wrapper.users ) );
 	done( null, user );
 }
 
@@ -50,7 +47,7 @@ function checkPermission( user, action, context ) {
 	if ( /noperm/.test( user.name ? user.name : user ) ) {
 		return when.reject( new Error( 'Failing for failure' ) );
 	}
-	debug( 'checking user %s for action %s', getUserString( user ), action );
+	log.debug( 'checking user %s for action %s', getUserString( user ), action );
 	return when.try( hasPermissions, getUserRoles( user ), getActionRoles( action ), context );
 }
 
@@ -80,7 +77,7 @@ function getUserRoles( user ) {
 	var userName = user.name ? user.name : user;
 	return when.promise( function( resolve ) {
 		var tmp = wrapper.users[ userName ];
-		debug( 'Getting user roles for %s: %s', getUserString( user ), JSON.stringify( tmp ) );
+		log.debug( 'Getting user roles for %s: %s', getUserString( user ), JSON.stringify( tmp ) );
 		resolve( tmp ? tmp.roles : [] );
 	} );
 }

@@ -6,3 +6,6 @@ node_modules/
 .nonstop.json
 coverage/
 plato/
+spec/
+.esformatter
+gulpfile.js

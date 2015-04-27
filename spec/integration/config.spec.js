@@ -10,7 +10,7 @@ var config = {
 };
 var get;
 
-describe( 'configuration', function() {
+describe( 'Configuration', function() {
 	var harness, cwd;
 
 	before( function() {

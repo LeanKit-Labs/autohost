@@ -21,31 +21,31 @@ var getAdapter = function() {
 	return fauxdapter;
 };
 
-describe( 'API', function() {
+describe( 'Transport', function() {
 	describe( 'when loading from a bad path', function() {
-		var api;
+		var transport;
 		var host = { actions: undefined };
 		var adapter = getAdapter();
 
 		before( function() {
-			api = require( '../../src/api.js' )( host, {} );
-			api.addAdapter( adapter );
+			transport = require( '../../src/transport.js' )( host, {} );
+			transport.addAdapter( adapter );
 		} );
 
 		it( 'should only show the default API endpoint', function() {
-			return api.start( './spec/durp' )
+			return transport.start( './spec/durp' )
 				.should.eventually.deep.equal( {
 				ah: { routes: { metrics: { method: 'get', url: undefined } } }
 			} );
 		} );
 
 		after( function() {
-			api.clearAdapters();
+			transport.clearAdapters();
 		} );
 	} );
 
 	describe( 'when loading from a good path', function() {
-		var api;
+		var transport;
 		var err;
 		var host = { actions: undefined, fount: fount };
 		var adapter = getAdapter();
@@ -56,12 +56,12 @@ describe( 'API', function() {
 			// argument from resource function calls with dependencies
 			fount.register( 'durp1', 'hello' );
 			fount.register( 'durp2', 'goodbye' );
-			api = require( '../../src/api.js' )( host, { modules: [ './spec/misc/anresource.js' ] } );
-			api.addAdapter( adapter );
+			transport = require( '../../src/transport.js' )( host, { modules: [ './spec/misc/anresource.js' ] } );
+			transport.addAdapter( adapter );
 		} );
 
 		it( 'should load all resources and actions', function() {
-			return api.start( './spec/resource' )
+			return transport.start( './spec/resource' )
 				.should.eventually.deep.equal(
 				{
 					one: {
@@ -97,7 +97,7 @@ describe( 'API', function() {
 		} );
 
 		it( 'should produce correctly formatted action list', function() {
-			api.actionList.should.eql(
+			transport.actionList.should.eql(
 				{
 					one: [ 'one.a', 'one.b' ],
 					two: [ 'two.hello', 'two.goodbye' ],
@@ -112,7 +112,7 @@ describe( 'API', function() {
 		} );
 
 		after( function() {
-			api.clearAdapters();
+			transport.clearAdapters();
 			fount.purgeAll();
 		} );
 	} );

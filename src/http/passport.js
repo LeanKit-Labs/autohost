@@ -7,48 +7,41 @@ var noOp = function() {
 	return when( true );
 };
 var userCountCheck = noOp;
-var passportInitialize;
-var passportSession;
-var authProvider;
-var anonPaths;
-var metrics;
 
-reset();
-
-function authConditionally( req, res, next ) {
+function authConditionally( state, req, res, next ) {
 	// if previous middleware has said to skip auth OR
 	// a user was attached from a session, skip authenticating
 	if ( req.skipAuth || req.user ) {
-		metrics.authenticationSkips.record();
+		state.metrics.authenticationSkips.record();
 		next();
 	} else {
-		metrics.authenticationAttempts.record();
-		var timer = metrics.authenticationTimer();
-		authProvider.authenticate( req, res, next );
+		state.metrics.authenticationAttempts.record();
+		var timer = state.metrics.authenticationTimer();
+		state.authProvider.authenticate( req, res, next );
 		timer.record();
 	}
 }
 
-function getAuthMiddleware( uri ) {
+function getAuthMiddleware( state, uri ) {
 	var list = [
-		{ path: uri, fn: passportInitialize },
-		{ path: uri, fn: passportSession }
+		{ path: uri, fn: state.passportInitialize },
+		{ path: uri, fn: state.passportSession }
 	]
-		.concat( _.map( anonPaths, function( pattern ) {
+		.concat( _.map( state.anonPaths, function( pattern ) {
 			return { path: pattern, fn: skipAuthentication };
 		} ) )
 		.concat( [ { path: uri, fn: whenNoUsers },
-			{ path: uri, fn: authConditionally },
+			{ path: uri, fn: authConditionally.bind( undefined, state ) },
 		{ path: uri, fn: getRoles } ] );
 	return list;
 }
 
-function getRoles( req, res, next ) {
+function getRoles( state, req, res, next ) {
 	var userName = _.isObject( req.user.name ) ? req.user.name.name : req.user.name;
 	req.authenticatedUser = userName || req.user.id || 'anonymous';
 
 	function onError( err ) {
-		metrics.authorizationErrors.record();
+		state.metrics.authorizationErrors.record();
 		req.user.roles = [];
 		timer.record();
 		log.debug( 'Failed to get roles for %s with %s', getUserString( req.user ), err.stack );
@@ -72,15 +65,15 @@ function getRoles( req, res, next ) {
 		req.user.roles = [ 'anonymous' ];
 		next();
 	} else {
-		var timer = metrics.authorizationTimer();
-		authProvider.getUserRoles( req.user, req.context )
+		var timer = state.metrics.authorizationTimer();
+		state.authProvider.getUserRoles( req.user, req.context )
 			.then( onRoles, onError );
 	}
 }
 
-function getSocketRoles( user ) {
+function getSocketRoles( state, user ) {
 	function onError( err ) {
-		metrics.authorizationErrors.record();
+		state.metrics.authorizationErrors.record();
 		timer.record();
 		log.debug( 'Failed to get roles for %s with %s', getUserString( user ), err.stack );
 		return [];
@@ -95,8 +88,8 @@ function getSocketRoles( user ) {
 	if ( user.name === 'anonymous' ) {
 		return when( [ 'anonymous' ] );
 	} else {
-		var timer = metrics.authorizationTimer();
-		return authProvider.getUserRoles( user, {} )
+		var timer = state.metrics.authorizationTimer();
+		return state.authProvider.getUserRoles( user, {} )
 			.then( onRoles, onError );
 	}
 }
@@ -105,15 +98,8 @@ function getUserString( user ) {
 	return user.name ? user.name : JSON.stringify( user );
 }
 
-function reset() {
-	passportInitialize = passport.initialize();
-	passportSession = passport.session();
-	authProvider = undefined;
-	anonPaths = undefined;
-}
-
-function resetUserCount() {
-	userCountCheck = authProvider.hasUsers;
+function resetUserCount( state ) {
+	userCountCheck = state.authProvider.hasUsers;
 }
 
 function skipAuthentication( req, res, next ) {
@@ -142,31 +128,34 @@ function whenNoUsers( req, res, next ) {
 }
 
 function withAuthLib( authProvider ) {
+	authProvider.initPassport( passport );
+	passport.serializeUser( authProvider.serializeUser );
+	passport.deserializeUser( authProvider.deserializeUser );
 	userCountCheck = authProvider.hasUsers || userCountCheck;
 	_.each( authProvider.strategies, function( strategy ) {
 		passport.use( strategy );
 	} );
 }
 
-module.exports = function( config, authPlugin, resetState ) {
-	if ( resetState ) {
-		reset();
-	}
-	metrics = metronic();
-	authProvider = authPlugin;
-	authProvider.initPassport( passport );
-	passport.serializeUser( authProvider.serializeUser );
-	passport.deserializeUser( authProvider.deserializeUser );
+module.exports = function( config, authProvider ) {
+	var state = {
+		authProvider: authProvider,
+		metrics: metronic(),
+		passportInitialize: passport.initialize(),
+		passportSession: passport.session()
+	};
+	_.merge( state, {
+		getMiddleware: getAuthMiddleware.bind( undefined, state ),
+		getRoles: getRoles.bind( undefined, state ),
+		getSocketRoles: getSocketRoles.bind( undefined, state ),
+		hasUsers: userCountCheck.bind( undefined, state ),
+		resetUserCheck: resetUserCount.bind( undefined, state )
+	} );
 	if ( config.anonymous ) {
-		anonPaths = _.isArray( config.anonymous ) ? config.anonymous : [ config.anonymous ];
+		state.anonPaths = _.isArray( config.anonymous ) ? config.anonymous : [ config.anonymous ];
 	} else {
-		anonPaths = [];
+		state.anonPaths = [];
 	}
 	withAuthLib( authProvider );
-	return {
-		getMiddleware: getAuthMiddleware,
-		getSocketRoles: getSocketRoles,
-		hasUsers: userCountCheck,
-		resetUserCheck: resetUserCount
-	};
+	return state;
 };

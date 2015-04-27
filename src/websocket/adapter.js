@@ -1,18 +1,6 @@
-var config;
-var authStrategy;
-var socket;
-var SocketEnvelope;
 var _ = require( 'lodash' );
 var metronic = require( '../metrics' );
 var log = require( '../log' )( 'autohost.websocket.adapter' );
-var metrics;
-var wrapper = {
-	name: 'http',
-	action: wireupAction,
-	resource: wireupResource,
-	start: start,
-	stop: stop
-};
 
 function buildActionAlias( resourceName, actionName ) {
 	return [ resourceName, actionName ].join( '.' );
@@ -22,9 +10,9 @@ function buildActionTopic( resourceName, action ) {
 	return [ resourceName, action.topic ].join( '.' );
 }
 
-function checkPermissionFor( user, context, action ) {
+function checkPermissionFor( state, user, context, action ) {
 	log.debug( 'Checking %s\'s permissions for %s', getUserString( user ), action );
-	return authStrategy.checkPermission( user, action, context )
+	return state.authProvider.checkPermission( user, action, context )
 		.then( null, function( err ) {
 			log.debug( 'Error during check permissions: %s', err.stack );
 			return false;
@@ -38,70 +26,113 @@ function getUserString( user ) {
 	return user.name ? user.name : JSON.stringify( user );
 }
 
-function start() {
-	socket.start( authStrategy );
+function start( state ) {
+	state.socket.start( state.authProvider );
 }
 
-function stop() {
-	socket.stop();
+function stop( state ) {
+	state.socket.stop();
 }
 
-function wireupResource( resource ) {
+function wireupResource( state, resource ) {
 	var meta = { topics: {} };
 	_.each( resource.actions, function( action, actionName ) {
-		wireupAction( resource, actionName, action, meta );
+		wireupAction( state, resource, actionName, action, meta );
 	} );
 	return meta;
 }
 
-function wireupAction( resource, actionName, action, meta ) {
+function getMetadata( state, resource, actionName, action ) {
 	var topic = buildActionTopic( resource.name, action );
 	var alias = buildActionAlias( resource.name, actionName );
-	var errors = metrics.meter( [ topic, 'error' ] );
-	var metricKey = [ metrics.prefix, [ resource.name, actionName ].join( '-' ), 'ws' ];
-	meta.topics[ actionName ] = { topic: topic };
-	log.debug( 'Mapping resource \'%s\' action \'%s\' to topic %s', resource.name, actionName, alias );
-	socket.on( topic, function( message, client ) {
-		var data = message.data || message;
-		var resourceTimer = metrics.timer( [ resource.name + '-' + actionName, 'ws', 'duration' ] );
-		var respond = function() {
-			var envelope = new SocketEnvelope( topic, message, client, metricKey, resourceTimer );
-			if ( config && config.handleRouteErrors ) {
-				try {
-					action.handle.apply( resource, [ envelope ] );
-				} catch ( err ) {
-					errors.record();
-					client.publish( data.replyTo || topic, 'Server error at topic ' + topic );
-				}
-			} else {
-				action.handle.apply( resource, [ envelope ] );
-			}
+	var errors = state.metrics.meter( [ topic, 'error' ] );
+	var metricKey = [ state.metrics.prefix, [ resource.name, actionName ].join( '-' ), 'ws' ];
+	return {
+		alias: alias,
+		authAttempted: function() {
+			state.metrics.authorizationAttempts.record();
+		},
+		authGranted: function() {
+			state.metrics.authorizationGrants.record();
+		},
+		authRejected: function() {
+			state.metrics.authorizationRejections.record();
+		},
+		topic: topic,
+		errors: errors,
+		metricKey: metricKey
+	};
+}
 
-		};
-		if ( authStrategy ) {
-			checkPermissionFor( client.user, {}, alias )
+function respond( state, meta, resource, action, client, data, message, resourceTimer ) {
+	var envelope = new state.Envelope( meta.topic, message, client, meta.metricKey, resourceTimer );
+	var result;
+	if ( state.config && state.config.handleRouteErrors ) {
+		try {
+			result = action.handle.apply( resource, [ envelope ] );
+		} catch ( err ) {
+			meta.errors.record();
+			client.publish( data.replyTo || meta.topic,
+				'Server error at topic ' + meta.topic );
+		}
+	} else {
+		result = action.handle.apply( resource, [ envelope ] );
+	}
+	if ( result ) {
+		if ( result.then ) {
+			var onResult = function onResult( x ) {
+				envelope.handleReturn( state.config, resource, action, x );
+			};
+			result.then( onResult, onResult );
+		} else {
+			envelope.handleReturn( state.config, resource, action, result );
+		}
+	}
+}
+
+function wireupAction( state, resource, actionName, action, metadata ) {
+	var meta = getMetadata( state, resource, actionName, action, metadata );
+	metadata.topics[ actionName ] = { topic: meta.topic };
+	log.debug( 'Mapping resource \'%s\' action \'%s\' to topic %s', resource.name, actionName, meta.alias );
+	state.socket.on( meta.topic, function( message, client ) {
+		var data = message.data || message;
+		var resourceTimer = state.metrics.timer( [ resource.name + '-' + actionName, 'ws', 'duration' ] );
+		if ( state.authProvider ) {
+			checkPermissionFor( state, client.user, {}, meta.alias )
 				.then( function( pass ) {
 					if ( pass ) {
-						metrics.authorizationGrants.record();
-						log.debug( 'WS activation of action %s for %s granted', alias, getUserString( client.user ) );
-						respond();
+						meta.authGranted();
+						log.debug( 'WS activation of action %s for %s granted',
+							meta.alias, getUserString( client.user ) );
+						respond( state, meta, resource, action, client, data, message, resourceTimer );
 					} else {
-						metrics.authorizationRejections.record();
-						log.debug( 'User %s was denied WS activation of action %s', getUserString( client.user ), alias );
-						client.publish( data.replyTo || topic, 'User lacks sufficient permissions' );
+						meta.authRejected();
+						log.debug( 'User %s was denied WS activation of action %s',
+							getUserString( client.user ), meta.alias );
+						client.publish( data.replyTo || meta.topic,
+							'User lacks sufficient permissions' );
 					}
 				} );
 		} else {
-			respond();
+			respond( state, meta, resource, action, client, data, message, resourceTimer );
 		}
 	} );
 }
 
-module.exports = function( cfg, auth, sock ) {
-	config = cfg;
-	metrics = metronic();
-	authStrategy = auth;
-	socket = sock;
-	SocketEnvelope = require( './socketEnvelope.js' );
-	return wrapper;
+module.exports = function( config, authProvider, socket ) {
+	var state = {
+		authProvider: authProvider,
+		config: config,
+		metrics: metronic(),
+		name: 'http',
+		socket: socket
+	};
+	_.merge( state, {
+		action: wireupAction.bind( undefined, state ),
+		Envelope: require( './socketEnvelope.js' ),
+		resource: wireupResource.bind( undefined, state ),
+		start: start.bind( undefined, state ),
+		stop: stop.bind( undefined, state )
+	} );
+	return state;
 };

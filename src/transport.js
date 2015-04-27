@@ -1,4 +1,3 @@
-// TODO: this module needs a lot of clean up :(
 var _ = require( 'lodash' );
 var path = require( 'path' );
 var when = require( 'when' );
@@ -6,28 +5,12 @@ var nodeWhen = require( 'when/node' );
 var fs = require( 'fs' );
 var log = require( './log' )( 'autohost.api' );
 var readDirectory = nodeWhen.lift( fs.readdir );
-var resources = {};
-var wrapper = {
-	actionList: {},
-	addAdapter: addAdapter,
-	clearAdapters: clearAdapters,
-	loadModule: loadModule,
-	loadResources: loadResources,
-	resources: resources,
-	start: start,
-	startAdapters: startAdapters,
-	stop: stop,
-};
-var config;
-var adapters = [];
-var host;
-var fount;
 
-function addAdapter( adapter ) {
-	adapters.push( adapter );
+function addAdapter( state, adapter ) {
+	state.adapters.push( adapter );
 }
 
-function attachPath( target, filePath ) {
+function attachPath( state, target, filePath ) {
 	var dir = path.dirname( filePath );
 	if ( _.isArray( target ) ) {
 		_.each( target, function( item ) {
@@ -38,13 +21,13 @@ function attachPath( target, filePath ) {
 	}
 }
 
-function clearAdapters() {
-	adapters = [];
+function clearAdapters( state ) {
+	state.adapters = [];
 }
 
 // store actions from the resource
-function getActions( resource ) {
-	var list = wrapper.actionList[ resource.name ] = [];
+function getActions( state, resource ) {
+	var list = state.actionList[ resource.name ] = [];
 	_.each( resource.actions, function( action, actionName ) {
 		list.push( [ resource.name, actionName ].join( '.' ) );
 	} );
@@ -88,27 +71,27 @@ function getResources( filePath ) {
 }
 
 // loads internal resources, resources from config path and node module resources
-function loadAll( resourcePath ) {
-	var loadActions = [ loadResources( resourcePath ) ] || [];
-	if ( config.modules ) {
-		_.each( config.modules, function( mod ) {
+function loadAll( state, resourcePath ) {
+	var loadActions = [ loadResources( state, resourcePath ) ] || [];
+	if ( state.config.modules ) {
+		_.each( state.config.modules, function( mod ) {
 			var modPath;
 			if ( /[\/]/.test( mod ) ) {
 				modPath = require.resolve( path.resolve( process.cwd(), mod ) );
 			} else {
 				modPath = require.resolve( mod );
 			}
-			loadActions.push( loadModule( modPath ) );
+			loadActions.push( loadModule( state, modPath ) );
 		} );
 	}
-	loadActions.push( loadModule( './ahResource' ) );
+	loadActions.push( loadModule( state, './ahResource' ) );
 	return when.all( loadActions );
 }
 
 
 // loads a module based on the file path and resolves the function
 // promises and all
-function loadModule( resourcePath ) {
+function loadModule( state, resourcePath ) {
 	try {
 		var key = path.resolve( resourcePath );
 		delete require.cache[ key ];
@@ -116,19 +99,19 @@ function loadModule( resourcePath ) {
 		var args = getArguments( modFn );
 		args.shift();
 		if ( args.length ) {
-			return fount.resolve( args )
+			return state.fount.resolve( args )
 				.then( function( deps ) {
 					var argList = _.map( args, function( arg ) {
 						return deps[ arg ];
 					} );
-					argList.unshift( host );
+					argList.unshift( state.host );
 					var mod = modFn.apply( modFn, argList );
-					attachPath( mod, resourcePath );
+					attachPath( state, mod, resourcePath );
 					return mod;
 				} );
 		} else {
-			var mod = modFn( host );
-			attachPath( mod, resourcePath );
+			var mod = modFn( state.host );
+			attachPath( state, mod, resourcePath );
 			return when( mod );
 		}
 	} catch ( err ) {
@@ -138,43 +121,43 @@ function loadModule( resourcePath ) {
 }
 
 // loadResources from path and returns the modules once they're loaded
-function loadResources( filePath ) {
+function loadResources( state, filePath ) {
 	var resourcePath = path.resolve( process.cwd(), filePath );
 	return getResources( resourcePath )
 		.then( function( list ) {
-			return when.all( _.map( _.filter( list ), loadModule ) )
+			return when.all( _.map( _.filter( list ), loadModule.bind( undefined, state ) ) )
 				.then( function( lists ) {
 					return _.flatten( lists );
 				} );
 		} );
 }
 
-function normalizeResources( list ) {
+function normalizeResources( state, list ) {
 	var flattened = _.flatten( list );
 	_.each( flattened, function( resource ) {
-		resources[ resource.name ] = resource;
-		getActions( resource );
+		state.resources[ resource.name ] = resource;
+		getActions( state, resource );
 	} );
-	return resources;
+	return state.resources;
 }
 
-function processModule( mod ) {
+function processModule( state, mod ) {
 	if ( mod && mod.name ) {
-		return processResource( mod, path.dirname( mod._path ) );
+		return processResource( state, mod, path.dirname( mod._path ) );
 	} else {
 		log.debug( 'Skipping resource at %s - no valid metadata provided', mod._path );
 		return when( [] );
 	}
 }
 
-function processResource( resource ) {
-	var meta = _.map( adapters, function( adapter ) {
+function processResource( state, resource ) {
+	var meta = _.map( state.adapters, function( adapter ) {
 		if ( _.isArray( resource ) ) {
 			return _.reduce( resource, function( acc, x ) {
-				return deepMerge( x, adapter.resource( x, resource._path, resources ) );
+				return deepMerge( x, adapter.resource( x, resource._path, state.resources ) );
 			}, {} );
 		} else {
-			return adapter.resource( resource, resource._path, resources );
+			return adapter.resource( resource, resource._path, state.resources );
 		}
 	} );
 	var container = {};
@@ -182,8 +165,9 @@ function processResource( resource ) {
 	return container;
 }
 
-function processResources() {
-	return _.reduce( _.map( resources, processModule ), reduce );
+function processResources( state ) {
+	var resources = _.map( state.resources, processModule.bind( undefined, state ) );
+	return _.reduce( resources, reduce );
 }
 
 function reduce( acc, resource ) {
@@ -199,34 +183,34 @@ function reduce( acc, resource ) {
 	return acc;
 }
 
-function start( resourcePath, auth ) {
-	wrapper.actionList = {};
-	return loadAll( resourcePath )
-		.then( normalizeResources )
+function start( state, resourcePath, auth ) {
+	state.actionList = {};
+	return loadAll( state, resourcePath )
+		.then( normalizeResources.bind( undefined, state ) )
 		.then( function() {
-			var meta = processResources();
-			host.actions = wrapper.actionList;
+			var meta = processResources( state );
+			state.host.actions = state.actionList;
 			if ( auth ) {
-				auth.updateActions( wrapper.actionList )
+				auth.updateActions( state.actionList )
 					.then( function() {
-						startAdapters( auth );
+						startAdapters( state, auth );
 					} );
 			} else {
-				startAdapters( auth );
+				startAdapters( state, auth );
 			}
 			return meta || {};
 		} );
 }
 
-function stop() {
-	_.each( adapters, function( adapter ) {
+function stop( state ) {
+	_.each( state.adapters, function( adapter ) {
 		adapter.stop();
 	} );
 }
 
-function startAdapters( auth ) {
-	_.each( adapters, function( adapter ) {
-		adapter.start( config, auth );
+function startAdapters( state, auth ) {
+	_.each( state.adapters, function( adapter ) {
+		adapter.start( state.config, auth );
 	} );
 }
 
@@ -238,9 +222,24 @@ function trim( list ) {
 	return ( list && list.length ) ? _.filter( list.map( trimString ) ) : [];
 }
 
-module.exports = function( ah, cfg ) {
-	config = cfg;
-	host = ah;
-	fount = ah.fount;
-	return wrapper;
+module.exports = function( host, config ) {
+	var state = {
+		actionList: {},
+		adapters: [],
+		config: config,
+		host: host,
+		fount: host.fount,
+		resources: {}
+	};
+
+	_.merge( state, {
+		addAdapter: addAdapter.bind( undefined, state ),
+		clearAdapters: clearAdapters.bind( undefined, state ),
+		loadModule: loadModule.bind( undefined, state ),
+		loadResources: loadResources.bind( undefined, state ),
+		start: start.bind( undefined, state ),
+		startAdapters: startAdapters.bind( undefined, state ),
+		stop: stop.bind( undefined, state )
+	} );
+	return state;
 };

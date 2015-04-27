@@ -1,41 +1,39 @@
-var config, socketIO, websocket, http;
 var _ = require( 'lodash' );
 var postal = require( 'postal' );
 var eventChannel = postal.channel( 'events' );
 var log = require( '../log' )( 'autohost.ws.transport' );
 var uuid = require( 'node-uuid' );
-var wrapper, websocket, socketIO;
-reset();
 
-function addClient( socket ) {
+function addClient( state, socket ) {
 	socket.connectionId = uuid.v4();
-	wrapper.clients.push( socket );
+	state.clients.push( socket );
 	if ( socket.user !== 'anonymous' ) {
-		socketIdentified( socket.user, socket );
+		socketIdentified( state, socket.user, socket );
 	}
 	eventChannel.publish( 'socket.client.connected', { socket: socket } );
 }
 
-function socketIdentified( id, socket ) {
-	if ( wrapper.clients.lookup[ id ] ) {
-		wrapper.clients.lookup[ id ].push( socket );
+function socketIdentified( state, id, socket ) {
+	if ( state.clients.lookup[ id ] ) {
+		state.clients.lookup[ id ].push( socket );
 	} else {
-		wrapper.clients.lookup[ id ] = [ socket ];
+		state.clients.lookup[ id ] = [ socket ];
 	}
 	eventChannel.publish( 'socket.client.identified', { id: id, socket: socket } );
 }
 
-function notifyClients( message, data ) {
-	log.debug( 'Notifying %d clients: %s %s', wrapper.clients.length, message, JSON.stringify( data ) );
-	_.each( wrapper.clients, function( client ) {
+function notifyClients( state, message, data ) {
+	log.debug( 'Notifying %d clients: %s %j',
+		state.clients.length, message, data );
+	_.each( state.clients, function( client ) {
 		client.publish( message, data );
 	} );
 }
 
-function onTopic( topic, handle /* context */ ) {
+function onTopic( state, topic, handle /* context */ ) {
 	log.debug( 'TOPIC: %s -> %s', topic, ( handle.name || 'anonymous' ) );
 	var safe = function( data, socket ) {
-		if ( config && config.handleRouteErrors ) {
+		if ( state.config && state.config.handleRouteErrors ) {
 			try {
 				handle( data, socket );
 			} catch ( err ) {
@@ -46,22 +44,22 @@ function onTopic( topic, handle /* context */ ) {
 		}
 	};
 
-	wrapper.topics[ topic ] = safe;
-	if ( socketIO ) {
-		socketIO.on( topic, safe );
+	state.topics[ topic ] = safe;
+	if ( state.socketIO ) {
+		state.socketIO.on( topic, safe );
 	}
-	if ( websocket ) {
-		websocket.on( topic, safe );
+	if ( state.websocket ) {
+		state.websocket.on( topic, safe );
 	}
 }
 
-function removeClient( socket ) {
-	var index = wrapper.clients.indexOf( socket );
+function removeClient( state, socket ) {
+	var index = state.clients.indexOf( socket );
 	if ( index >= 0 ) {
-		wrapper.clients.splice( index, 1 );
+		state.clients.splice( index, 1 );
 	}
-	if ( socket.id && wrapper.clients.lookup[ socket.id ] ) {
-		var list = wrapper.clients.lookup[ socket.id ];
+	if ( socket.id && state.clients.lookup[ socket.id ] ) {
+		var list = state.clients.lookup[ socket.id ];
 		index = list.indexOf( socket );
 		if ( index >= 0 ) {
 			list.splice( index, 1 );
@@ -70,28 +68,17 @@ function removeClient( socket ) {
 	eventChannel.publish( 'socket.client.closed', { id: socket.id, socket: socket } );
 }
 
-function reset() {
-	wrapper = {
-		add: addClient,
-		clients: [],
-		identified: socketIdentified,
-		notify: notifyClients,
-		on: onTopic,
-		remove: removeClient,
-		reset: reset,
-		send: sendToClient,
-		start: start,
-		stop: stop,
-		topics: {}
-	};
-	wrapper.clients.lookup = {};
+function reset( state ) {
+	state.clients = [];
+	state.topics = {};
+	state.clients.lookup = {};
 }
 
-function sendToClient( id, message, data ) {
-	log.debug( 'Sending to clients %s: %s %s', id, message, JSON.stringify( data ) );
-	var sockets = wrapper.clients.lookup[ id ];
+function sendToClient( state, id, message, data ) {
+	log.debug( 'Sending to clients %s: %s %j', id, message, data );
+	var sockets = state.clients.lookup[ id ];
 	if ( !sockets ) {
-		sockets = _.where( wrapper.clients, function( client ) {
+		sockets = _.where( state.clients, function( client ) {
 			return client.user.id === id || client.user.name === id;
 		} );
 	}
@@ -104,37 +91,50 @@ function sendToClient( id, message, data ) {
 	return false;
 }
 
-function start() {
-	if ( config.socketio || config.socketIO || config.socketIo ) {
-		socketIO = require( './socketio.js' )( config, wrapper, http.passport );
-		socketIO.config( http );
+function start( state ) {
+	if ( state.config.socketio || state.config.socketIO || state.config.socketIo ) {
+		state.socketIO = require( './socketio.js' )( state.config, state, state.http.passport );
+		state.socketIO.configure( state.http );
 	}
-	if ( config.websocket || config.websockets ) {
-		websocket = require( './websocket' )( config, wrapper, http.passport );
-		websocket.config( http );
+	if ( state.config.websocket || state.config.websockets ) {
+		state.websocket = require( './websocket' )( state.config, state, state.http.passport );
+		state.websocket.configure( state.http );
 	}
 }
 
-function stop() {
-	_.each( wrapper.clients, function( socket ) {
-		if ( socket ) {
+function stop( state ) {
+	_.each( state.clients, function( socket ) {
+		if ( socket !== undefined ) {
 			socket.removeAllListeners();
 			socket.close();
 		}
 	} );
-	if ( socketIO ) {
-		socketIO.stop();
+	if ( state.socketIO ) {
+		state.socketIO.stop();
 	}
-	if ( websocket ) {
-		websocket.stop();
+	if ( state.websocket ) {
+		state.websocket.stop();
 	}
 }
 
-module.exports = function( cfg, httpLib, resetState ) {
-	if ( resetState ) {
-		reset();
-	}
-	config = cfg;
-	http = httpLib;
-	return wrapper;
+module.exports = function( config, http ) {
+	var state = {
+		clients: [],
+		config: config,
+		http: http,
+		topics: {}
+	};
+	_.merge( state, {
+		add: addClient.bind( undefined, state ),
+		identified: socketIdentified.bind( undefined, state ),
+		notify: notifyClients.bind( undefined, state ),
+		on: onTopic.bind( undefined, state ),
+		remove: removeClient.bind( undefined, state ),
+		reset: reset.bind( undefined, state ),
+		send: sendToClient.bind( undefined, state ),
+		start: start.bind( undefined, state ),
+		stop: stop.bind( undefined, state ),
+	} );
+	state.clients.lookup = {};
+	return state;
 };

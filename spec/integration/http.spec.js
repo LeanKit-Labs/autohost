@@ -26,7 +26,7 @@ describe( 'HTTP', function() {
 		harness = require( './harness.js' )( config );
 		cookieExpiresAt = new Date( Date.now() + 60000 );
 		var argsCall = function( env ) {
-			env.reply( {
+			return {
 				data: [ env.data.one, env.data.two, env.data.three, env.data.four, env.params.three, env.params.four, env.extension, env.preparsed ],
 				headers: { 'test-header': 'look a header value!' },
 				cookies: { 'an-cookies': {
@@ -37,7 +37,7 @@ describe( 'HTTP', function() {
 							domain: 'autohost.com'
 						}
 					} }
-			} );
+			};
 		};
 
 		var anonProxy = function( env ) {
@@ -125,7 +125,7 @@ describe( 'HTTP', function() {
 			static: {
 				path: './spec/public/',
 				maxAge: '1d',
-				setHeaders: function ( res ) {
+				setHeaders: function( res ) {
 					res.set( 'test-header', 'custom' );
 				}
 			}
@@ -212,7 +212,7 @@ describe( 'HTTP', function() {
 					headers: { 'Authorization': 'Bearer three' }
 				} )
 				.then( transformResponse( 'body', 'testHeader', 'setCookie' ), onError )
-				.should.eventually.have.property( 'body' ).that.equal( 'Could not determine user permissions' );
+				.should.eventually.have.property( 'body' ).that.equal( 'User lacks sufficient permissions' );
 		} );
 	} );
 
@@ -404,7 +404,7 @@ describe( 'HTTP', function() {
 				.then( transformResponse( 'body', 'statusCode' ), onError )
 				.should.eventually.deep.equal(
 				{
-					body:'custom apiPrefix route matched',
+					body: 'custom apiPrefix route matched',
 					statusCode: 200
 				}
 			);
