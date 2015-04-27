@@ -425,7 +425,7 @@ describe( 'HTTP Envelope', function() {
 			} );
 		} );
 
-		describe( 'with overriden render', function() {
+		describe( 'with overridden render', function() {
 			var envelope, req, res, request;
 			before( function() {
 				res = createResponse();

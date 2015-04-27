@@ -38,6 +38,7 @@ describe( 'Socket Envelope', function() {
 				socket.published.should.eql( [
 					{
 						success: false,
+						status: 500,
 						data: 'MyCustom: test'
 					}
 				] );
@@ -67,6 +68,7 @@ describe( 'Socket Envelope', function() {
 				socket.published.should.eql( [
 					{
 						success: false,
+						status: 404,
 						data: 'NEVER EVER'
 					}
 				] );
@@ -95,6 +97,7 @@ describe( 'Socket Envelope', function() {
 				socket.published.should.eql( [
 					{
 						success: false,
+						status: 401,
 						data: 'a test'
 					}
 				] );
@@ -116,6 +119,7 @@ describe( 'Socket Envelope', function() {
 				socket.published.should.eql( [
 					{
 						success: false,
+						status: 500,
 						data: 'no support'
 					}
 				] );
@@ -137,6 +141,7 @@ describe( 'Socket Envelope', function() {
 				socket.published.should.eql( [
 					{
 						success: true,
+						status: 200,
 						data: 'just a simple string'
 					}
 				] );
@@ -158,6 +163,7 @@ describe( 'Socket Envelope', function() {
 				socket.published.should.eql( [
 					{
 						success: true,
+						status: 202,
 						data: 'For me? Well I accept you!'
 					}
 				] );
@@ -179,6 +185,7 @@ describe( 'Socket Envelope', function() {
 				socket.published.should.eql( [
 					{
 						success: true,
+						status: 200,
 						data: { a: 1, b: 2, c: 3 }
 					}
 				] );
@@ -200,6 +207,7 @@ describe( 'Socket Envelope', function() {
 				socket.published.should.eql( [
 					{
 						success: true,
+						status: 200,
 						data: { a: 1, b: 2, c: 3 }
 					}
 				] );
@@ -231,6 +239,7 @@ describe( 'Socket Envelope', function() {
 				socket.published.should.eql( [
 					{
 						success: true,
+						status: 200,
 						data: { a: 1, b: 2, c: 3 },
 						_headers: {
 							h1: 'this is a header',
@@ -260,6 +269,7 @@ describe( 'Socket Envelope', function() {
 				socket.published.should.eql( [
 					{
 						success: false,
+						status: 400,
 						data: 'The API call \'test.forward\' is not supported via websockets. Sockets do not support proxying via forwardTo.'
 					}
 				] );
@@ -290,6 +300,7 @@ describe( 'Socket Envelope', function() {
 				socket.published.should.eql( [
 					{
 						success: false,
+						status: 400,
 						data: 'The resource you are trying to reach has moved.'
 					}
 				] );

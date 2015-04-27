@@ -54,6 +54,7 @@ SocketEnvelope.prototype.forwardTo = function( /* options */ ) {
 	this.recordTime();
 	this.reply( {
 		success: false,
+		status: 400,
 		data: 'The API call \'' + this.topic + '\' is not supported via websockets. Sockets do not support proxying via forwardTo.'
 	} );
 };
@@ -64,24 +65,28 @@ SocketEnvelope.prototype.recordTime = function() {
 
 SocketEnvelope.prototype.redirect = function( /* options */ ) {
 	this.recordTime();
-	this.reply( { success: false, data: 'The resource you are trying to reach has moved.' } );
+	this.reply( {
+		success: false,
+		status: 400,
+		data: 'The resource you are trying to reach has moved.'
+	} );
 	throw new Error( 'Sockets do not support redirection.' );
 };
 
 SocketEnvelope.prototype.render = function( host, resource, action, result ) {
-	var envelope = { success: true, data: result };
+	var envelope = { success: true, status: 200, data: result };
 	if ( result.data || result.success ) {
 		_.merge( envelope, result );
 	}
 	if ( envelope.status > 100 && envelope.status < 300 ) {
 		envelope.success = true;
-		delete envelope.status;
 	}
 	this.reply( envelope );
 };
 
 SocketEnvelope.prototype.renderError = function( host, resource, action, error ) {
 	var defaultStrategy = {
+		status: 500,
 		body: error.message
 	};
 
@@ -97,6 +102,7 @@ SocketEnvelope.prototype.renderError = function( host, resource, action, error )
 
 	var reply = {
 		success: false,
+		status: strategy.status ? strategy.status : 500,
 		data: strategy.reply ? strategy.reply( error, this ) : strategy.body
 	};
 	this.reply( reply );

@@ -179,7 +179,7 @@ describe( 'Index', function() {
 			} );
 		} );
 
-		it( 'should use provided metronic instance', function() {
+		it( 'should use log configuration', function() {
 			log.config.should.eql( { fake: true } );
 		} );
 	} );

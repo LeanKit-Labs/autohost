@@ -5,8 +5,9 @@
  * Improve control over session and session cookie configuration
  * Bug fix - socket.io adapter re-attached authentication middleware on every connection
  * Minor improvement to logging abstraction and updates to specs still using debug
- * Refactored module-level state out of http adapter
- * Refactored module-level state out of http module
+ * Refactored module-level state out of modules
+ * Support object literal syntax for resource action handles
+ * Support custom error handling
 
 ## 0.3.x
 Primary motivation here is to begin work on a version of autohost that will work well with a hypermedia library ( [hyped](https://github.com/leankit-labs/hyped) ). This is a breaking change because of several structural and naming changes to how resources get modeled.
