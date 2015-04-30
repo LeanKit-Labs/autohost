@@ -7,6 +7,7 @@ var httpAdapterFn = require( './http/adapter' );
 var socketFn = require( './websocket/socket' );
 var socketAdapterFn = require( './websocket/adapter' );
 var middlewareLib = require( './http/middleware' );
+var sessionLib = require( 'express-session' );
 var postal = require( 'postal' );
 var eventChannel = postal.channel( 'events' );
 var internalFount = require( 'fount' );
@@ -15,7 +16,7 @@ function initialize( config, authProvider, fount ) {
 	config = config || {};
 	authProvider = authProvider || config.authProvider;
 	require( './log' )( config.logging || {} );
-	var middleware = middlewareLib();
+	var middleware = middlewareLib( sessionLib );
 	var http = httpFn( request, middleware );
 	var socket = socketFn( config, http );
 	var state = {
@@ -30,7 +31,7 @@ function initialize( config, authProvider, fount ) {
 		request: request,
 		resources: {},
 		socket: socket,
-		session: middleware.sessionLib,
+		session: sessionLib,
 		transport: undefined
 	};
 	var transport = state.transport = require( './transport' )( state, config );
@@ -97,4 +98,5 @@ function setup( state, transport, authProvider ) {
 		} );
 }
 
+initialize.sessionLib = sessionLib;
 module.exports = initialize;

@@ -1,7 +1,6 @@
 var _ = require( 'lodash' );
 var bodyParser = require( 'body-parser' );
 var cookies = require( 'cookie-parser' );
-var sessionLib = require( 'express-session' );
 var multer = require( 'multer' );
 var metronic = require( '../metrics' );
 var os = require( 'os' );
@@ -66,14 +65,14 @@ function configure( state, config ) {
 		name: 'ah.sid',
 		secret: 'autohostthing',
 		resave: true,
-		store: new sessionLib.MemoryStore(),
+		store: new state.sessionLib.MemoryStore(),
 		saveUninitialized: true,
 		rolling: false
 	};
 	var cookieConfig = _.defaults( state.config.cookie || {}, cookieDefaults );
 	var sessionConfig = _.defaults( state.config.session || {}, sessionDefaults );
 	sessionConfig.cookie = cookieConfig;
-	state.session = sessionLib( sessionConfig );
+	state.session = state.sessionLib( sessionConfig );
 }
 
 function requestMetrics( state, req, res, next ) {
@@ -138,7 +137,7 @@ function requestMetrics( state, req, res, next ) {
 	next();
 }
 
-module.exports = function() {
+module.exports = function( sessionLib ) {
 	var state = {
 		config: undefined,
 		cookieParser: cookies(),
