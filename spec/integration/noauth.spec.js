@@ -12,6 +12,7 @@ var config = {
 	noAuth: true
 };
 var get, post;
+var harnessFn = require( '../../src/harness' );
 
 describe( 'No Authentication', function() {
 	var cookieExpiresAt;
@@ -24,7 +25,7 @@ describe( 'No Authentication', function() {
 	// * action with a regex URL
 	// * route that throws an exception
 	before( function() {
-		harness = require( './harness.js' )( config );
+		harness = harnessFn( config );
 		if ( harness.httpAdapter.passport ) {
 			harness.httpAdapter.passport.resetUserCheck();
 		}
@@ -67,7 +68,7 @@ describe( 'No Authentication', function() {
 			env.reply( { data: 'regex route matched' } );
 		};
 
-		harness.addMiddleware( '/', function( req, res, next ) {
+		harness.addMiddleware( '/', function httpExtension( req, res, next ) {
 			req.extendHttp = {
 				extension: 'an extension!',
 				preparsed: req.preparams
@@ -96,7 +97,7 @@ describe( 'No Authentication', function() {
 			static: {
 				path: './spec/public/',
 				maxAge: '1d',
-				setHeaders: function ( res ) {
+				setHeaders: function( res ) {
 					res.set( 'test-header', 'custom' );
 				}
 			}

@@ -1,14 +1,6 @@
 require( '../setup' );
 var fount = require( 'fount' );
 var request = require( 'request' );
-/*
-var httpFn = require( './http/http.js' );
-var httpAdapterFn = require( './http/adapter.js' );
-var socketFn = require( './websocket/socket.js' );
-var socketAdapterFn = require( './websocket/adapter.js' );
-var middlewareLib = require( './http/middleware.js' );
-require( './transport' );
-*/
 
 var middleware, http, httpAdapter, socket, socketAdapter, transport, log;
 function getHost() {
@@ -52,11 +44,11 @@ function getHost() {
 		return socketAdapter;
 	};
 	transport = {
-		adapters: [],
-		addAdapter: function( adapter ) {
-			this.adapters.push( adapter );
+		adapters: {},
+		addAdapter: function( protocol, adapter ) {
+			this.adapters[ protocol ] = adapter ;
 		},
-		start: function() {
+		init: function() {
 			return when.resolve( {} );
 		}
 	};
@@ -125,10 +117,10 @@ describe( 'Index', function() {
 		} );
 
 		it( 'should add adpaters to transport', function() {
-			transport.adapters.should.eql( [
-				httpAdapter,
-				socketAdapter
-			] );
+			transport.adapters.should.eql( {
+				http: httpAdapter,
+				ws: socketAdapter
+			} );
 		} );
 	} );
 

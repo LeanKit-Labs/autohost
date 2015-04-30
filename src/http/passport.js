@@ -24,20 +24,20 @@ function authConditionally( state, req, res, next ) {
 
 function getAuthMiddleware( state, uri ) {
 	var list = [
-		{ path: uri, fn: state.passportInitialize },
-		{ path: uri, fn: state.passportSession }
+		{ path: uri, fn: state.passportInitialize, alias: 'passport' },
+		{ path: uri, fn: state.passportSession, alias: 'passportSession' }
 	]
 		.concat( _.map( state.anonPaths, function( pattern ) {
-			return { path: pattern, fn: skipAuthentication };
+			return { path: pattern, fn: skipAuthentication, alias: 'skipAuth' };
 		} ) )
 		.concat( [ { path: uri, fn: whenNoUsers },
-			{ path: uri, fn: authConditionally.bind( undefined, state ) },
-		{ path: uri, fn: getRoles } ] );
+			{ path: uri, fn: authConditionally.bind( undefined, state ), alias: 'conditionalAuth' },
+		{ path: uri, fn: getRoles, alias: 'userRoles' } ] );
 	return list;
 }
 
 function getRoles( state, req, res, next ) {
-	var userName = _.isObject( req.user.name ) ? req.user.name.name : req.user.name;
+	var userName = _.isObject( req.user ) ? req.user.name : undefined;
 	req.authenticatedUser = userName || req.user.id || 'anonymous';
 
 	function onError( err ) {

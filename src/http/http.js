@@ -10,6 +10,8 @@ var regex = require( './regex.js' );
 var Router = express.Router;
 var expreq = express.request;
 var expres = express.response;
+expressInit.name = 'expressInit';
+queryParser.name = 'queryParser';
 
 function buildUrl() {
 	var idx = 0,
@@ -171,9 +173,9 @@ function queryParser( req, res, next ) {
 	next();
 }
 
-function registerMiddleware( state, filter, callback ) {
+function registerMiddleware( state, filter, callback, alias ) {
 	var fn = function( router ) {
-		log.debug( 'MIDDLEWARE: %s mounted at %s', ( callback.name || 'anonymous' ), filter );
+		log.debug( 'MIDDLEWARE: %s mounted at %s', ( callback.name || alias || 'anonymous' ), filter );
 		router.use( filter, callback );
 	};
 	if ( state.app ) {
@@ -182,9 +184,11 @@ function registerMiddleware( state, filter, callback ) {
 	state.systemMiddleware.push( fn );
 }
 
-function registerUserMiddleware( state, filter, callback ) {
+function registerUserMiddleware( state, filter, callback, alias ) {
+	// if using an auth strategy, move cookie and session middleware before passport middleware
+	// to take advantage of sessions/cookies and avoid authenticating on every request
 	var fn = function( router ) {
-		log.debug( 'MIDDLEWARE: %s mounted at %s', ( callback.name || 'anonymous' ), filter );
+		log.debug( 'MIDDLEWARE: %s mounted at %s', ( callback.name || alias || 'anonymous' ), filter );
 		router.use( filter, callback );
 	};
 	if ( state.app ) {
@@ -238,7 +242,12 @@ function start( state, config, passport ) {
 	state.config = config;
 	state.passport = passport;
 	if ( config.parseAhead ) {
-		registerMiddleware( state, '/', preprocessPathVariables.bind( undefined, state ) );
+		registerMiddleware(
+			state,
+			'/',
+			preprocessPathVariables.bind( undefined, state ),
+			'preprocessPathVariables'
+		);
 	}
 	// if using an auth strategy, move cookie and session middleware before passport middleware
 	// to take advantage of sessions/cookies and avoid authenticating on every request
@@ -246,7 +255,7 @@ function start( state, config, passport ) {
 		state.middlewareLib.useCookies( state.middleware );
 		state.middlewareLib.useSession( state.middleware );
 		_.each( passport.getMiddleware( '/' ), function( m ) {
-			state.middleware( m.path, m.fn );
+			state.middleware( m.path, m.fn, m.alias );
 		} );
 	}
 	// prime middleware with defaults

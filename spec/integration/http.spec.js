@@ -11,6 +11,7 @@ var config = {
 	handleRouteErrors: true
 };
 var get, post;
+var harnessFn = require( '../../src/harness' );
 
 describe( 'HTTP', function() {
 	var cookieExpiresAt;
@@ -23,7 +24,7 @@ describe( 'HTTP', function() {
 	// * action with a regex URL
 	// * route that throws an exception
 	before( function() {
-		harness = require( './harness.js' )( config );
+		harness = harnessFn( config );
 		cookieExpiresAt = new Date( Date.now() + 60000 );
 		var argsCall = function( env ) {
 			return {
@@ -85,7 +86,7 @@ describe( 'HTTP', function() {
 				preparsed: req.preparams
 			};
 			next();
-		} );
+		}, 'httpExtension' );
 
 		harness.addResource( {
 			name: 'test',
@@ -421,7 +422,7 @@ describe( 'HTTP', function() {
 				.then( transformResponse( 'body', 'statusCode' ), onError )
 				.should.eventually.deep.equal(
 				{
-					body: 'Server error at GET /error',
+					body: 'I am bad at things!',
 					statusCode: 500
 				}
 			);

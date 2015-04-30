@@ -3,7 +3,8 @@
 var Basic = require( 'passport-http' ).BasicStrategy;
 var Bearer = require( 'passport-http-bearer' ).Strategy;
 var Query = require( './queryStrategy.js' );
-var log = require( '../../../src/log' )( 'autohost.auth.mock' );
+var log = require( '../log' )( 'autohost.auth.mock' );
+var _ = require( 'lodash' );
 var bearerAuth;
 var basicAuth;
 var queryAuth;

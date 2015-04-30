@@ -34,6 +34,41 @@ describe( 'HTTP Envelope', function() {
 			} );
 		} );
 
+		describe( 'with overlapping generic error handlers', function() {
+			var envelope, req, res, request, host, resource;
+			before( function() {
+				res = createResponse();
+				req = createRequest();
+				request = stubRequest();
+				envelope = new ( envelopeFn( request ))( req, res, 'test' );
+				host = {
+					errors: {
+						'Error': {
+							status: 500
+						}
+					}
+				};
+				resource = {
+					errors: {
+						'Error': {
+							status: 505,
+							reply: function( error ) {
+								return 'this is silly: ' + error.message;
+							}
+						}
+					}
+				};
+				envelope.handleReturn( host, resource, {}, new Error( 'test' ) );
+			} );
+
+			it( 'should use 500 status and create body from reply method', function() {
+				res.sent.should.eql( {
+					status: 505,
+					body: 'this is silly: test'
+				} );
+			} );
+		} );
+
 		describe( 'with resource defined custom error', function() {
 			var envelope, req, res, request, resource;
 			before( function() {

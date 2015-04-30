@@ -1,5 +1,15 @@
 ## 0.4.x
 
+### 0.4.1
+
+ * API Change - host now requires `start` to start the server
+ * authProvider is now a config property
+ * Bug fix - undefined config would throw an error instead of using all defaults
+ * Remove support for incorrectly nested user property on request object
+ * Added support for handling generic errors
+ * Added aliases for anonymous middleware for better debug logging
+ * Rework harness to rely more on index
+
 ### 0.4.0
 
  * Improve control over session and session cookie configuration

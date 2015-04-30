@@ -12,23 +12,28 @@ var eventChannel = postal.channel( 'events' );
 var internalFount = require( 'fount' );
 
 function initialize( config, authProvider, fount ) {
-	var middleware = middlewareLib();
+	config = config || {};
+	authProvider = authProvider || config.authProvider;
 	require( './log' )( config.logging || {} );
-
+	var middleware = middlewareLib();
+	var http = httpFn( request, middleware );
+	var socket = socketFn( config, http );
 	var state = {
 		actions: undefined,
 		auth: undefined,
 		config: config,
 		fount: fount || config.fount || internalFount,
-		http: httpFn( request, middleware ),
+		http: http,
 		meta: undefined,
 		metrics: require( './metrics' )( config.metrics || {} ),
+		middleware: middleware,
 		request: request,
 		resources: {},
-		socket: undefined,
-		session: middleware.sessionLib
+		socket: socket,
+		session: middleware.sessionLib,
+		transport: undefined
 	};
-	var transport = require( './transport' )( state, config );
+	var transport = state.transport = require( './transport' )( state, config );
 	function onResources( x ) {
 		process.nextTick( function() {
 			eventChannel.publish( 'resources.loaded', x.resources );
@@ -37,11 +42,7 @@ function initialize( config, authProvider, fount ) {
 	_.merge( state, {
 		on: onEvent,
 		onResources: onEvent.bind( undefined, 'resources.loaded' ),
-		start: function() {
-			transport.startAdapters();
-			when( transport.resources )
-				.then( onResources );
-		},
+		start: transport.start,
 		stop: transport.stop
 	} );
 
@@ -70,12 +71,12 @@ function setup( state, transport, authProvider ) {
 	var transportPrefix = config.transportPrefix === undefined ? '/api' : config.transportPrefix;
 
 	var httpAdapter = httpAdapterFn( config, authProvider, state.http, request );
-	transport.addAdapter( httpAdapter );
+	transport.addAdapter( 'http', httpAdapter );
 	state.passport = httpAdapter.passport;
 
 	// API metadata
 	if ( !config.noOptions ) {
-		state.http.middleware( transportPrefix, function( req, res, next ) {
+		state.http.middleware( transportPrefix, function options( req, res, next ) {
 			if ( req.method === 'OPTIONS' || req.method === 'options' ) {
 				res.status( 200 ).send( state.meta );
 			} else {
@@ -84,11 +85,10 @@ function setup( state, transport, authProvider ) {
 		} );
 	}
 
-	state.socket = socketFn( config, state.http );
 	var socketAdapter = socketAdapterFn( config, authProvider, state.socket );
-	transport.addAdapter( socketAdapter );
+	transport.addAdapter( 'ws', socketAdapter );
 
-	return transport.start( config.resources || path.join( process.cwd(), './resource' ), authProvider )
+	return transport.init( config.resources || path.join( process.cwd(), './resource' ), authProvider )
 		.then( function( meta ) {
 			meta.prefix = transportPrefix;
 			state.meta = meta;

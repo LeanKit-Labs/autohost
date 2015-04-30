@@ -16,7 +16,7 @@ function applyCookieMiddleware( state, attach ) {
 
 function applyMiddelware( state, attach, hasAuth ) {
 	// add a timer to track ALL requests
-	attach( '/', requestMetrics.bind( undefined, state ) );
+	attach( '/', requestMetrics.bind( undefined, state ), 'metrics' );
 
 	if ( !hasAuth ) {
 		applyCookieMiddleware( state, attach );
@@ -29,7 +29,7 @@ function applyMiddelware( state, attach, hasAuth ) {
 		attach( '/', bodyParser.json( { type: 'application/vnd.api+json' } ) );
 		attach( '/', multer( {
 			dest: state.config.tmp
-		} ) );
+		} ), 'multer' );
 	}
 
 	if ( !hasAuth ) {

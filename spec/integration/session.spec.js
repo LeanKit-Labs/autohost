@@ -10,12 +10,13 @@ var config = {
 	defaultUser: true
 };
 var post, get;
+var harnessFn = require( '../../src/harness' );
 
 describe( 'Session Management', function() {
 	var harness, loggedOut;
 
 	before( function() {
-		harness = require( './harness.js' )( config );
+		harness = harnessFn( config );
 		var testCall = function( env ) {
 			env.reply( { data: 'hello' } );
 		};
@@ -30,7 +31,7 @@ describe( 'Session Management', function() {
 				logout: { url: '/logout', method: 'all', topic: 'logout', handle: logout },
 			}
 		} );
-		harness.addMiddleware( '/api/test/logout', function( req, res, next ) {
+		harness.addMiddleware( '/api/test/logout', function logout( req, res, next ) {
 			loggedOut = true;
 			next();
 		} );

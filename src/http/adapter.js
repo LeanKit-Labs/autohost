@@ -125,9 +125,7 @@ function respond( state, meta, req, res, resource, action ) {
 			meta.errorCount.record();
 			log.debug( 'ERROR! route: %s %s failed with %s',
 				action.method.toUpperCase(), action.url, err.stack );
-			res.status( 500 ).send(
-				'Server error at ' + action.method.toUpperCase() + ' ' + action.url
-			);
+			result = err;
 		}
 	} else {
 		result = action.handle.apply( resource, [ envelope ] );

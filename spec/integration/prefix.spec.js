@@ -2,6 +2,7 @@ require( '../setup' );
 var requestor = require( 'request' ).defaults( { jar: false } );
 var port = 8988;
 var post, get;
+var harnessFn = require( '../../src/harness' );
 before( function() {
 	get = function( req ) {
 		return when.promise( function( resolve, reject ) {
@@ -40,7 +41,7 @@ describe( 'URL & API Prefix', function() {
 			urlPrefix: '/prefixed',
 			apiPrefix: ''
 		};
-		harness = require( './harness.js' )( config );
+		harness = harnessFn( config );
 		cookieExpiresAt = new Date( Date.now() + 60000 );
 		var argsCall = function( env ) {
 			env.reply( {
@@ -61,7 +62,7 @@ describe( 'URL & API Prefix', function() {
 			env.reply( { data: 'regex route matched' } );
 		};
 
-		harness.addMiddleware( '/', function( req, res, next ) {
+		harness.addMiddleware( '/', function httpExtension( req, res, next ) {
 			req.extendHttp = {
 				extension: 'an extension!',
 				preparsed: req.preparams
@@ -152,7 +153,7 @@ describe( 'URL Strategy with Prefix', function() {
 				return [ 'strategized', resourceName, actionName ].join( '/' );
 			}
 		};
-		harness = require( './harness.js' )( config );
+		harness = harnessFn( config );
 		var fileCall = function( env ) {
 			env.replyWithFile( 'text/plain', 'hello.txt', fs.createReadStream( './spec/public/txt/hello.txt' ) );
 		};
@@ -168,7 +169,7 @@ describe( 'URL Strategy with Prefix', function() {
 			}
 		};
 
-		harness.addMiddleware( '/', function( req, res, next ) {
+		harness.addMiddleware( '/', function httpExtension( req, res, next ) {
 			req.extendHttp = {
 				extension: 'an extension!',
 				preparsed: req.preparams
