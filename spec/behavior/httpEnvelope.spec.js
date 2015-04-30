@@ -705,7 +705,6 @@ function createResponse() {
 			return this;
 		}.bind( res ),
 		set: function( k, v ) {
-			console.log( 'setting headers', k, v );
 			if ( _.isObject( k ) ) {
 				_.each( k, function( val, h ) {
 					this.headers[ h ] = val;
