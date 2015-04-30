@@ -223,10 +223,10 @@ This example assumes that either:
 
 ```js
 // example using autohost's fount instance
-var host = require( 'autohost' );
-
-host.register( 'myDependency1', { ... } );
-host.register( 'myDependency2', somePromise );
+var autohost = require( 'autohost' );
+var host = autohost( { ... } );
+host.fount.register( 'myDependency1', { ... } );
+host.fount.register( 'myDependency2', somePromise );
 
 ```
 
