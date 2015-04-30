@@ -6,8 +6,8 @@ var fs = require( 'fs' );
 var log = require( './log' )( 'autohost.api' );
 var readDirectory = nodeWhen.lift( fs.readdir );
 
-function addAdapter( state, adapter ) {
-	state.adapters.push( adapter );
+function addAdapter( state, protocol, adapter ) {
+	state.adapters[ protocol ] = adapter;
 }
 
 function attachPath( state, target, filePath ) {
@@ -22,7 +22,7 @@ function attachPath( state, target, filePath ) {
 }
 
 function clearAdapters( state ) {
-	state.adapters = [];
+	state.adapters = {};
 }
 
 // store actions from the resource
@@ -183,20 +183,19 @@ function reduce( acc, resource ) {
 	return acc;
 }
 
-function start( state, resourcePath, auth ) {
+function init( state, resourcePath, auth ) {
 	state.actionList = {};
+	state.auth = auth;
 	return loadAll( state, resourcePath )
 		.then( normalizeResources.bind( undefined, state ) )
 		.then( function() {
 			var meta = processResources( state );
 			state.host.actions = state.actionList;
-			if ( auth ) {
-				auth.updateActions( state.actionList )
+			if ( auth && auth.updateActions ) {
+				return auth.updateActions( state.actionList )
 					.then( function() {
-						startAdapters( state, auth );
+						return meta || {};
 					} );
-			} else {
-				startAdapters( state, auth );
 			}
 			return meta || {};
 		} );
@@ -208,9 +207,9 @@ function stop( state ) {
 	} );
 }
 
-function startAdapters( state, auth ) {
+function start( state ) {
 	_.each( state.adapters, function( adapter ) {
-		adapter.start( state.config, auth );
+		adapter.start( state.config, state.auth );
 	} );
 }
 
@@ -224,8 +223,9 @@ function trim( list ) {
 
 module.exports = function( host, config ) {
 	var state = {
+		auth: undefined,
 		actionList: {},
-		adapters: [],
+		adapters: {},
 		config: config,
 		host: host,
 		fount: host.fount,
@@ -237,8 +237,8 @@ module.exports = function( host, config ) {
 		clearAdapters: clearAdapters.bind( undefined, state ),
 		loadModule: loadModule.bind( undefined, state ),
 		loadResources: loadResources.bind( undefined, state ),
+		init: init.bind( undefined, state ),
 		start: start.bind( undefined, state ),
-		startAdapters: startAdapters.bind( undefined, state ),
 		stop: stop.bind( undefined, state )
 	} );
 	return state;

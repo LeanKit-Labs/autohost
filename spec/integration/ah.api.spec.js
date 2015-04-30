@@ -10,12 +10,13 @@ var config = {
 };
 var os = require( 'os' );
 var hostName = os.hostname();
+var harnessFn = require( '../../src/harness' );
 
 describe( 'AH Resource', function() {
 	var harness, loggedOut;
 
 	before( function() {
-		harness = require( './harness.js' )( config );
+		harness = harnessFn( config );
 		harness.metrics.useLocalAdapter();
 		var testCall = function( env ) {
 			env.reply( { data: 'hello' } );
@@ -42,7 +43,7 @@ describe( 'AH Resource', function() {
 		harness.addMiddleware( '/api/test/call', function( req, res, next ) {
 			loggedOut = true;
 			next();
-		} );
+		}, 'logout' );
 		harness.setActionRoles( 'test.call', [ 'user' ] );
 		harness.start();
 	} );

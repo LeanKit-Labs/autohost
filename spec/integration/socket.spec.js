@@ -9,12 +9,13 @@ var config = {
 	defaultUser: true,
 	handleRouteErrors: true
 };
+var harnessFn = require( '../../src/harness' );
 
 describe( 'Socket Management', function() {
 	var harness;
 
 	before( function() {
-		harness = require( './harness.js' )( config );
+		harness = harnessFn( config );
 		harness.addUser( 'usertwo', 'two', 'two', [] );
 		harness.start();
 	} );

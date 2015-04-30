@@ -1,7 +1,5 @@
 function middlewareFn( stub ) {
-	return proxyquire( '../src/http/middleware', {
-		'express-session': stub
-	} )();
+	return require( '../../src/http/middleware' )( stub );
 }
 
 function mockFn() {

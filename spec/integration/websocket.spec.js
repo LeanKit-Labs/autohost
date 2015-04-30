@@ -9,6 +9,7 @@ var config = {
 	parseAhead: true,
 	handleRouteErrors: true
 };
+var harnessFn = require( '../../src/harness' );
 
 describe( 'Websocket', function() {
 	var cookieExpiresAt;
@@ -20,7 +21,7 @@ describe( 'Websocket', function() {
 	// * action that throws exception
 	// * route that throws an exception
 	before( function() {
-		harness = require( './harness.js' )( config );
+		harness = harnessFn( config );
 		cookieExpiresAt = new Date( Date.now() + 60000 );
 		var argsCall = function( env ) {
 			return {
@@ -60,7 +61,7 @@ describe( 'Websocket', function() {
 			}
 		};
 
-		harness.addMiddleware( '/', function( req, res, next ) {
+		harness.addMiddleware( '/', function httpExtension( req, res, next ) {
 			req.extendHttp = {
 				extension: 'an extension!',
 				preparsed: req.preparams

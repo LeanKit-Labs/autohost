@@ -8,13 +8,12 @@ var defaults = {
 
 module.exports = function setup( config ) {
 	config = _.defaults( config, defaults );
-	require( '../../src/log' )( config.log || {} );
-	var requestor = require( 'request' ).defaults( { jar: false } );
+	require( './log' )( config.log || {} );
 
 	var authProvider;
 	var hasAuth = !config.noAuth;
 	if ( hasAuth ) {
-		authProvider = require( './auth/mock.js' )( config );
+		authProvider = require( './mock/auth' )( config );
 		if ( config.defaultUser ) {
 			authProvider.tokens = { 'one': 'userone' };
 			authProvider.users = {
@@ -23,13 +22,14 @@ module.exports = function setup( config ) {
 		}
 	}
 
-	var middleware = require( '../../src/http/middleware.js' )();
-	middleware.configure( config );
-	var http = require( '../../src/http/http.js' )( requestor, middleware );
-	var httpAdapter = require( '../../src/http/adapter.js' )( config, authProvider, http, requestor );
-	var socket = require( '../../src/websocket/socket.js' )( config, http );
-	var socketAdapter = require( '../../src/websocket/adapter.js' )( config, authProvider, socket );
-
+	var autohost = require( './index' );
+	config.authProvider = authProvider;
+	var host = autohost( config );
+	var httpAdapter = host.transport.adapters.http;
+	var socketAdapter = host.transport.adapters.ws;
+	var http = host.http;
+	var socket = host.socket;
+	var middleware = host.middleware;
 	var actionRoles = function( action, roles ) {
 		if ( authProvider ) {
 			authProvider.actions[ action ] = { roles: roles };
@@ -62,8 +62,8 @@ module.exports = function setup( config ) {
 		actionRoles( fqn, [] );
 	};
 
-	var addMiddleware = function( url, mw ) {
-		http.middleware( url, mw );
+	var addMiddleware = function( url, mw, alias ) {
+		http.middleware( url, mw, alias );
 	};
 
 	var addResource = function( resource, resourcePath ) {
@@ -128,8 +128,7 @@ module.exports = function setup( config ) {
 	};
 
 	var start = function() {
-		httpAdapter.start();
-		socketAdapter.start();
+		host.start();
 	};
 
 	var stop = function() {
@@ -146,8 +145,7 @@ module.exports = function setup( config ) {
 		_.each( wsClients, function( w ) {
 			w.close();
 		} );
-		httpAdapter.stop();
-		socketAdapter.stop();
+		host.stop();
 	};
 
 	return {
@@ -162,9 +160,9 @@ module.exports = function setup( config ) {
 		clearUsers: clearUsers,
 		getIOClient: getIOClient,
 		getWSClient: getWSClient,
-		http: http,
+		http: host.http,
 		httpAdapter: httpAdapter,
-		metrics: require( '../../src/metrics' )( config.metrics ),
+		metrics: require( './metrics' )( config.metrics ),
 		middleware: middleware,
 		setActionRoles: actionRoles,
 		setUserRoles: userRoles,

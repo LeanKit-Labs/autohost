@@ -25,7 +25,7 @@ function buildActionUrl( state, resourceName, actionName, action, resource, reso
 		prefix = hasPrefix( state, url ) ? '' : prefix;
 		return state.http.buildUrl( prefix, url );
 	} else {
-		var resourceIndex = action.url.indexOf( resourceName );
+		var resourceIndex = action.url ? action.url.indexOf( resourceName ) : -1;
 		var resourcePrefix = resourceIndex === 0 || resourceIndex === 1 ? '' : resourceName;
 		return state.http.buildUrl(
 			prefix, resource.urlPrefix || '', resourcePrefix, ( action.url || '' )
@@ -125,9 +125,7 @@ function respond( state, meta, req, res, resource, action ) {
 			meta.errorCount.record();
 			log.debug( 'ERROR! route: %s %s failed with %s',
 				action.method.toUpperCase(), action.url, err.stack );
-			res.status( 500 ).send(
-				'Server error at ' + action.method.toUpperCase() + ' ' + action.url
-			);
+			result = err;
 		}
 	} else {
 		result = action.handle.apply( resource, [ envelope ] );

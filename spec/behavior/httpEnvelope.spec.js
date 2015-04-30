@@ -34,6 +34,104 @@ describe( 'HTTP Envelope', function() {
 			} );
 		} );
 
+		describe( 'with overlapping generic error handlers', function() {
+			var envelope, req, res, request, host, resource;
+			before( function() {
+				res = createResponse();
+				req = createRequest();
+				request = stubRequest();
+				envelope = new ( envelopeFn( request ))( req, res, 'test' );
+				host = {
+					errors: {
+						'Error': {
+							status: 500
+						}
+					}
+				};
+				resource = {
+					errors: {
+						'Error': {
+							status: 505,
+							reply: function( error ) {
+								return 'this is silly: ' + error.message;
+							}
+						}
+					}
+				};
+				envelope.handleReturn( host, resource, {}, new Error( 'test' ) );
+			} );
+
+			it( 'should use 500 status and create body from reply method', function() {
+				res.sent.should.eql( {
+					status: 505,
+					body: 'this is silly: test'
+				} );
+			} );
+		} );
+
+		describe( 'with existing file error', function() {
+			var envelope, req, res, request, host;
+			before( function() {
+				res = createResponse();
+				req = createRequest();
+				request = stubRequest();
+				envelope = new ( envelopeFn( request ))( req, res, 'test' );
+				host = {
+					static: './spec/public',
+					errors: {
+						'Error': {
+							status: 500,
+							file: './myError.html'
+						}
+					}
+				};
+				envelope.handleReturn( host, {}, {}, new Error( 'test' ) );
+			} );
+
+			it( 'should use 500 status', function( done ) {
+				setTimeout( function() {
+					res.sent.should.eql( {
+						status: 500,
+						body: '<html>\n\t<body>Behold, yon error!</body>\n</html>'
+					} );
+					done();
+				}, 50 );
+			} );
+
+			it( 'should set content-type header only', function() {
+				res.headers.should.eql( {
+					'Content-Type': 'text/html'
+				} );
+			} );
+		} );
+
+		describe( 'with missing file error', function() {
+			var envelope, req, res, request, host;
+			before( function() {
+				res = createResponse();
+				req = createRequest();
+				request = stubRequest();
+				envelope = new ( envelopeFn( request ))( req, res, 'test' );
+				host = {
+					static: './spec/public',
+					errors: {
+						'Error': {
+							status: 500,
+							file: './myUrrur.html'
+						}
+					}
+				};
+				envelope.handleReturn( host, {}, {}, new Error( 'default error message' ) );
+			} );
+
+			it( 'should fall back to default error handling', function() {
+				res.sent.should.eql( {
+					status: 500,
+					body: 'default error message'
+				} );
+			} );
+		} );
+
 		describe( 'with resource defined custom error', function() {
 			var envelope, req, res, request, resource;
 			before( function() {
@@ -604,7 +702,9 @@ function createResponse() {
 			this.sent.url = url;
 		}.bind( res ),
 		send: function( data ) {
-			this.sent.body = data;
+			if ( data ) {
+				this.sent.body = data;
+			}
 			return this;
 		}.bind( res ),
 		set: function( k, v ) {
@@ -616,6 +716,17 @@ function createResponse() {
 				this.headers[ k ] = v;
 			}
 		}.bind( res ),
+		write: function( chunk ) {
+			this.sent.body = this.sent.body || '';
+			if ( chunk ) {
+				this.sent.body += chunk;
+			}
+		},
+		end: _.noop,
+		on: _.noop,
+		once: _.noop,
+		emit: _.noop,
+		removeListener: _.noop,
 		status: function( code ) {
 			this.sent.status = code;
 			return this;

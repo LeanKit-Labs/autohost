@@ -29,13 +29,15 @@ I created autohost so we could have a consistent, reliable and extendible way to
 #### ./index.js - the most boring app ever
 ```js
 var autohost = require( 'autohost' );
-var authProvider = require( 'autohost-nedb-auth' )( {} );
-var host = autohost( {}, authProvider );
+var auth = require( 'autohost-nedb-auth' )( {} );
+var host = autohost( { authProvider: auth } );
+// additional setup, like custom middleware would go here
+host.start(); // starts the server
 ```
 
 	node index.js
 
-## autohost( config, [authProvider] )
+## autohost( config )
 Refer to the section below for a list of available configuration properties and default values.
 
 ### Configuration
@@ -54,6 +56,7 @@ The object literal follows the format:
 	resources: './resource', // where to load resource modules from
 	modules: [], 			// list of npm resource modules to load
 
+	authProvider: undefined, // a promise for or instance of an authentication provider
 	allowedOrigin: , 		// used to filter incoming web socket connections based on origin
 	socketIO: false, 		// enables socket.io,
 	websocket: false, 		// enables websockets
@@ -100,7 +103,7 @@ By default [express session](https://github.com/expressjs/session) is the sessio
 This example demonstrates using the redis and connect-redis libraries to create a redis-backed session store.
 ```javascript
 var autohost = require( 'autohost' );
-var authProvider = require( 'autohost-nedb-auth' )( {} );
+var auth = require( 'autohost-nedb-auth' )( {} );
 
 var redis = require( 'redis' ).createClient( port, address );
 var RedisStore = require( 'connect-redis' )( host.session );
@@ -110,12 +113,14 @@ var store = new RedisStore( {
 	} );
 
 host = autohost( {
+	authProvider: auth,
 	session: {
 		name: 'myapp.sid',
 		secret: 'youdontevenknow',
 		store: store
 	}
-}, authProvider );
+} );
+host.start();
 ```
 
 #### Ending a session
@@ -218,10 +223,10 @@ This example assumes that either:
 
 ```js
 // example using autohost's fount instance
-var host = require( 'autohost' );
-
-host.register( 'myDependency1', { ... } );
-host.register( 'myDependency2', somePromise );
+var autohost = require( 'autohost' );
+var host = autohost( { ... } );
+host.fount.register( 'myDependency1', { ... } );
+host.fount.register( 'myDependency2', somePromise );
 
 ```
 
@@ -311,6 +316,8 @@ The handle is a callback that will be invoked if the caller has adequate permiss
 {
 	status: 200,
 	data: undefined,
+	cookies: {}, // set cookies sent back to the client
+	headers: {}, // set headers sent back in the response
 	file: { // only used when replying with file
 		name: , // the file name for the response
 		type: , // the content-type
@@ -329,13 +336,39 @@ The handle is a callback that will be invoked if the caller has adequate permiss
 }
 ```
 
+> **Recommendation**
+
+> Don't include application logic in a resource file. The resource is there as a means to 'plug' application logic into HTTP and websocket transports. Keeping behavior in a separate module will make it easy to test application behavior apart from autohost.
+
+### Controlling Error Responses
+Responses sent to the client based on an error returned from an action's handle can be controlled at the config, resource or action level. How to handle a specific error type is determined by first checking the action, then resource, then config (host) levels.
+
+The `errors` property can be set at any of these levels and is a set of case-sensitive error names and a literal specifying how to render the error. The literal can contain a `status` to control the status code used and a static `body`, `file` or `reply` function that takes the error as an argument and returns the content for the response body.
+
+> Note: File is only applicable for the http transport and will be ignored in sockets.
+
+```javascript
+// this could exist in the config, a resource or an action
+errors: {
+	Error: {
+		status: 500,
+		body: 'oops'
+	},
+	NotFoundError: {
+		status: 404,
+		file: './404.html' // file is relative to the static folder
+	},
+	BadRequestError: {
+		status: 400,
+		reply: function( err ) {
+			return 'This is no good: ' + err.message;
+		}
+	}
+},
+```
 
 #### Tighter Response Control
 Read the section on envelopes for details on data available and alternate ways to produce a response.
-
-> **Recommendation**
-
-> You should not include application logic in a resource file. The resource is there as a means to 'plug' application logic into HTTP and websocket transports. Keeping behavior in a separate module will make it easy to test application behavior apart from autohost.
 
 ## Envelope
 Envelopes are an abstraction around the incoming message or request. They are intended to help normalize interactions with a client despite the transport being used.
@@ -408,7 +441,7 @@ A list of NPM modules can be specified that will be loaded as resources. This fe
 ## HTTP Transport
 The http transport API has three methods to add middleware, API routes and static content routes. While resources are the preferred means of adding static and API routes, it's very common to add application specific middleware. Custom middleware is added *after* standard middleware and passport (unless specific middleware was disabled via configuration).
 
- * `host.http.middleware( mountPath, callback )`
+ * `host.http.middleware( mountPath, callback, [middlewareAlias] )`
  * `host.http.route( url, callback )`
  * `host.http.static( url, filePath or options )` (See [static](#static) above for details on options)
 
@@ -422,7 +455,7 @@ By default autohost places all resource action routes behind `/api` to prevent a
 
 	Note: a `urlPrefix` will always precede this if one has been supplied.
 
-You can also override this setting per-resource by giving your resource an `apiPrefix` setting.
+This setting can be controlled per-resource via the `apiPrefix` setting.
 
 #### urlPrefix
 In the event that a reverse proxy is in front of autohost that routes requests from a path segment to the service, use a urlPrefix to align the leading path from the original url with routes generated by autohost.

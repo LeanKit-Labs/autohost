@@ -9,11 +9,16 @@ var config = {
 	defaultUser: true,
 };
 var get;
+var harnessFn = require( '../../src/harness' );
 
 describe( 'Configuration', function() {
-	var harness, cwd;
+	var harness, cwd, fount;
 
 	before( function() {
+		fount = require( 'fount' );
+		fount.register( 'durp1', 'hello' );
+		fount.register( 'durp2', 'goodbye' );
+		config.fount = fount;
 		cwd = process.cwd();
 		process.chdir( path.join( __dirname, '..' ) );
 		get = function( req ) {
@@ -35,7 +40,7 @@ describe( 'Configuration', function() {
 				var testConfig = _.extend( {}, config, {
 					static: false
 				} );
-				harness = require( './harness.js' )( testConfig );
+				harness = harnessFn( testConfig );
 				harness.start();
 			} );
 
@@ -65,7 +70,7 @@ describe( 'Configuration', function() {
 
 			before( function() {
 				cwd = process.cwd();
-				harness = require( './harness.js' )( _.extend( {}, config ) );
+				harness = harnessFn( _.extend( {}, config ) );
 				harness.start();
 			} );
 
@@ -95,7 +100,7 @@ describe( 'Configuration', function() {
 				var testConfig = _.extend( {}, config, {
 					static: './public/txt'
 				} );
-				harness = require( './harness.js' )( testConfig );
+				harness = harnessFn( testConfig );
 				harness.start();
 			} );
 
@@ -131,7 +136,7 @@ describe( 'Configuration', function() {
 						}
 					}
 				} );
-				harness = require( './harness.js' )( testConfig );
+				harness = harnessFn( testConfig );
 				harness.start();
 			} );
 

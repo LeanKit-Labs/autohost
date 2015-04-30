@@ -29,11 +29,11 @@ describe( 'Transport', function() {
 
 		before( function() {
 			transport = require( '../../src/transport.js' )( host, {} );
-			transport.addAdapter( adapter );
+			transport.addAdapter( 'test', adapter );
 		} );
 
 		it( 'should only show the default API endpoint', function() {
-			return transport.start( './spec/durp' )
+			return transport.init( './spec/durp' )
 				.should.eventually.deep.equal( {
 				ah: { routes: { metrics: { method: 'get', url: undefined } } }
 			} );
@@ -57,11 +57,11 @@ describe( 'Transport', function() {
 			fount.register( 'durp1', 'hello' );
 			fount.register( 'durp2', 'goodbye' );
 			transport = require( '../../src/transport.js' )( host, { modules: [ './spec/misc/anresource.js' ] } );
-			transport.addAdapter( adapter );
+			transport.addAdapter( 'test', adapter );
 		} );
 
 		it( 'should load all resources and actions', function() {
-			return transport.start( './spec/resource' )
+			return transport.init( './spec/resource' )
 				.should.eventually.deep.equal(
 				{
 					one: {
@@ -107,8 +107,8 @@ describe( 'Transport', function() {
 				} );
 		} );
 
-		it( 'should start adapter', function() {
-			adapter.started.should.be.true; // jshint ignore:line
+		it( 'should not start adapter', function() {
+			adapter.started.should.be.false; // jshint ignore:line
 		} );
 
 		after( function() {

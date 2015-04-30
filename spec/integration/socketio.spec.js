@@ -9,6 +9,7 @@ var config = {
 	parseAhead: true,
 	handleRouteErrors: true
 };
+var harnessFn = require( '../../src/harness' );
 
 describe( 'Socket.io', function() {
 	var cookieExpiresAt;
@@ -20,7 +21,7 @@ describe( 'Socket.io', function() {
 	// * action that throws exception
 	// * route that throws an exception
 	before( function() {
-		harness = require( './harness.js' )( config );
+		harness = harnessFn( config );
 		cookieExpiresAt = new Date( Date.now() + 60000 );
 		var argsCall = function( env ) {
 			return {
@@ -74,7 +75,7 @@ describe( 'Socket.io', function() {
 				preparsed: req.preparams
 			};
 			next();
-		} );
+		}, 'httpExtension' );
 
 		harness.addResource( {
 			name: 'test',
