@@ -88,11 +88,14 @@ describe( 'HTTP Envelope', function() {
 				envelope.handleReturn( host, {}, {}, new Error( 'test' ) );
 			} );
 
-			it( 'should use 500 status', function() {
-				res.sent.should.eql( {
-					status: 500,
-					body: '<html>\n\t<body>Behold, yon error!</body>\n</html>'
-				} );
+			it( 'should use 500 status', function( done ) {
+				setTimeout( function() {
+					res.sent.should.eql( {
+						status: 500,
+						body: '<html>\n\t<body>Behold, yon error!</body>\n</html>'
+					} );
+					done();
+				}, 50 );
 			} );
 
 			it( 'should set content-type header only', function() {
