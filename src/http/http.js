@@ -198,7 +198,7 @@ function registerUserMiddleware( state, filter, callback, alias ) {
 }
 
 function registerRoute( state, url, method, callback ) {
-	method = method.toLowerCase();
+	method = method ? method.toLowerCase() : 'all';
 	method = method === 'all' || method === 'any' ? 'all' : method;
 	var fn = function() {
 		url = prefix( state, url );

@@ -12,9 +12,13 @@ var get;
 var harnessFn = require( '../../src/harness' );
 
 describe( 'Configuration', function() {
-	var harness, cwd;
+	var harness, cwd, fount;
 
 	before( function() {
+		fount = require( 'fount' );
+		fount.register( 'durp1', 'hello' );
+		fount.register( 'durp2', 'goodbye' );
+		config.fount = fount;
 		cwd = process.cwd();
 		process.chdir( path.join( __dirname, '..' ) );
 		get = function( req ) {
