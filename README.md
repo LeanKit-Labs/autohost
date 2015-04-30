@@ -345,6 +345,8 @@ Responses sent to the client based on an error returned from an action's handle 
 
 The `errors` property can be set at any of these levels and is a set of case-sensitive error names and a literal specifying how to render the error. The literal can contain a `status` to control the status code used and a static `body`, `file` or `reply` function that takes the error as an argument and returns the content for the response body.
 
+> Note: File is only applicable for the http transport and will be ignored in sockets.
+
 ```javascript
 // this could exist in the config, a resource or an action
 errors: {

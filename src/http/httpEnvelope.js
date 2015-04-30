@@ -1,5 +1,7 @@
 var request;
 var _ = require( 'lodash' );
+var fs = require( 'fs' );
+var path = require( 'path' );
 
 function HttpEnvelope( req, res, metricKey ) {
 	this.transport = 'http';
@@ -86,7 +88,7 @@ HttpEnvelope.prototype.handleReturn = function( host, resource, action, result )
 		this.renderError( host, resource, action, result );
 	} else {
 		if ( result.file ) {
-			this.replyWithFile( result.file.type, result.file.name, result.file.stream );
+			this.replyWithFile( result.file.type, result.file.name, result.file.stream, result.status );
 		} else if ( result.forward ) {
 			this.forwardTo( result.forward );
 		} else if ( result.redirect ) {
@@ -121,19 +123,28 @@ HttpEnvelope.prototype.renderError = function( host, resource, action, error ) {
 		resourceError,
 		actionError
 	);
-
-	var reply = {
-		status: strategy.status,
-		data: strategy.reply ? strategy.reply( error, this ) : strategy.body
-	};
-	this.reply( reply );
+	var filePath = strategy.file ? path.resolve( host.static, strategy.file ) : '';
+	if ( fs.existsSync( filePath ) ) {
+		this.replyWithFile( 'text/html', undefined, fs.createReadStream( filePath ), strategy.status );
+	} else {
+		var reply = {
+			status: strategy.status,
+			data: strategy.reply ? strategy.reply( error, this ) : strategy.body
+		};
+		this.reply( reply );
+	}
 };
 
-HttpEnvelope.prototype.replyWithFile = function( contentType, fileName, fileStream ) {
-	this._original.res.set( {
-		'Content-Disposition': 'attachment; filename="' + fileName + '"',
+HttpEnvelope.prototype.replyWithFile = function( contentType, fileName, fileStream, status ) {
+	status = status || 200;
+	var headers = {
 		'Content-Type': contentType
-	} );
+	};
+	if ( fileName ) {
+		headers[ 'Content-Disposition' ] = 'attachment; filename="' + fileName + '"';
+	}
+	this._original.res.status( status );
+	this._original.res.set( headers );
 	fileStream.pipe( this._original.res );
 };
 
