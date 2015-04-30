@@ -175,7 +175,7 @@ function queryParser( req, res, next ) {
 
 function registerMiddleware( state, filter, callback, alias ) {
 	var fn = function( router ) {
-		log.debug( 'MIDDLEWARE: %s mounted at %s', ( callback.name || alias || 'anonymous' ), filter );
+		log.debug( 'SYSTEM MIDDLEWARE: %s mounted at %s', ( callback.name || alias || 'anonymous' ), filter );
 		router.use( filter, callback );
 	};
 	if ( state.app ) {
@@ -188,7 +188,7 @@ function registerUserMiddleware( state, filter, callback, alias ) {
 	// if using an auth strategy, move cookie and session middleware before passport middleware
 	// to take advantage of sessions/cookies and avoid authenticating on every request
 	var fn = function( router ) {
-		log.debug( 'MIDDLEWARE: %s mounted at %s', ( callback.name || alias || 'anonymous' ), filter );
+		log.debug( 'USER MIDDLEWARE: %s mounted at %s', ( callback.name || alias || 'anonymous' ), filter );
 		router.use( filter, callback );
 	};
 	if ( state.app ) {
@@ -252,14 +252,14 @@ function start( state, config, passport ) {
 	// if using an auth strategy, move cookie and session middleware before passport middleware
 	// to take advantage of sessions/cookies and avoid authenticating on every request
 	if ( passport ) {
-		state.middlewareLib.useCookies( state.middleware );
-		state.middlewareLib.useSession( state.middleware );
+		state.middlewareLib.useCookies( state.ahMiddleware );
+		state.middlewareLib.useSession( state.ahMiddleware );
 		_.each( passport.getMiddleware( '/' ), function( m ) {
-			state.middleware( m.path, m.fn, m.alias );
+			state.ahMiddleware( m.path, m.fn, m.alias );
 		} );
 	}
 	// prime middleware with defaults
-	state.middlewareLib.attach( state.middleware, passport !== undefined );
+	state.middlewareLib.attach( state.ahMiddleware, passport !== undefined );
 
 	initializePublicRoute( state );
 	state.app = express();
@@ -305,6 +305,7 @@ module.exports = function( request, middleware ) {
 		start: start.bind( undefined, state ),
 		static: registerStaticPath.bind( undefined, state ),
 		stop: stop.bind( undefined, state ),
+		ahMiddleware: registerMiddleware.bind( undefined, state )
 	} );
 	return state;
 };

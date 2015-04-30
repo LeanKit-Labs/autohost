@@ -5,10 +5,13 @@
  * API Change - host now requires `start` to start the server
  * authProvider is now a config property
  * Bug fix - undefined config would throw an error instead of using all defaults
+ * Bug fix - correct registration of system middleware as user middleware
  * Remove support for incorrectly nested user property on request object
  * Added support for handling generic errors
+ * Support returning static files as error responses
  * Added aliases for anonymous middleware for better debug logging
- * Rework harness to rely more on index
+ * Rework harness to rely on index
+ * Expose harness via 'autohost/harness'
 
 ### 0.4.0
 

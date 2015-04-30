@@ -14,7 +14,7 @@ function applyCookieMiddleware( state, attach ) {
 	}
 }
 
-function applyMiddelware( state, attach, hasAuth ) {
+function applyMiddleware( state, attach, hasAuth ) {
 	// add a timer to track ALL requests
 	attach( '/', requestMetrics.bind( undefined, state ), 'metrics' );
 
@@ -147,7 +147,7 @@ module.exports = function() {
 		sessionLib: sessionLib
 	};
 	_.merge( state, {
-		attach: applyMiddelware.bind( undefined, state ),
+		attach: applyMiddleware.bind( undefined, state ),
 		configure: configure.bind( undefined, state ),
 		useCookies: applyCookieMiddleware.bind( undefined, state ),
 		useSession: applySessionMiddleware.bind( undefined, state ),
