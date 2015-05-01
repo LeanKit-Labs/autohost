@@ -91,7 +91,7 @@ function requestMetrics( state, req, res, next ) {
 	var timer = state.metrics.timer( [ urlKey, 'http', 'duration' ] );
 
 	res.once( 'finish', function() {
-		var user = req.authenticatedUser;
+		var user = _.isObject( req.user ) ? ( req.user.name || req.user.username || req.user.id ) : 'anonymous';
 		var method = req.method.toUpperCase();
 		var read = req.connection.bytesRead;
 		var readKB = read / 1024;
