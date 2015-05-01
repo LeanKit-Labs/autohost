@@ -38,7 +38,6 @@ function getAuthMiddleware( state, uri ) {
 
 function getRoles( state, req, res, next ) {
 	var userName = _.isObject( req.user ) ? req.user.name : undefined;
-	req.authenticatedUser = userName || req.user.id || 'anonymous';
 
 	function onError( err ) {
 		state.metrics.authorizationErrors.record();
@@ -95,7 +94,7 @@ function getSocketRoles( state, user ) {
 }
 
 function getUserString( user ) {
-	return user.name ? user.name : JSON.stringify( user );
+	return user.name || user.username || user.id || JSON.stringify( user );
 }
 
 function resetUserCount( state ) {

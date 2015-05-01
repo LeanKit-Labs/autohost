@@ -1,3 +1,4 @@
+var _ = require( 'lodash' );
 var path = require( 'path' );
 var port = 8988;
 var defaults = {
