@@ -1,5 +1,10 @@
 ## 0.4.x
 
+### 0.4.2
+
+ * Bug fix - authenticated users don't show up in access log correctly on consecutive calls
+ * Remove authenticatedUser property from request
+
 ### 0.4.1
 
  * API Change - host now requires `start` to start the server
