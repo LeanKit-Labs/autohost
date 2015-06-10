@@ -325,7 +325,7 @@ The handle is a callback that will be invoked if the caller has adequate permiss
 	},
 	forward: { // only used if forwarding the request
 		url: , // the url to forward to
-		method: , // if unspecified, copies headers in the original request
+		method: , // if unspecified, copies the method of the original request
 		headers: , // if unspecified, copies headers in the original request
 		body: // use if changing the body contents
 	},
