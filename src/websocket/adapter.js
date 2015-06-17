@@ -50,13 +50,13 @@ function getMetadata( state, resource, actionName, action ) {
 	return {
 		alias: alias,
 		authAttempted: function() {
-			state.metrics.authorizationAttempts.record();
+			state.metrics.authorizationAttempts.record( 1, { name: 'WS_AUTHORIZATION_ATTEMPTS' } );
 		},
 		authGranted: function() {
-			state.metrics.authorizationGrants.record();
+			state.metrics.authorizationGrants.record( 1, { name: 'WS_AUTHORIZATION_GRANTS' } );
 		},
 		authRejected: function() {
-			state.metrics.authorizationRejections.record();
+			state.metrics.authorizationRejections.record( 1, { name: 'WS_AUTHORIZATION_REJECTIONS' } );
 		},
 		topic: topic,
 		errors: errors,
@@ -71,7 +71,7 @@ function respond( state, meta, resource, action, client, data, message, resource
 		try {
 			result = action.handle.apply( resource, [ envelope ] );
 		} catch ( err ) {
-			meta.errors.record();
+			meta.errors.record( 1, { name: 'WS_TOPIC_ERRORS' } );
 			client.publish( data.replyTo || meta.topic,
 				'Server error at topic ' + meta.topic );
 		}

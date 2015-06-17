@@ -12,13 +12,13 @@ function authConditionally( state, req, res, next ) {
 	// if previous middleware has said to skip auth OR
 	// a user was attached from a session, skip authenticating
 	if ( req.skipAuth || req.user ) {
-		state.metrics.authenticationSkips.record();
+		state.metrics.authenticationSkips.record( 1, { name: 'HTTP_AUTHENTICATION_SKIPPED' } );
 		next();
 	} else {
-		state.metrics.authenticationAttempts.record();
+		state.metrics.authenticationAttempts.record( 1, { name: 'HTTP_AUTHENTICATION_ATTEMPTS' } );
 		var timer = state.metrics.authenticationTimer();
 		state.authProvider.authenticate( req, res, next );
-		timer.record();
+		timer.record( { name: 'HTTP_AUTHENTICATION_DURATION' } );
 	}
 }
 
@@ -40,9 +40,9 @@ function getRoles( state, req, res, next ) {
 	var userName = _.isObject( req.user ) ? req.user.name : undefined;
 
 	function onError( err ) {
-		state.metrics.authorizationErrors.record();
+		state.metrics.authorizationErrors.record( 1, { name: 'HTTP_AUTHORIZATION_ERRORS' } );
 		req.user.roles = [];
-		timer.record();
+		timer.record( { name: 'HTTP_AUTHORIZATION_DURATION' } );
 		log.debug( 'Failed to get roles for %s with %s', getUserString( req.user ), err.stack );
 		// during a socket connection, express is not fully initialized and this call fails ... hard
 		try {
@@ -56,7 +56,7 @@ function getRoles( state, req, res, next ) {
 	function onRoles( roles ) {
 		log.debug( 'Got roles [ %s ] for %s', roles, req.user );
 		req.user.roles = roles;
-		timer.record();
+		timer.record( { name: 'HTTP_AUTHORIZATION_DURATION' } );
 		next();
 	}
 
@@ -72,15 +72,15 @@ function getRoles( state, req, res, next ) {
 
 function getSocketRoles( state, user ) {
 	function onError( err ) {
-		state.metrics.authorizationErrors.record();
-		timer.record();
+		state.metrics.authorizationErrors.record( 1, { name: 'WS_AUTHORIZATION_ERRORS' } );
+		timer.record( { name: 'WS_AUTHORIZATION_DURATION' } );
 		log.debug( 'Failed to get roles for %s with %s', getUserString( user ), err.stack );
 		return [];
 	}
 
 	function onRoles( roles ) {
 		log.debug( 'Got roles [ %s ] for %s', roles, getUserString( user ) );
-		timer.record();
+		timer.record( { name: 'WS_AUTHORIZATION_DURATION' } );
 		return roles;
 	}
 

@@ -60,7 +60,7 @@ SocketEnvelope.prototype.forwardTo = function( /* options */ ) {
 };
 
 SocketEnvelope.prototype.recordTime = function() {
-	this.timer.record();
+	this.timer.record( { name: 'WS_ACTION_DURATION' } );
 };
 
 SocketEnvelope.prototype.redirect = function( /* options */ ) {

@@ -1,5 +1,10 @@
 ## 0.4.x
 
+### 0.4.3
+
+ * Add metadata to metrics to provide a unique name for each metric collected
+ * Bug fix - prevent default metronic instance from being used when user provides one via config
+
 ### 0.4.2
 
  * Bug fix - authenticated users don't show up in access log correctly on consecutive calls
