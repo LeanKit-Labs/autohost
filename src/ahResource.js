@@ -6,13 +6,9 @@ module.exports = function( host ) {
 			"metrics": {
 				url: "/metrics",
 				method: "get",
-				handle: function( envelope ) {
+				handle: function( /* envelope */ ) {
 					var metrics = host.metrics.getReport();
-					if ( envelope.hyped ) {
-						envelope.hyped( metrics ).render();
-					} else {
-						envelope.reply( { data: metrics } );
-					}
+					return { data: metrics };
 				}
 			}
 		}

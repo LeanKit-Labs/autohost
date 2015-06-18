@@ -563,46 +563,58 @@ Being aware of the metric keys used is important.
 
 __System Level Metrics__
 
-* {prefix}.{hostName}.memory-total
-* {prefix}.{hostName}.memory-allocated
-* {prefix}.{hostName}.memory-free
+| Key | Name |
+|-----|------|
+| {prefix}.{hostName}.memory-total | SYSTEM_MEMORY_TOTAL |
+| {prefix}.{hostName}.memory-allocated | SYSTEM_MEMORY_USED |
+| {prefix}.{hostName}.memory-free | SYSTEM_MEMORY_FREE |
 
 __Process Level Metrics__
 
-* {prefix}.{hostName}.{processTitle}.memory-physical
-* {prefix}.{hostName}.{processTitle}.memory-allocated
-* {prefix}.{hostName}.{processTitle}.memory-used
-* {prefix}.{hostName}.{processTitle}.core-#-load
+| Key | Name |
+|-----|------|
+| {prefix}.{hostName}.{processTitle}.memory-physical | PROCESS_MEMORY_ALLOCATED |
+| {prefix}.{hostName}.{processTitle}.memory-allocated | PROCESS_MEMORY_AVAILABLE |
+| {prefix}.{hostName}.{processTitle}.memory-used | PROCESS_MEMORY_USED |
+| {prefix}.{hostName}.{processTitle}.core-#-load | PROCESS_CORE_#_LOAD |
 
 __Authentication & Authorization__
 
-* {prefix}.{hostName}.{processTitle}.authenticating
-* {prefix}.{hostName}.{processTitle}.authentication-attempted
-* {prefix}.{hostName}.{processTitle}.authentication-failed
-* {prefix}.{hostName}.{processTitle}.authentication-granted
-* {prefix}.{hostName}.{processTitle}.authentication-rejected
-* {prefix}.{hostName}.{processTitle}.authentication-skipped
-* {prefix}.{hostName}.{processTitle}.authorizing
-* {prefix}.{hostName}.{processTitle}.authorization-attempted
-* {prefix}.{hostName}.{processTitle}.authorization-failed
-* {prefix}.{hostName}.{processTitle}.authorization-granted
-* {prefix}.{hostName}.{processTitle}.authorization-rejected
+| Key | Name |
+|-----|------|
+| {prefix}.{hostName}.{processTitle}.authenticating | HTTP_AUTHENTICATION_DURATION |
+| {prefix}.{hostName}.{processTitle}.authentication-attempted | HTTP_AUTHENTICATION_ATTEMPTS |
+| {prefix}.{hostName}.{processTitle}.authentication-failed | HTTP_AUTHENTICATION_ERRORS |
+| {prefix}.{hostName}.{processTitle}.authentication-granted | HTTP_AUTHENTICATION_GRANTED |
+| {prefix}.{hostName}.{processTitle}.authentication-rejected | HTTP_AUTHENTICATION_REJECTED |
+| {prefix}.{hostName}.{processTitle}.authentication-skipped | HTTP_AUTHENTICATION_SKIPPED |
+| {prefix}.{hostName}.{processTitle}.authorizing | HTTP_AUTHORIZATION_DURATION |
+| {prefix}.{hostName}.{processTitle}.authorization-attempted | HTTP_AUTHORIZATION_ATTEMPTS |
+| {prefix}.{hostName}.{processTitle}.authorization-failed | HTTP_AUTHORIZATION_ERRORS |
+| {prefix}.{hostName}.{processTitle}.authorization-granted | HTTP_AUTHORIZATION_GRANTED |
+| {prefix}.{hostName}.{processTitle}.authorization-rejected | HTTP_AUTHORIZATION_REJECTED |
 
 __Static Resources & Custom Routes__
 
-* {prefix}.{hostName}.{processTitle}.{url-verb}.ingress
-* {prefix}.{hostName}.{processTitle}.{url-verb}.egress
-* {prefix}.{hostName}.{processTitle}.{url-verb}.duration
-* {prefix}.{hostName}.{processTitle}.{url-verb}.errors
-* {prefix}.{hostName}.{processTitle}.{url-verb}.requests
+| Key | Name |
+|-----|------|
+| {prefix}.{hostName}.{processTitle}.{url-verb}.ingress | HTTP_INGRESS |
+| {prefix}.{hostName}.{processTitle}.{url-verb}.egress | HTTP_EGRESS |
+| {prefix}.{hostName}.{processTitle}.{url-verb}.duration | HTTP_ROUTE_DURATION |
+| {prefix}.{hostName}.{processTitle}.{url-verb}.exceptions | HTTP_ROUTE_EXCEPTIONS |
+| {prefix}.{hostName}.{processTitle}.{url-verb}.errors | HTTP_ROUTE_ERRORS |
+| {prefix}.{hostName}.{processTitle}.{url-verb}.requests | HTTP_REQUESTS |
 
 __Resource Actions__
 
-* {prefix}.{hostName}.{processTitle}.{resource-action}.{transport}.ingress
-* {prefix}.{hostName}.{processTitle}.{resource-action}.{transport}.egress
-* {prefix}.{hostName}.{processTitle}.{resource-action}.{transport}.duration
-* {prefix}.{hostName}.{processTitle}.{resource-action}.{transport}.errors
-* {prefix}.{hostName}.{processTitle}.{resource-action}.{transport}.requests
+| Key | Name |
+|-----|------|
+| {prefix}.{hostName}.{processTitle}.{resource-action}.{transport}.ingress | HTTP_API_INGRESS |
+| {prefix}.{hostName}.{processTitle}.{resource-action}.{transport}.egress | HTTP_API_EGRESS |
+| {prefix}.{hostName}.{processTitle}.{resource-action}.{transport}.duration | HTTP_API_DURATION |
+| {prefix}.{hostName}.{processTitle}.{resource-action}.{transport}.exceptions | HTTP_API_EXCEPTIONS |
+| {prefix}.{hostName}.{processTitle}.{resource-action}.{transport}.errors | HTTP_API_ERRORS |
+| {prefix}.{hostName}.{processTitle}.{resource-action}.{transport}.requests | HTTP_REQUESTS |
 
 ## Metadata
 Metadata describing the routes and topic are available via an OPTIONS to api:

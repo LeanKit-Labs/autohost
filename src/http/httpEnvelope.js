@@ -2,6 +2,7 @@ var request;
 var _ = require( 'lodash' );
 var fs = require( 'fs' );
 var path = require( 'path' );
+var metrics = require( '../metrics' )();
 
 function HttpEnvelope( req, res, metricKey ) {
 	this.transport = 'http';
@@ -23,6 +24,9 @@ function HttpEnvelope( req, res, metricKey ) {
 		req: req,
 		res: res
 	};
+	this.exceptions = metrics.meter( this.metricKey.concat( 'exceptions' ) );
+	this.errors = metrics.meter( this.metricKey.concat( 'errors' ) );
+
 	[ req.params, req.query ].forEach( function( source ) {
 		Object.keys( source ).forEach( function( key ) {
 			var val = source[ key ];
@@ -123,6 +127,12 @@ HttpEnvelope.prototype.renderError = function( host, resource, action, error ) {
 		resourceError,
 		actionError
 	);
+
+	if( strategy.status >= 500 ) {
+		this.exceptions.record( 1, { name: 'HTTP_API_EXCEPTIONS' } );
+	} else {
+		this.errors.record( 1, { name: 'HTTP_API_ERRORS' } );
+	}
 	var filePath = strategy.file ? path.resolve( host.static, strategy.file ) : '';
 	if ( fs.existsSync( filePath ) ) {
 		this.replyWithFile( 'text/html', undefined, fs.createReadStream( filePath ), strategy.status );

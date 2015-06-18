@@ -52,16 +52,16 @@ function checkPermissionFor( state, user, context, action ) {
 	log.debug( 'Checking %s\'s permissions for %s',
 		getUserString( user ), action
 	);
-	state.metrics.authorizationAttempts.record();
+	state.metrics.authorizationAttempts.record( 1, { name: 'HTTP_AUTHORIZATION_ATTEMPTS' } );
 	var timer = state.metrics.authorizationTimer();
 	function onError( err ) {
 		log.error( 'Error during check permissions: %s', err.stack );
-		state.metrics.authorizationErrors.record();
-		timer.record();
+		state.metrics.authorizationErrors.record( 1, { name: 'HTTP_AUTHORIZATION_ERRORS' });
+		timer.record( { name: 'HTTP_AUTHORIZATION_DURATION' } );
 		return false;
 	}
 	function onPermission( granted ) {
-		timer.record();
+		timer.record( { name: 'HTTP_AUTHORIZATION_DURATION' } );
 		return granted;
 	}
 	return state.auth.checkPermission( user, action, context )
@@ -73,20 +73,18 @@ function getActionMetadata( state, resource, actionName, action, meta, resources
 	var alias = buildActionAlias( resource.name, actionName );
 	var resourceKey = [ [ resource.name, actionName ].join( '-' ), 'http' ];
 	var metricKey = [ state.metrics.prefix ].concat( resourceKey );
-	var errors = state.metrics.meter( resourceKey.concat( 'error' ) );
 	meta.routes[ actionName ] = { method: action.method, url: url };
 	return {
 		alias: alias,
 		authAttempted: function() {
-			state.metrics.authorizationAttempts.record();
+			state.metrics.authorizationAttempts.record( 1, { name: 'HTTP_AUTHORIZATION_ATTEMPTS' } );
 		},
 		authGranted: function() {
-			state.metrics.authorizationGrants.record();
+			state.metrics.authorizationGrants.record( 1, { name: 'HTTP_AUTHORIZATION_GRANTED' }  );
 		},
 		authRejected: function() {
-			state.metrics.authorizationRejections.record();
+			state.metrics.authorizationRejections.record( 1, { name: 'HTTP_AUTHORIZATION_REJECTED' } );
 		},
-		errorCount: errors,
 		getEnvelope: function( req, res ) {
 			return new state.Envelope( req, res, metricKey );
 		},
@@ -122,8 +120,7 @@ function respond( state, meta, req, res, resource, action ) {
 		try {
 			result = action.handle.apply( resource, [ envelope ] );
 		} catch ( err ) {
-			meta.errorCount.record();
-			log.debug( 'ERROR! route: %s %s failed with %s',
+			log.error( 'API EXCEPTION! route: %s %s failed with %s',
 				action.method.toUpperCase(), action.url, err.stack );
 			result = err;
 		}
@@ -183,7 +180,7 @@ function wireupAction( state, resource, actionName, action, metadata, resources 
 		req._checkPermission = meta.getPermissionCheck( req );
 		var timer = meta.getTimer();
 		res.once( 'finish', function() {
-			timer.record();
+			timer.record( { name: 'HTTP_API_DURATION' } );
 		} );
 
 		if ( state.auth ) {
