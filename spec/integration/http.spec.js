@@ -213,7 +213,7 @@ describe( 'HTTP', function() {
 					headers: { 'Authorization': 'Bearer three' }
 				} )
 				.then( transformResponse( 'body', 'testHeader', 'setCookie' ), onError )
-				.should.eventually.have.property( 'body' ).that.equal( 'User lacks sufficient permissions' );
+				.should.eventually.have.property( 'body' ).that.equal( 'Could not determine user permission' );
 		} );
 	} );
 

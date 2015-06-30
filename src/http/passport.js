@@ -32,7 +32,7 @@ function getAuthMiddleware( state, uri ) {
 		} ) )
 		.concat( [ { path: uri, fn: whenNoUsers },
 			{ path: uri, fn: authConditionally.bind( undefined, state ), alias: 'conditionalAuth' },
-		{ path: uri, fn: getRoles, alias: 'userRoles' } ] );
+		{ path: uri, fn: getRoles.bind( undefined, state ), alias: 'userRoles' } ] );
 	return list;
 }
 
