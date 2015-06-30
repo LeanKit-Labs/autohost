@@ -1,5 +1,8 @@
 ## 0.4.x
 
+### 0.4.4
+Bug fix - getRoles was incorrectly being treated as error handling middleware
+
 ### 0.4.3
 
  * Add metadata to metrics to provide a unique name for each metric collected

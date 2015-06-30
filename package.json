@@ -1,6 +1,6 @@
 {
   "name": "autohost",
-  "version": "0.4.3",
+  "version": "0.4.4",
   "description": "Resource driven, transport agnostic host",
   "main": "src/index.js",
   "dependencies": {
@@ -67,6 +67,10 @@
       "name": "Jim Cowart",
       "email": "jim@ifandelse.com",
       "url": "http://ifandelse.com"
+    },
+    {
+      "name": "Ryan Niemeyer",
+      "url": "http://knockmeout.net"
     },
     {
       "name": "Josh Bush",
