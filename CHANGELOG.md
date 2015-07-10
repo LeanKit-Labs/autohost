@@ -1,6 +1,6 @@
 ## 0.4.x
 
-### Latest
+### 0.4.5
 Enhancement - getUserString is now shared as an overrideable global config option
 
 ### 0.4.4
