@@ -11,7 +11,7 @@ function buildActionTopic( resourceName, action ) {
 }
 
 function checkPermissionFor( state, user, context, action ) {
-	log.debug( 'Checking %s\'s permissions for %s', getUserString( user ), action );
+	log.debug( 'Checking %s\'s permissions for %s', state.config.getUserString( user ), action );
 	return state.authProvider.checkPermission( user, action, context )
 		.then( null, function( err ) {
 			log.debug( 'Error during check permissions: %s', err.stack );
@@ -20,10 +20,6 @@ function checkPermissionFor( state, user, context, action ) {
 		.then( function( granted ) {
 			return granted;
 		} );
-}
-
-function getUserString( user ) {
-	return user.name ? user.name : JSON.stringify( user );
 }
 
 function start( state ) {
@@ -103,12 +99,12 @@ function wireupAction( state, resource, actionName, action, metadata ) {
 					if ( pass ) {
 						meta.authGranted();
 						log.debug( 'WS activation of action %s for %s granted',
-							meta.alias, getUserString( client.user ) );
+							meta.alias, state.config.getUserString( client.user ) );
 						respond( state, meta, resource, action, client, data, message, resourceTimer );
 					} else {
 						meta.authRejected();
 						log.debug( 'User %s was denied WS activation of action %s',
-							getUserString( client.user ), meta.alias );
+							state.config.getUserString( client.user ), meta.alias );
 						client.publish( data.replyTo || meta.topic,
 							'User lacks sufficient permissions' );
 					}

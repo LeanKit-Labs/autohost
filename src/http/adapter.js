@@ -50,7 +50,7 @@ function buildPath( pathSpec ) {
 
 function checkPermissionFor( state, user, context, action ) {
 	log.debug( 'Checking %s\'s permissions for %s',
-		getUserString( user ), action
+		state.config.getUserString( user ), action
 	);
 	state.metrics.authorizationAttempts.record( 1, { name: 'HTTP_AUTHORIZATION_ATTEMPTS' } );
 	var timer = state.metrics.authorizationTimer();
@@ -99,10 +99,6 @@ function getActionMetadata( state, resource, actionName, action, meta, resources
 		resourceKey: resourceKey,
 		url: url
 	};
-}
-
-function getUserString( user ) {
-	return user.name ? user.name : JSON.stringify( user );
 }
 
 function hasPrefix( state, url ) {
@@ -190,12 +186,12 @@ function wireupAction( state, resource, actionName, action, metadata, resources 
 					if ( pass ) {
 						meta.authGranted();
 						log.debug( 'HTTP activation of action %s (%s %s) for %j granted',
-							meta.alias, action.method, meta.url, getUserString( req.user ) );
+							meta.alias, action.method, meta.url, state.config.getUserString( req.user ) );
 						respond( state, meta, req, res, resource, action );
 					} else {
 						meta.authRejected();
 						log.debug( 'User %s was denied HTTP activation of action %s (%s %s)',
-							getUserString( req.user ), meta.alias, action.method, meta.url );
+							state.config.getUserString( req.user ), meta.alias, action.method, meta.url );
 						if ( !res._headerSent ) {
 							res.status( 403 ).send( 'User lacks sufficient permissions' );
 						}

@@ -14,6 +14,11 @@ var internalFount = require( 'fount' );
 
 function initialize( config, authProvider, fount ) {
 	config = config || {};
+	_.defaults( config, {
+		getUserString: function( user ) {
+			return user.name || user.username || user.id || JSON.stringify( user );
+		}
+	} );
 	authProvider = authProvider || config.authProvider;
 	require( './log' )( config.logging || {} );
 	var metrics = require( './metrics' )( config.metrics || {} );
