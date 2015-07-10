@@ -3,6 +3,7 @@ var fount = require( 'fount' );
 var request = require( 'request' );
 
 var middleware, http, httpAdapter, socket, socketAdapter, transport, log;
+var noop = function (){};
 function getHost() {
 	middleware = {
 		configure: function( config ) {
@@ -80,7 +81,7 @@ describe( 'Index', function() {
 	describe( 'with defaults', function() {
 		var host;
 		before( function() {
-			host = getHost()( { test: true } );
+			host = getHost()( { test: true, getUserString: noop } );
 		} );
 
 		it( 'should get internal fount reference', function() {
@@ -88,16 +89,16 @@ describe( 'Index', function() {
 		} );
 
 		it( 'should pass configuration to middleware library', function() {
-			middleware.args.should.eql( [ { test: true } ] );
+			middleware.args.should.eql( [ { test: true, getUserString: noop } ] );
 		} );
 
 		it( 'should pass state and configuration to transport library', function() {
-			transport.args.should.eql( [ host, { test: true } ] );
+			transport.args.should.eql( [ host, { test: true, getUserString: noop } ] );
 		} );
 
 		it( 'should initialize http adapter', function() {
 			httpAdapter.args.should.eql( [
-				{ test: true },
+				{ test: true, getUserString: noop },
 				undefined,
 				http,
 				request
@@ -105,12 +106,12 @@ describe( 'Index', function() {
 		} );
 
 		it( 'should initialize socket', function() {
-			socket.args.should.eql( [ { test: true }, http ] );
+			socket.args.should.eql( [ { test: true, getUserString: noop }, http ] );
 		} );
 
 		it( 'should initialize socket adapter', function() {
 			socketAdapter.args.should.eql( [
-				{ test: true },
+				{ test: true, getUserString: noop },
 				undefined,
 				host.socket
 			] );

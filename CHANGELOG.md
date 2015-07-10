@@ -1,5 +1,8 @@
 ## 0.4.x
 
+### Latest
+Enhancement - getUserString is now shared as an overrideable global config option
+
 ### 0.4.4
 Bug fix - getRoles was incorrectly being treated as error handling middleware
 

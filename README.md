@@ -70,6 +70,7 @@ The object literal follows the format:
 
 	session: 				// session configuration
 	cookie: 				// session cookie configuration
+	getUserString:			// method to return a string id for a user
 
 	logging: {}, 			// configuration passed to autohost's whistlepunk instance
 	fount: undefined, 		// pass the app's fount instance to autohost
@@ -166,6 +167,25 @@ Each library supports all optional features and can be managed from the [admin a
 
 Planned support for:
  * MS SQL server
+
+### getUserString
+
+ The `getUserString` option expects a method that accepts `user` as its only parameter, and returns a string (used for logging) to identify the user. The default method provided attempts the following steps:
+
+ * return `user.name` if available, otherwise:
+ * return `user.username` if available, otherwise:
+ * return `user.id` if available, otherwise:
+ * return `JSON.stringify( user )`
+
+ Override this method with custom logic if the default does not match your field names on your user object. For instance:
+
+ ```js
+ {
+ 	getUserString: function ( user ) {
+ 		return user.login;
+ 	}
+ }
+ ```
 
 ### fount
 [fount](https://github.com/LeanKit-Labs/fount) is a dependency injection library for Node. If the application is using fount, the application's instance can be provided at the end of the init call so that resources will have access to the same fount instance the application is using. The fount instance in use by `autohost` is available via `host.fount`.

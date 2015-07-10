@@ -43,7 +43,7 @@ function getRoles( state, req, res, next ) {
 		state.metrics.authorizationErrors.record( 1, { name: 'HTTP_AUTHORIZATION_ERRORS' } );
 		req.user.roles = [];
 		timer.record( { name: 'HTTP_AUTHORIZATION_DURATION' } );
-		log.debug( 'Failed to get roles for %s with %s', getUserString( req.user ), err.stack );
+		log.debug( 'Failed to get roles for %s with %s', state.config.getUserString( req.user ), err.stack );
 		// during a socket connection, express is not fully initialized and this call fails ... hard
 		try {
 			res.status( 500 ).send( 'Could not determine user permissions' );
@@ -74,12 +74,12 @@ function getSocketRoles( state, user ) {
 	function onError( err ) {
 		state.metrics.authorizationErrors.record( 1, { name: 'WS_AUTHORIZATION_ERRORS' } );
 		timer.record( { name: 'WS_AUTHORIZATION_DURATION' } );
-		log.debug( 'Failed to get roles for %s with %s', getUserString( user ), err.stack );
+		log.debug( 'Failed to get roles for %s with %s', state.config.getUserString( user ), err.stack );
 		return [];
 	}
 
 	function onRoles( roles ) {
-		log.debug( 'Got roles [ %s ] for %s', roles, getUserString( user ) );
+		log.debug( 'Got roles [ %s ] for %s', roles, state.config.getUserString( user ) );
 		timer.record( { name: 'WS_AUTHORIZATION_DURATION' } );
 		return roles;
 	}
@@ -91,10 +91,6 @@ function getSocketRoles( state, user ) {
 		return state.authProvider.getUserRoles( user, {} )
 			.then( onRoles, onError );
 	}
-}
-
-function getUserString( user ) {
-	return user.name || user.username || user.id || JSON.stringify( user );
 }
 
 function resetUserCount( state ) {
@@ -138,6 +134,7 @@ function withAuthLib( authProvider ) {
 
 module.exports = function( config, authProvider ) {
 	var state = {
+		config: config,
 		authProvider: authProvider,
 		metrics: metronic(),
 		passportInitialize: passport.initialize(),

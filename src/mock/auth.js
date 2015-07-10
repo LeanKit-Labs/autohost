@@ -53,7 +53,7 @@ function checkPermission( user, action, context ) {
 }
 
 function getUserString( user ) {
-	return user.name ? user.name : JSON.stringify( user );
+	return user.name || user.username || user.id || JSON.stringify( user );
 }
 
 function hasPermissions( userRoles, actionRoles, context ) {
