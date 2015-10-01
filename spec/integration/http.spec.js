@@ -132,6 +132,62 @@ describe( 'HTTP', function() {
 			}
 		} );
 
+		function returnContext( envelope ) {
+			return { data: envelope.context };
+		}
+
+		harness.addResource( {
+			name: 'middlewareResource',
+			middleware: function( envelope, next ) {
+				if( envelope.headers.wtf ) {
+					return {
+						status: 700,
+						headers: {
+							'content-type': 'application/json'
+						},
+						data: [ 'whisky', 'tango', 'foxtrot' ]
+					};
+				} else {
+					return next();
+				}
+			},
+			actions: {
+				plain: {
+					handle: returnContext
+				},
+				extra: {
+					middleware: [
+						function( envelope, next ) {
+							if( envelope.headers[ 'action-middleware' ] === '1' ) {
+								envelope.context.mw = 1;
+							}
+							return next();
+						},
+						function( envelope, next ) {
+							if( envelope.data.mw ) {
+								envelope.context.mw2 = envelope.data.test;
+							}
+							return next();
+						}
+					],
+					method: 'get',
+					url: '/extra/:test',
+					handle: returnContext
+				},
+				bad: {
+					middleware: [
+						function( envelope, next ) {
+							return next();
+						},
+						undefined
+					],
+					method: 'get',
+					url: '/bad',
+					handle: returnContext
+				}
+			}
+		} );
+
 		harness.addRoute( '/api/test/fail', 'GET', errorCall );
 		harness.addTopic( 'fail', errorCall );
 		harness.setActionRoles( 'test.args', [ 'user' ] );
@@ -152,6 +208,83 @@ describe( 'HTTP', function() {
 			} );
 		};
 		post = lift( requestor.post );
+	} );
+
+	describe( 'Resource and action middleware', function() {
+		it( 'should short-circuit stack when resource middleware is activated', function() {
+			return get(
+				{
+					url: 'http://localhost:8988/api/middlewareResource',
+					headers: { 'Authorization': 'Bearer one', 'wtf': 'true' }
+				} )
+				.then( transformResponse( 'body', 'type', 'statusCode' ), onError )
+				.should.eventually.deep.equal(
+				{
+					body: '["whisky","tango","foxtrot"]',
+					statusCode: 700,
+					type: 'application/json; charset=utf-8'
+				} );
+		} );
+
+		it( 'should activate first action middelware independently', function() {
+			return get(
+				{
+					url: 'http://localhost:8988/api/middlewareResource/extra/test',
+					headers: { 'Authorization': 'Bearer one', 'action-middleware': '1' }
+				} )
+				.then( transformResponse( 'body', 'type', 'statusCode' ), onError )
+				.should.eventually.deep.equal(
+				{
+					body: '{"mw":1}',
+					statusCode: 200,
+					type: 'application/json; charset=utf-8'
+				} );
+		} );
+
+		it( 'should activate second action middelware independently', function() {
+			return get(
+				{
+					url: 'http://localhost:8988/api/middlewareResource/extra/test?mw=true',
+					headers: { 'Authorization': 'Bearer one' }
+				} )
+				.then( transformResponse( 'body', 'type', 'statusCode' ), onError )
+				.should.eventually.deep.equal(
+				{
+					body: '{"mw2":"test"}',
+					statusCode: 200,
+					type: 'application/json; charset=utf-8'
+				} );
+		} );
+
+		it( 'should activate first and second action middelware', function() {
+			return get(
+				{
+					url: 'http://localhost:8988/api/middlewareResource/extra/test?mw=true',
+					headers: { 'Authorization': 'Bearer one', 'action-middleware': '1' }
+				} )
+				.then( transformResponse( 'body', 'type', 'statusCode' ), onError )
+				.should.eventually.deep.equal(
+				{
+					body: '{"mw":1,"mw2":"test"}',
+					statusCode: 200,
+					type: 'application/json; charset=utf-8'
+				} );
+		} );
+
+		it( 'should return a server error when undefined middleware is supplied', function() {
+			return get(
+				{
+					url: 'http://localhost:8988/api/middlewareResource/bad',
+					headers: { 'Authorization': 'Bearer one' }
+				} )
+				.then( transformResponse( 'body', 'type', 'statusCode' ), onError )
+				.should.eventually.deep.equal(
+				{
+					body: '{"message":"The server failed to provide a response"}',
+					statusCode: 500,
+					type: 'application/json; charset=utf-8'
+				} );
+		} );
 	} );
 
 	describe( 'Posting overlapping args (authorized)', function() {

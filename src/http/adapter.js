@@ -68,6 +68,17 @@ function checkPermissionFor( state, user, context, action ) {
 		.then( onPermission, onError );
 }
 
+function executeStack( resource, action, envelope, stack ) {
+	var calls = stack.slice( 0 );
+	var call = calls.shift();
+	if( call ) {
+		return call.bind( resource )( envelope, executeStack.bind( undefined, resource, action, envelope, calls ) );
+	} else {
+		log.error( 'Invalid middelware was supplied in resource "%s", action "%s".', resource.name, action.name );
+		return { status: 500, data: { message: 'The server failed to provide a response' } };
+	}
+}
+
 function getActionMetadata( state, resource, actionName, action, meta, resources ) {
 	var url = buildActionUrl( state, resource.name, actionName, action, resource, resources );
 	var alias = buildActionAlias( resource.name, actionName );
@@ -112,16 +123,24 @@ function hasPrefix( state, url ) {
 function respond( state, meta, req, res, resource, action ) {
 	var envelope = meta.getEnvelope( req, res );
 	var result;
+	var stack = [];
+	if( resource.middleware ) {
+		stack = stack.concat( resource.middleware );
+	}
+	if( action.middleware ) {
+		stack = stack.concat( action.middleware );
+	}
+	stack.push( action.handle );
 	if ( meta.handleErrors ) {
 		try {
-			result = action.handle.apply( resource, [ envelope ] );
+			result = executeStack( resource, action, envelope, stack );
 		} catch ( err ) {
 			log.error( 'API EXCEPTION! route: %s %s failed with %s',
 				action.method.toUpperCase(), action.url, err.stack );
 			result = err;
 		}
 	} else {
-		result = action.handle.apply( resource, [ envelope ] );
+		result = executeStack( resource, action, envelope, stack );
 	}
 	if ( result ) {
 		if ( result.then ) {
@@ -159,6 +178,7 @@ function wireupResource( state, resource, basePath, resources ) {
 		meta.path = { url: '/' + resource.name, directory: static.path };
 	}
 	_.each( resource.actions, function( action, actionName ) {
+		action.name = actionName;
 		wireupAction( state, resource, actionName, action, meta, resources );
 	} );
 	return meta;

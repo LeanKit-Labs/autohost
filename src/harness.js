@@ -37,14 +37,15 @@ module.exports = function setup( config ) {
 		}
 	};
 
-	var addAction = function( resourceName, actionName, handle, method, url, topic ) {
+	var addAction = function( resourceName, actionName, handle, method, url, topic, resourceMiddleware, actionMiddleware ) {
 		var fqn = [ resourceName, actionName ].join( '.' );
 		httpAdapter.action(
-			{ name: resourceName },
+			{ name: resourceName, middleware: resourceMiddleware },
 			actionName,
 			{
 				method: method || 'get',
 				url: url || '/' + actionName,
+				middleware: actionMiddleware,
 				handle: handle
 			},
 			{ routes: {} }

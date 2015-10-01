@@ -221,11 +221,13 @@ module.exports = function( host ) {
 		static: '', // relative path to static assets for this resource,
 		apiPrefix: '', // Optional override for global apiPrefix setting. Omit entirely to use default.
 		urlPrefix: '', // URL prefix for all actions in this resource
+		middleware: [],// one or more middleware functions to mount to the resource's url
 		actions:  {
 			send: {
 				method: 'get', // http verb
 				url: '', // url pattern appended to the resource name
 				topic: 'send', // topic segment appended the resource name
+				middleware: [], // one or more middleware functions to mount to the action's url
 				handle: function( envelope ) {
 					// see section on envelope for more detail
 				}
@@ -259,11 +261,13 @@ module.exports = function( host, myDependency1, myDependency2 ) {
 		static: '', // relative path to static assets for this resource
 		apiPrefix: '', // Optional override for global apiPrefix setting. Omit entirely to use default.
 		urlPrefix: '', // URL prefix for all actions in this resource
+		middleware: [],// one or more middleware functions to mount to the resource's url
 		actions: {
 			send: {
 				method: 'get', // http verb
 				url: '', // url pattern appended to the resource name
 				topic: 'send', // topic segment appended the resource name
+				middleware: [], // one or more middleware functions to mount to the action's url
 				handle: function( envelope ) {
 					// see section on envelope for more detail
 				}
@@ -280,13 +284,48 @@ The resource name is pre-pended to the action's alias to create a globally uniqu
 
 	topic: {resource-name}.{action-topic|action-alias}
 
-
 	Note: If defining resources for use with [hyped](https://github.com/leankit-labs/hyped) - the resource name is not automatically pre-pended to the url.
 
-### resources
+### static
 You can host nested static files under a resource using this property. The directory and its contents found at the path will be hosted after the resource name in the URL.
 
-To enable this, simply add the module names as an array in the `modules` property of the configuration hash passed to init.
+### middleware
+Provides a mechanism for defining resource-level middleware either in a single function or in a list of functions. These functions are provided with an envelope and are able to make changes to it before it reaches action-specific middleware or the handle call.
+
+Below are several examples of different middleware patterns. This should demonstrate both synchronous and asynchronous patterns for proceding and short-circuiting the stack.
+
+```javascript
+...
+// all middleware must return either the result of next or a promise/data structure
+middleware: [
+	function( envelope, next ) {
+		// invokes the next middelware or handle call
+		return next();
+	},
+	function( envelope, next ) {
+		// demonstrates returning a data structure
+		if( envelope.data.example === 1 ) {
+			return { data: { message: 'This will short circuit the stack and respond immediately' } };
+		} else if( envelope.data.example === 2 ) {
+			// demonstrates returning next asynchronously
+			return somethingPromisey()
+				.then( function( x ) {
+					envelope.context.importantThing = x;
+					return next();
+				} );
+		} else if( envelope.data.example === 3 ) {
+			// demonstrates short-circuiting a stack via a promise
+			return anotherPromise()
+				.then( function( x ) {
+					return { data: x };
+				} );
+		} else {
+			return next();
+		}
+	}
+}
+...
+```
 
 ## Actions
 The hash of actions are the operations exposed on a resource on the available transports.
@@ -325,6 +364,12 @@ function myStrategy( resourceName, actionName, action, resourceList ) { ... }
 ```
 
 The string returned will be the URL used to route requests to this action. Proceed with extreme caution.
+
+### middleware
+Provides a mechanism for defining action-level middleware either in a single function or in a list of functions. These functions are provided with an envelope and are able to make changes to it before it reaches the handle call.
+
+__IMPORTANT__
+Middleware **must** return either the result of the `next` call _or_ a promise/data structure to short circuit the stack with a response. They are mutually exclusive. Do not call both. Do not fail to return one or the other.
 
 ### handle
 The handle is a callback that will be invoked if the caller has adequate permissions. The handle call can return a hash (or a promise that resolve to one) with the following properties:
@@ -457,6 +502,8 @@ Forwards the request using the request library and returns the resulting stream.
 
 ## External Resources - Loading an NPM Resource Module
 A list of NPM modules can be specified that will be loaded as resources. This feature is intended to support packages that supply a resource and static files as a sharable module. Hopefully it will lead to some interesting sharing of common APIs and/or UIs for autohost based services. (example - realtime metrics dashboard)
+
+To enable this, simply add the module names as an array in the `modules` property of the configuration hash passed to init.
 
 ## HTTP Transport
 The http transport API has three methods to add middleware, API routes and static content routes. While resources are the preferred means of adding static and API routes, it's very common to add application specific middleware. Custom middleware is added *after* standard middleware and passport (unless specific middleware was disabled via configuration).

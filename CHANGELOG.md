@@ -1,5 +1,9 @@
 ## 0.4.x
 
+### Next
+ * Add resource and action middleware abstraction
+ * Minor corrections to existing README for previous features
+
 ### 0.4.5
 Enhancement - getUserString is now shared as an overrideable global config option
 
