@@ -1,5 +1,8 @@
 ## 0.4.x
 
+### Next
+ * Add authorize predicate to resource actions to support alternate authorization approach
+
 ### 0.4.6
  * Add resource and action middleware abstraction
  * Minor corrections to existing README for previous features

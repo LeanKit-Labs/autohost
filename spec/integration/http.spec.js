@@ -188,9 +188,33 @@ describe( 'HTTP', function() {
 			}
 		} );
 
+		harness.addResource( {
+			name: 'actionAuth',
+			actions: {
+				canhaz: {
+					authorize: function( envelope ) {
+						return envelope.headers.canhaz;
+					},
+					handle: function() {
+						return { data: 'Yes, you can' };
+					}
+				},
+				cantneverhaz: {
+					url: '/busted',
+					authorize: function() {
+						throw new Error( 'This is why you can\'t have nice things ...' );
+					},
+					handle: function() {
+						return { data: 'Don\'t you wish your API wasn\'t busted like me?' };
+					}
+				}
+			}
+		} );
+
 		harness.addRoute( '/api/test/fail', 'GET', errorCall );
 		harness.addTopic( 'fail', errorCall );
 		harness.setActionRoles( 'test.args', [ 'user' ] );
+		harness.setActionRoles( 'actionAuth.canhaz', [ 'user' ] );
 		harness.addUser( 'usertwo', 'two', 'two', [] );
 		harness.addUser( 'usererror', 'three', 'three', [] );
 		harness.addUser( 'usernoperm', 'four', 'four', [] );
@@ -283,6 +307,52 @@ describe( 'HTTP', function() {
 					body: '{"message":"The server failed to provide a response"}',
 					statusCode: 500,
 					type: 'application/json; charset=utf-8'
+				} );
+		} );
+	} );
+
+	describe( 'Calling action with action authorization (unauthorized)', function() {
+		it( 'should reject user as not having adequate permissions', function() {
+			return get(
+				{
+					url: 'http://localhost:8988/api/actionAuth',
+					headers: { 'Authorization': 'Bearer two' }
+				} )
+				.then( transformResponse( 'body', 'testHeader', 'setCookie' ), onError )
+				.should.eventually.have.property( 'body' ).that.equal( 'User lacks sufficient permissions' );
+		} );
+	} );
+
+	describe( 'Calling action with action authorization (override)', function() {
+		it( 'should reject user as not having adequate permissions', function() {
+			return get(
+				{
+					url: 'http://localhost:8988/api/actionAuth',
+					headers: {
+						'Authorization': 'Bearer two',
+						canhaz: true
+					}
+				} )
+				.then( transformResponse( 'body' ) )
+				.should.eventually.have.property( 'body' ).that.equal( 'Yes, you can' );
+		} );
+	} );
+
+	describe( 'Calling action with action authorization (broken)', function() {
+		it( 'should reject user as not having adequate permissions', function() {
+			return get(
+				{
+					url: 'http://localhost:8988/api/actionAuth/busted',
+					headers: {
+						'Authorization': 'Bearer two',
+						canhaz: true
+					}
+				} )
+				.then( transformResponse( 'body', 'statusCode' ), onError )
+				.should.eventually.deep.equal(
+				{
+					body: 'Server error at ALL /api/actionAuth/busted',
+					statusCode: 500
 				} );
 		} );
 	} );
