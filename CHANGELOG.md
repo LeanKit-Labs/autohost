@@ -1,6 +1,6 @@
 ## 0.4.x
 
-### Next
+### 0.4.6
  * Add resource and action middleware abstraction
  * Minor corrections to existing README for previous features
 
