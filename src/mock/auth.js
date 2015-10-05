@@ -5,6 +5,7 @@ var Bearer = require( 'passport-http-bearer' ).Strategy;
 var Query = require( './queryStrategy.js' );
 var log = require( '../log' )( 'autohost.auth.mock' );
 var _ = require( 'lodash' );
+var when = require( 'when' );
 var bearerAuth;
 var basicAuth;
 var queryAuth;

@@ -228,6 +228,7 @@ module.exports = function( host ) {
 				url: '', // url pattern appended to the resource name
 				topic: 'send', // topic segment appended the resource name
 				middleware: [], // one or more middleware functions to mount to the action's url
+				authorize: , // optional predicate to check user permissions
 				handle: function( envelope ) {
 					// see section on envelope for more detail
 				}
@@ -268,6 +269,7 @@ module.exports = function( host, myDependency1, myDependency2 ) {
 				url: '', // url pattern appended to the resource name
 				topic: 'send', // topic segment appended the resource name
 				middleware: [], // one or more middleware functions to mount to the action's url
+				authorize: , // optional predicate to check user permissions
 				handle: function( envelope ) {
 					// see section on envelope for more detail
 				}
@@ -370,6 +372,20 @@ Provides a mechanism for defining action-level middleware either in a single fun
 
 __IMPORTANT__
 Middleware **must** return either the result of the `next` call _or_ a promise/data structure to short circuit the stack with a response. They are mutually exclusive. Do not call both. Do not fail to return one or the other.
+
+### authorize
+An optional predicate for checking the users permission. The envelope is provided to the function and should return a boolean or a promise that resolves to a boolean indicating whether or not the user can perform the requested action.
+
+> Note: when present, this _overrides_ rather than augments any authorization check that would have been performed by a configured autohost auth library.
+
+```javascript
+...
+authorize: function( envelope ) {
+	return envelope.user.isAwesome;
+}
+...
+}
+```
 
 ### handle
 The handle is a callback that will be invoked if the caller has adequate permissions. The handle call can return a hash (or a promise that resolve to one) with the following properties:

@@ -1,5 +1,6 @@
 var path = require( 'path' );
 var _ = require( 'lodash' );
+var when = require( 'when' );
 var regex = require( './regex.js' );
 var log = require( '../log' )( 'autohost.http.adapter' );
 var passportFn = require( './passport.js' );
@@ -48,7 +49,7 @@ function buildPath( pathSpec ) {
 	return hasLocalPrefix ? './' + pathSpec : pathSpec;
 }
 
-function checkPermissionFor( state, user, context, action ) {
+function checkPermissionFor( state, permissionCheck, user, action ) {
 	log.debug( 'Checking %s\'s permissions for %s',
 		state.config.getUserString( user ), action
 	);
@@ -64,7 +65,7 @@ function checkPermissionFor( state, user, context, action ) {
 		timer.record( { name: 'HTTP_AUTHORIZATION_DURATION' } );
 		return granted;
 	}
-	return state.auth.checkPermission( user, action, context )
+	return permissionCheck()
 		.then( onPermission, onError );
 }
 
@@ -87,6 +88,7 @@ function getActionMetadata( state, resource, actionName, action, meta, resources
 	meta.routes[ actionName ] = { method: action.method, url: url };
 	return {
 		alias: alias,
+		envelope: undefined,
 		authAttempted: function() {
 			state.metrics.authorizationAttempts.record( 1, { name: 'HTTP_AUTHORIZATION_ATTEMPTS' } );
 		},
@@ -97,10 +99,25 @@ function getActionMetadata( state, resource, actionName, action, meta, resources
 			state.metrics.authorizationRejections.record( 1, { name: 'HTTP_AUTHORIZATION_REJECTED' } );
 		},
 		getEnvelope: function( req, res ) {
-			return new state.Envelope( req, res, metricKey );
+			var envelope = new state.Envelope( req, res, metricKey );
+			this.envelope = envelope;
+			return this.envelope;
 		},
 		getPermissionCheck: function( req ) {
-			return state.auth ? checkPermissionFor.bind( undefined, state, req.user, req.context ) : undefined;
+			var check;
+			if( action.authorize ) {
+				var envelope = this.envelope;
+				check = function() {
+					var can = action.authorize.bind( resource )( envelope );
+					return can && can.then ? can : when.resolve( can );
+				};
+				return checkPermissionFor.bind( undefined, state, check, req.user, alias );
+			} else if( state.auth && state.auth.checkPermission ) {
+				check = state.auth.checkPermission.bind( state.auth, req.user, alias, req.context );
+				return checkPermissionFor.bind( undefined, state, check, req.user, alias );
+			} else {
+				return undefined;
+			}
 		},
 		getTimer: function() {
 			return state.metrics.timer( resourceKey.concat( 'duration' ) );
@@ -190,18 +207,20 @@ function wireupAction( state, resource, actionName, action, metadata, resources 
 		resource.name, actionName, action.method, meta.url );
 
 	state.http.route( meta.url, action.method, function( req, res ) {
+		meta.getEnvelope( req, res );
+		var authCheck = meta.getPermissionCheck( req );
 		req._metricKey = meta.metricKey;
 		req._resource = resource.name;
 		req._action = actionName;
-		req._checkPermission = meta.getPermissionCheck( req );
+		req._checkPermission = authCheck;
 		var timer = meta.getTimer();
 		res.once( 'finish', function() {
 			timer.record( { name: 'HTTP_API_DURATION' } );
 		} );
 
-		if ( state.auth ) {
+		if ( authCheck ) {
 			meta.authAttempted();
-			checkPermissionFor( state, req.user, req.context, meta.alias )
+			authCheck()
 				.then( function onPermission( pass ) {
 					if ( pass ) {
 						meta.authGranted();
