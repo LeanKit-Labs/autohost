@@ -1,6 +1,6 @@
 ## 0.4.x
 
-### Next
+### 0.4.7
  * Add authorize predicate to resource actions to support alternate authorization approach
 
 ### 0.4.6
