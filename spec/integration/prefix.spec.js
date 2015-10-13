@@ -102,7 +102,7 @@ describe( 'URL & API Prefix', function() {
 					.should.eventually.deep.equal(
 					{
 						body: [
-							'alpha', 'bravo', 'charlie', 'delta', 'echo', 'foxtrot', 'an extension!',
+							'alpha', 'bravo', 'charlie', 'delta', 'charlie', 'foxtrot', 'an extension!',
 							{ one: 'alpha', two: 'bravo', three: 'charlie' }
 						],
 						header: 'look a header value!',

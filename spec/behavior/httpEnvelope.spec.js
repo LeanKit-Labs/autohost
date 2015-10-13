@@ -605,17 +605,17 @@ describe( 'HTTP Envelope', function() {
 				envelope = new ( envelopeFn( request ))( req, res, 'test' );
 			} );
 
-			it( 'should not override path variables with query parameters', function() {
+			it( 'should not override path variables with query parameters on data', function() {
 				envelope.data.should.eql( {
 					one: 1,
 					two: 2
 				} );
 			} );
 
-			it( 'should write query parameters to params on envelope', function() {
+			it( 'should not override path variables with query parameters on params', function() {
 				envelope.params.should.eql( {
-					one: 3,
-					two: 4
+					one: 1,
+					two: 2
 				} );
 			} );
 		} );
@@ -648,10 +648,10 @@ describe( 'HTTP Envelope', function() {
 				} );
 			} );
 
-			it( 'should write query parameters to params on envelope', function() {
+			it( 'should not override path variables with query parameters on params', function() {
 				envelope.params.should.eql( {
-					one: 3,
-					two: 4
+					one: 1,
+					two: 2
 				} );
 			} );
 		} );

@@ -1,5 +1,8 @@
 ## 0.4.x
 
+### Current
+ * A query string value can no longer override a URL parameter (Matches behavior of the `data` object)
+
 ### 0.4.7
  * Add authorize predicate to resource actions to support alternate authorization approach
 
