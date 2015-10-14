@@ -1,6 +1,6 @@
-## 0.4.x
+## 0.5.x
 
-### Next
+### 0.5.0
  * A query string value can no longer override a URL parameter (Matches behavior of the `data` object)
  * Correct issue where insufficient parameters were passed to authorize predicates in hyped
  * Default authorization (permission) checks to the end of all middleware
