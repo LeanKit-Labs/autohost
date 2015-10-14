@@ -45,12 +45,17 @@ function getRoles( state, req, res, next ) {
 		timer.record( { name: 'HTTP_AUTHORIZATION_DURATION' } );
 		log.debug( 'Failed to get roles for %s with %s', state.config.getUserString( req.user ), err.stack );
 		// during a socket connection, express is not fully initialized and this call fails ... hard
-		try {
-			res.status( 500 ).send( 'Could not determine user permissions' );
-		} catch ( err ) {
-			log.warn( 'Could not reply with user permission error to request before express is fully initialized.' );
+		if( state.config.socketio && /socket.io/.test( req.url ) ) {
+			next();
+		} else if ( state.config.websocket && /websocket/.test( req.url ) ) {
+			next();
+		} else {
+			try {
+				res.status( 500 ).send( { message: 'Could not determine user permissions' } );
+			} catch ( err ) {
+				log.warn( 'Could not reply with user permission error to request before express is fully initialized.' );
+			}
 		}
-		next();
 	}
 
 	function onRoles( roles ) {

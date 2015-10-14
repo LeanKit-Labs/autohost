@@ -209,7 +209,7 @@ function registerRoute( state, url, method, callback ) {
 					callback( req, res );
 				} catch ( err ) {
 					log.debug( 'ERROR! route: %s %s failed with %s', method.toUpperCase(), url, err.stack );
-					res.status( 500 ).send( 'Server error at ' + method.toUpperCase() + ' ' + url );
+					res.status( 500 ).send( { message: 'Server error at ' + method.toUpperCase() + ' ' + url } );
 				}
 			} else {
 				callback( req, res );

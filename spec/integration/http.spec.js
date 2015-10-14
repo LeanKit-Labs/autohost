@@ -184,6 +184,26 @@ describe( 'HTTP', function() {
 					method: 'get',
 					url: '/bad',
 					handle: returnContext
+				},
+				shortCircuit: {
+					middleware: [
+						function( envelope, next ) {
+							envelope.context.auth = envelope.headers[ 'middleware-user' ];
+							return next();
+						},
+						'authorize',
+						function() {
+							return {
+								data: 'lol, you never even had a chance to hit the handler!'
+							};
+						}
+					],
+					method: 'get',
+					url: '/shortcircuit',
+					authorize: function( envelope ) {
+						return envelope.context.auth;
+					},
+					handle: returnContext
 				}
 			}
 		} );
@@ -239,12 +259,13 @@ describe( 'HTTP', function() {
 			return get(
 				{
 					url: 'http://localhost:8988/api/middlewareResource',
+					json: true,
 					headers: { 'Authorization': 'Bearer one', 'wtf': 'true' }
 				} )
 				.then( transformResponse( 'body', 'type', 'statusCode' ), onError )
 				.should.eventually.deep.equal(
 				{
-					body: '["whisky","tango","foxtrot"]',
+					body: [ 'whisky', 'tango', 'foxtrot' ],
 					statusCode: 700,
 					type: 'application/json; charset=utf-8'
 				} );
@@ -254,12 +275,16 @@ describe( 'HTTP', function() {
 			return get(
 				{
 					url: 'http://localhost:8988/api/middlewareResource/extra/test',
-					headers: { 'Authorization': 'Bearer one', 'action-middleware': '1' }
+					json: true,
+					headers: {
+						'Authorization': 'Bearer one',
+						'action-middleware': '1'
+					}
 				} )
 				.then( transformResponse( 'body', 'type', 'statusCode' ), onError )
 				.should.eventually.deep.equal(
 				{
-					body: '{"mw":1}',
+					body: { mw: 1 },
 					statusCode: 200,
 					type: 'application/json; charset=utf-8'
 				} );
@@ -269,12 +294,15 @@ describe( 'HTTP', function() {
 			return get(
 				{
 					url: 'http://localhost:8988/api/middlewareResource/extra/test?mw=true',
-					headers: { 'Authorization': 'Bearer one' }
+					json: true,
+					headers: {
+						'Authorization': 'Bearer one'
+					}
 				} )
 				.then( transformResponse( 'body', 'type', 'statusCode' ), onError )
 				.should.eventually.deep.equal(
 				{
-					body: '{"mw2":"test"}',
+					body: { mw2: 'test' },
 					statusCode: 200,
 					type: 'application/json; charset=utf-8'
 				} );
@@ -284,13 +312,35 @@ describe( 'HTTP', function() {
 			return get(
 				{
 					url: 'http://localhost:8988/api/middlewareResource/extra/test?mw=true',
-					headers: { 'Authorization': 'Bearer one', 'action-middleware': '1' }
+					json: true,
+					headers: {
+						'Authorization': 'Bearer one',
+						'action-middleware': '1'
+					}
 				} )
 				.then( transformResponse( 'body', 'type', 'statusCode' ), onError )
 				.should.eventually.deep.equal(
 				{
-					body: '{"mw":1,"mw2":"test"}',
+					body: { mw: 1, mw2: 'test' },
 					statusCode: 200,
+					type: 'application/json; charset=utf-8'
+				} );
+		} );
+
+		it( 'should short-circuit middelware stack once authorize call returns false', function() {
+			return get(
+				{
+					url: 'http://localhost:8988/api/middlewareResource/shortcircuit',
+					json: true,
+					headers: {
+						'Authorization': 'Bearer one'
+					}
+				} )
+				.then( transformResponse( 'body', 'type', 'statusCode' ), onError )
+				.should.eventually.deep.equal(
+				{
+					body: { message: 'User lacks sufficient permissions' },
+					statusCode: 403,
 					type: 'application/json; charset=utf-8'
 				} );
 		} );
@@ -299,12 +349,13 @@ describe( 'HTTP', function() {
 			return get(
 				{
 					url: 'http://localhost:8988/api/middlewareResource/bad',
+					json: true,
 					headers: { 'Authorization': 'Bearer one' }
 				} )
 				.then( transformResponse( 'body', 'type', 'statusCode' ), onError )
 				.should.eventually.deep.equal(
 				{
-					body: '{"message":"The server failed to provide a response"}',
+					body: { 'message': 'The server failed to provide a response' },
 					statusCode: 500,
 					type: 'application/json; charset=utf-8'
 				} );
@@ -316,10 +367,12 @@ describe( 'HTTP', function() {
 			return get(
 				{
 					url: 'http://localhost:8988/api/actionAuth',
+					json: true,
 					headers: { 'Authorization': 'Bearer two' }
 				} )
-				.then( transformResponse( 'body', 'testHeader', 'setCookie' ), onError )
-				.should.eventually.have.property( 'body' ).that.equal( 'User lacks sufficient permissions' );
+				.should.eventually.have.property( 'body' ).that.eql(
+					{ message: 'User lacks sufficient permissions' }
+				);
 		} );
 	} );
 
@@ -343,6 +396,7 @@ describe( 'HTTP', function() {
 			return get(
 				{
 					url: 'http://localhost:8988/api/actionAuth/busted',
+					json: true,
 					headers: {
 						'Authorization': 'Bearer two',
 						canhaz: true
@@ -351,7 +405,7 @@ describe( 'HTTP', function() {
 				.then( transformResponse( 'body', 'statusCode' ), onError )
 				.should.eventually.deep.equal(
 				{
-					body: 'Server error at ALL /api/actionAuth/busted',
+					body: { message: 'Server error at ALL /api/actionAuth/busted' },
 					statusCode: 500
 				} );
 		} );
@@ -402,7 +456,7 @@ describe( 'HTTP', function() {
 					headers: { 'Authorization': 'Bearer two' }
 				} )
 				.then( transformResponse( 'body', 'testHeader', 'setCookie' ), onError )
-				.should.eventually.have.property( 'body' ).that.equal( 'User lacks sufficient permissions' );
+				.should.eventually.have.property( 'body' ).that.eql( { message: 'User lacks sufficient permissions' } );
 		} );
 	} );
 
@@ -416,7 +470,7 @@ describe( 'HTTP', function() {
 					headers: { 'Authorization': 'Bearer three' }
 				} )
 				.then( transformResponse( 'body', 'testHeader', 'setCookie' ), onError )
-				.should.eventually.have.property( 'body' ).that.equal( 'Could not determine user permission' );
+				.should.eventually.have.property( 'body' ).that.eql( { message: 'Could not determine user permissions' } );
 		} );
 	} );
 
@@ -429,7 +483,7 @@ describe( 'HTTP', function() {
 					body: { four: 'delta' },
 					headers: { 'Authorization': 'Bearer four' }
 				} )
-				.should.eventually.have.deep.property( '[0].body' ).to.equal( 'User lacks sufficient permissions' );
+				.should.eventually.have.deep.property( '[0].body' ).to.eql( { message: 'Server error at /api/test/args/alpha/bravo/charlie?three=echo&four=foxtrot' } );
 		} );
 	} );
 
@@ -637,12 +691,13 @@ describe( 'HTTP', function() {
 			return get(
 				{
 					url: 'http://localhost:8988/api/test/fail',
+					json: true,
 					headers: { 'Authorization': 'Bearer one' }
 				} )
 				.then( transformResponse( 'body', 'statusCode' ), onError )
 				.should.eventually.deep.equal(
 				{
-					body: 'Server error at GET /api/test/fail',
+					body: { message: 'Server error at GET /api/test/fail' },
 					statusCode: 500
 				}
 			);
