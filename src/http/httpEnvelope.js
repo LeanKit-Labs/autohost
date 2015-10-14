@@ -30,10 +30,12 @@ function HttpEnvelope( req, res, metricKey ) {
 	[ req.params, req.query ].forEach( function( source ) {
 		Object.keys( source ).forEach( function( key ) {
 			var val = source[ key ];
-			if ( this.data[ key ] === undefined || this.data[ key ] === null ) {
+			if ( !this.data.hasOwnProperty( key ) ) {
 				this.data[ key ] = val;
 			}
-			this.params[ key ] = val;
+			if ( !this.params.hasOwnProperty( key ) ) {
+				this.params[ key ] = val;
+			}
 		}.bind( this ) );
 	}.bind( this ) );
 
