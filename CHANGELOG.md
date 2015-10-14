@@ -1,7 +1,12 @@
 ## 0.4.x
 
-### Current
+### Next
  * A query string value can no longer override a URL parameter (Matches behavior of the `data` object)
+ * Correct issue where insufficient parameters were passed to authorize predicates in hyped
+ * Default authorization (permission) checks to the end of all middleware
+ * Allow a placeholder to control when authorization checks occur in middleware stacks
+ * Return JSON `{ message: ... }` for all error responses
+ * Fix issue where express middleware that responds with an error code did not end HTTP stack evaluation
 
 ### 0.4.7
  * Add authorize predicate to resource actions to support alternate authorization approach

@@ -49,22 +49,44 @@ function buildPath( pathSpec ) {
 	return hasLocalPrefix ? './' + pathSpec : pathSpec;
 }
 
-function checkPermissionFor( state, permissionCheck, user, action ) {
+function checkPermissionFor( state, permissionCheck, meta, action, envelope, next ) {
 	log.debug( 'Checking %s\'s permissions for %s',
-		state.config.getUserString( user ), action
+		state.config.getUserString( envelope.user ), meta.alias
 	);
-	state.metrics.authorizationAttempts.record( 1, { name: 'HTTP_AUTHORIZATION_ATTEMPTS' } );
+	meta.authAttempted();
 	var timer = state.metrics.authorizationTimer();
+
 	function onError( err ) {
 		log.error( 'Error during check permissions: %s', err.stack );
 		state.metrics.authorizationErrors.record( 1, { name: 'HTTP_AUTHORIZATION_ERRORS' });
 		timer.record( { name: 'HTTP_AUTHORIZATION_DURATION' } );
-		return false;
+		return {
+			status: 500,
+			data: { message: 'Server error at ' + envelope.path }
+		};
 	}
+
 	function onPermission( granted ) {
 		timer.record( { name: 'HTTP_AUTHORIZATION_DURATION' } );
-		return granted;
+		if( granted ) {
+			meta.authGranted();
+			log.debug( 'HTTP activation of action %s (%s %s) for %j granted',
+				meta.alias, action.method, meta.url, state.config.getUserString( envelope.user )
+			);
+			return next();
+		} else {
+			meta.authRejected();
+			log.debug( 'User %s was denied HTTP activation of action %s (%s %s)',
+				state.config.getUserString( envelope.user ), meta.alias, action.method, meta.url
+			);
+			return {
+				status: 403,
+				//headers: { 'Content-Type': 'application/json' },
+				data: { message: 'User lacks sufficient permissions' }
+			};
+		}
 	}
+
 	return permissionCheck()
 		.then( onPermission, onError );
 }
@@ -103,22 +125,6 @@ function getActionMetadata( state, resource, actionName, action, meta, resources
 			this.envelope = envelope;
 			return this.envelope;
 		},
-		getPermissionCheck: function( req ) {
-			var check;
-			if( action.authorize ) {
-				var envelope = this.envelope;
-				check = function() {
-					var can = action.authorize.bind( resource )( envelope );
-					return can && can.then ? can : when.resolve( can );
-				};
-				return checkPermissionFor.bind( undefined, state, check, req.user, alias );
-			} else if( state.auth && state.auth.checkPermission ) {
-				check = state.auth.checkPermission.bind( state.auth, req.user, alias, req.context );
-				return checkPermissionFor.bind( undefined, state, check, req.user, alias );
-			} else {
-				return undefined;
-			}
-		},
 		getTimer: function() {
 			return state.metrics.timer( resourceKey.concat( 'duration' ) );
 		},
@@ -128,6 +134,22 @@ function getActionMetadata( state, resource, actionName, action, meta, resources
 		url: url
 	};
 }
+
+function getPermissionCheck( state, meta, resource, action, envelope ) {
+		var check;
+		if( action.authorize ) {
+			check = function() {
+				var can = action.authorize.bind( resource )( envelope, envelope.context );
+				return can && can.then ? can : when.resolve( can );
+			};
+			return checkPermissionFor.bind( undefined, state, check, meta, action );
+		} else if( state.auth && state.auth.checkPermission ) {
+			check = state.auth.checkPermission.bind( state.auth, envelope.user, meta.alias, envelope.context );
+			return checkPermissionFor.bind( undefined, state, check, meta, action );
+		} else {
+			return function( envelope, next ) { return next(); };
+		}
+	}
 
 function hasPrefix( state, url ) {
 	var prefix = state.http.buildUrl(
@@ -141,13 +163,32 @@ function respond( state, meta, req, res, resource, action ) {
 	var envelope = meta.getEnvelope( req, res );
 	var result;
 	var stack = [];
+	var checkedPermissions = false;
+	var authCheck = getPermissionCheck( state, meta, resource, action, envelope );
 	if( resource.middleware ) {
 		stack = stack.concat( resource.middleware );
 	}
 	if( action.middleware ) {
 		stack = stack.concat( action.middleware );
 	}
+
+	// check to see if a placeholder for permission check
+	// is in the stack to short-circuit expensive middleware calls
+	// that would be unnecessary if the rquesting user lacks
+	// requisite permissions
+	stack = _.map( stack, function( f ) {
+		if( f === 'authorize' ) {
+			checkedPermissions = true;
+			return authCheck;
+		} else {
+			return f;
+		}
+	} );
+	if( !checkedPermissions ) {
+		stack.push( authCheck );
+	}
 	stack.push( action.handle );
+
 	if ( meta.handleErrors ) {
 		try {
 			result = executeStack( resource, action, envelope, stack );
@@ -162,7 +203,12 @@ function respond( state, meta, req, res, resource, action ) {
 	if ( result ) {
 		if ( result.then ) {
 			var onResult = function onResult( x ) {
-				envelope.handleReturn( state.config, resource, action, x );
+				if( x ) {
+					envelope.handleReturn( state.config, resource, action, x );
+				} else {
+					log.warn( 'Handle at route: %s %s returned undefined',
+						action.method.toUpperCase(), action.url );
+				}
 			};
 			result.then( onResult, onResult );
 		} else {
@@ -208,37 +254,16 @@ function wireupAction( state, resource, actionName, action, metadata, resources 
 
 	state.http.route( meta.url, action.method, function( req, res ) {
 		meta.getEnvelope( req, res );
-		var authCheck = meta.getPermissionCheck( req );
+
 		req._metricKey = meta.metricKey;
 		req._resource = resource.name;
 		req._action = actionName;
-		req._checkPermission = authCheck;
 		var timer = meta.getTimer();
 		res.once( 'finish', function() {
 			timer.record( { name: 'HTTP_API_DURATION' } );
 		} );
 
-		if ( authCheck ) {
-			meta.authAttempted();
-			authCheck()
-				.then( function onPermission( pass ) {
-					if ( pass ) {
-						meta.authGranted();
-						log.debug( 'HTTP activation of action %s (%s %s) for %j granted',
-							meta.alias, action.method, meta.url, state.config.getUserString( req.user ) );
-						respond( state, meta, req, res, resource, action );
-					} else {
-						meta.authRejected();
-						log.debug( 'User %s was denied HTTP activation of action %s (%s %s)',
-							state.config.getUserString( req.user ), meta.alias, action.method, meta.url );
-						if ( !res._headerSent ) {
-							res.status( 403 ).send( 'User lacks sufficient permissions' );
-						}
-					}
-				} );
-		} else {
-			respond( state, meta, req, res, resource, action );
-		}
+		respond( state, meta, req, res, resource, action );
 	} );
 }
 

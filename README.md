@@ -301,7 +301,7 @@ Below are several examples of different middleware patterns. This should demonst
 // all middleware must return either the result of next or a promise/data structure
 middleware: [
 	function( envelope, next ) {
-		// invokes the next middelware or handle call
+		// invokes the next middleware or handle call
 		return next();
 	},
 	function( envelope, next ) {
@@ -374,7 +374,9 @@ __IMPORTANT__
 Middleware **must** return either the result of the `next` call _or_ a promise/data structure to short circuit the stack with a response. They are mutually exclusive. Do not call both. Do not fail to return one or the other.
 
 ### authorize
-An optional predicate for checking the users permission. The envelope is provided to the function and should return a boolean or a promise that resolves to a boolean indicating whether or not the user can perform the requested action.
+The `authorize` predicate was added to actions to allow for much more fine grained, explicit control of user authorization. By default, authorization checks are performed after _all_ middleware has run. This allows middleware to provide any necessary data on the envelope's context so that the authorization strategy can use this in determining the user's access level.
+
+To change this, provide the string "authorize" in place of a middleware call in the resource or action middleware property and the check will be performed where the string appeared in the stack. This allows an application to short-circuit the stack and avoid running middleware that performs expensive and unnecessary i/o if the user does not have permission to perform the action.
 
 > Note: when present, this _overrides_ rather than augments any authorization check that would have been performed by a configured autohost auth library.
 
@@ -584,7 +586,7 @@ These events can be subscribed to via `host.on`:
  * 'socket.client.identified', { socket: socketConnection, id: id } - raised when client reports unique id
  * 'socket.client.closed', { socket: socketConnection, id: id } - raised when client disconnects the websocket connection
 
-## Auth
+## Auth - via Auth Provider
 Authentication and authorization are supplied by an auth provider library that conforms to autohost's auth specifications. You can read more about that at [here](/blob/master/docs/authprovider.md).
 
 ### Programmatic control
