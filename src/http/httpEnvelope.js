@@ -17,6 +17,7 @@ function HttpEnvelope( req, res, metricKey ) {
 	this.metricKey = metricKey;
 	this.params = {};
 	this.path = this.url = req.url;
+	this.method = req.method.toLowerCase();
 	this.responseStream = res;
 	this.session = req.session;
 	this.user = req.user;
@@ -118,7 +119,7 @@ HttpEnvelope.prototype.render = function( host, resource, action, result ) {
 HttpEnvelope.prototype.renderError = function( host, resource, action, error ) {
 	var defaultStrategy = {
 		status: 500,
-		body: error.message
+		body: { message: 'Server error' }
 	};
 	var hostError = host.errors ? host.errors[ error.name ] : undefined;
 	var resourceError = resource.errors ? resource.errors[ error.name ] : undefined;
@@ -143,7 +144,7 @@ HttpEnvelope.prototype.renderError = function( host, resource, action, error ) {
 			status: strategy.status,
 			data: strategy.reply ? strategy.reply( error, this ) : strategy.body
 		};
-		this.reply( reply );
+		this.reply( this.render( host, resource, action, reply ) );
 	}
 };
 

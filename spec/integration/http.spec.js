@@ -670,16 +670,17 @@ describe( 'HTTP', function() {
 	} );
 
 	describe( 'Making a request to a broken action', function() {
-		it( 'should return a 500 and error message', function() {
+		it( 'should return a 500 and default error message', function() {
 			return get(
 				{
 					url: 'http://localhost:8988/api/test/error',
+					json: true,
 					headers: { 'Authorization': 'Bearer one' }
 				} )
 				.then( transformResponse( 'body', 'statusCode' ), onError )
 				.should.eventually.deep.equal(
 				{
-					body: 'I am bad at things!',
+					body: { message: 'Server error' },
 					statusCode: 500
 				}
 			);

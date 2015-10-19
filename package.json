@@ -24,8 +24,6 @@
     "whistlepunk": "~0.3.1"
   },
   "devDependencies": {
-    "autohost-nedb-auth": "~0.2.0",
-    "autohost-riak-auth": "~0.2.0",
     "biggulp": "0.0.*",
     "chai": "^2.0.0",
     "chai-as-promised": "^4.2.0",

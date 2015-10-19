@@ -1,5 +1,12 @@
 ## 0.5.x
 
+### Next
+ * Bug fix - error results not getting rendered correctly from hyped
+ * Change default error strategy to use an object with a `message` property to match other AH default responses
+ * No longer return errors as message body (too dangerous a default behavior)
+ * Add `method` property to httpEnvelope
+ * Remove demo and dependencies on auth provider libraries
+
 ### 0.5.0
  * A query string value can no longer override a URL parameter (Matches behavior of the `data` object)
  * Correct issue where insufficient parameters were passed to authorize predicates in hyped
