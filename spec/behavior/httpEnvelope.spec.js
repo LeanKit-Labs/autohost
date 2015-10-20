@@ -8,12 +8,13 @@ describe( 'HTTP Envelope', function() {
 	describe( 'when handling return', function() {
 
 		describe( 'with host defined custom error', function() {
-			var envelope, req, res, request, host;
+			var envelope, req, res, request, host, renderSpy;
 			before( function() {
 				res = createResponse();
 				req = createRequest();
 				request = stubRequest();
 				envelope = new ( envelopeFn( request ))( req, res, 'test' );
+				renderSpy = sinon.spy( envelope, 'render' );
 				host = {
 					errors: {
 						'MyCustom': {
@@ -31,6 +32,14 @@ describe( 'HTTP Envelope', function() {
 					status: 500,
 					body: 'MyCustom: test'
 				} );
+			} );
+
+			it( 'should call envelope render to generate the reply', function() {
+				renderSpy.should.have.been.calledOnce;
+			} );
+
+			after( function() {
+				renderSpy.restore();
 			} );
 		} );
 
@@ -127,7 +136,7 @@ describe( 'HTTP Envelope', function() {
 			it( 'should fall back to default error handling', function() {
 				res.sent.should.eql( {
 					status: 500,
-					body: 'default error message'
+					body: { message: 'Server error' }
 				} );
 			} );
 		} );
@@ -175,10 +184,10 @@ describe( 'HTTP Envelope', function() {
 				envelope.handleReturn( {}, {}, action, new MyCustomError( 'a test' ) );
 			} );
 
-			it( 'should use custom status and error message as body', function() {
+			it( 'should use custom status and default error message as body', function() {
 				res.sent.should.eql( {
 					status: 401,
-					body: 'a test'
+					body: { message: 'Server error' }
 				} );
 			} );
 		} );
@@ -193,10 +202,10 @@ describe( 'HTTP Envelope', function() {
 				envelope.handleReturn( {}, {}, {}, new MyCustomError( 'no support' ) );
 			} );
 
-			it( 'should default to 500 status and error message as body', function() {
+			it( 'should default to 500 status and default error message', function() {
 				res.sent.should.eql( {
 					status: 500,
-					body: 'no support'
+					body: { message: 'Server error' }
 				} );
 			} );
 		} );
@@ -677,7 +686,8 @@ function stubRequest() {
 function createRequest() {
 	return {
 		params: {},
-		query: {}
+		query: {},
+		method: "GET"
 	};
 }
 
