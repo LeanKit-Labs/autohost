@@ -49,7 +49,7 @@ function applySessionMiddleware( state, attach ) {
 }
 
 function crossOrigin( state, req, res, next ) {
-	_.each( state.cors, function( val, header ) {
+	_.each( state.config.cors, function( val, header ) {
 		res.header( header, val );
 	});
 	next();
@@ -72,7 +72,7 @@ function configure( state, config ) {
 	};
 	var corsDefaults = {
 		'Access-Control-Allow-Origin': '*',
-		'Access-Control-Allow-Headers': 'X-Requested-With',
+		'Access-Control-Allow-Headers': 'X-Requested-With,Authorization',
 		'Access-Control-Allow-Methods': 'OPTIONS,POST,PUT,DELETE'
 	};
 	var cookieConfig = _.defaults( state.config.cookie || {}, cookieDefaults );

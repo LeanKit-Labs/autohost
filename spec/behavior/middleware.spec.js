@@ -15,7 +15,7 @@ describe( 'Middleware', function() {
 		it( 'Should return expected defaults', function() {
 			mw.config.cors.should.eql( {
 				'Access-Control-Allow-Origin': '*',
-				'Access-Control-Allow-Headers': 'X-Requested-With',
+				'Access-Control-Allow-Headers': 'X-Requested-With,Authorization',
 				'Access-Control-Allow-Methods': 'OPTIONS,POST,PUT,DELETE'
 			} );
 		} );
@@ -35,7 +35,7 @@ describe( 'Middleware', function() {
 			mw.config.cors.should.eql( {
 				'Test-Header-Stuff': 'Sudo Make Me a Sandwich',
 				'Access-Control-Allow-Origin': 'ANYBUDDY',
-				'Access-Control-Allow-Headers': 'X-Requested-With',
+				'Access-Control-Allow-Headers': 'X-Requested-With,Authorization',
 				'Access-Control-Allow-Methods': 'OPTIONS,POST,PUT,DELETE'
 			} );
 		} );
