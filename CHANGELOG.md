@@ -1,5 +1,8 @@
 ## 0.5.x
 
+### 0.5.3
+ * Fixed issue where cors config was not properly accessed in middleware.
+
 ### 0.5.2
  * Added ability to configure Access-Allow headers via top level config.
  * Added JSCS configuration file.
