@@ -1,5 +1,10 @@
 ## 0.5.x
 
+### 0.5.2
+ * Added ability to configure Access-Allow headers via top level config.
+ * Added JSCS configuration file.
+ * Skipped auth on options calls
+
 ### 0.5.1
  * Bug fix - error results not getting rendered correctly from hyped
  * Change default error strategy to use an object with a `message` property to match other AH default responses
