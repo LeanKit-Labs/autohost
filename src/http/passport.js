@@ -11,9 +11,11 @@ var userCountCheck = noOp;
 function authConditionally( state, req, res, next ) {
 	// if previous middleware has said to skip auth OR
 	// a user was attached from a session, skip authenticating
-	if ( req.skipAuth || req.user ) {
+	var isOptions = req.method.toLowerCase() === "options";
+	var skipAuth = req.skipAuth || ( isOptions && !state.config.authOptions );
+	if ( skipAuth || req.user ) {
 		state.metrics.authenticationSkips.record( 1, { name: 'HTTP_AUTHENTICATION_SKIPPED' } );
-		next();
+		skipAuthentication( req, res, next );
 	} else {
 		state.metrics.authenticationAttempts.record( 1, { name: 'HTTP_AUTHENTICATION_ATTEMPTS' } );
 		var timer = state.metrics.authenticationTimer();

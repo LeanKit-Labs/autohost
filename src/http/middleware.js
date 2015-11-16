@@ -37,7 +37,7 @@ function applyMiddleware( state, attach, hasAuth ) {
 
 	// turn on cross origin unless turned off by the consumer
 	if ( !state.config.noCrossOrigin ) {
-		attach( '/', crossOrigin );
+		attach( '/', crossOrigin.bind( undefined, state ) );
 	}
 }
 
@@ -48,9 +48,10 @@ function applySessionMiddleware( state, attach ) {
 	}
 }
 
-function crossOrigin( req, res, next ) {
-	res.header( 'Access-Control-Allow-Origin', '*' );
-	res.header( 'Access-Control-Allow-Headers', 'X-Requested-With' );
+function crossOrigin( state, req, res, next ) {
+	_.each( state.cors, function( val, header ) {
+		res.header( header, val );
+	});
 	next();
 }
 
@@ -69,8 +70,14 @@ function configure( state, config ) {
 		saveUninitialized: true,
 		rolling: false
 	};
+	var corsDefaults = {
+		'Access-Control-Allow-Origin': '*',
+		'Access-Control-Allow-Headers': 'X-Requested-With',
+		'Access-Control-Allow-Methods': 'OPTIONS,POST,PUT,DELETE'
+	};
 	var cookieConfig = _.defaults( state.config.cookie || {}, cookieDefaults );
 	var sessionConfig = _.defaults( state.config.session || {}, sessionDefaults );
+	state.config.cors = _.defaults( state.config.cors || {}, corsDefaults );
 	sessionConfig.cookie = cookieConfig;
 	state.session = state.sessionLib( sessionConfig );
 }
