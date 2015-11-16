@@ -147,6 +147,11 @@ module.exports = function setup( config ) {
 		_.each( wsClients, function( w ) {
 			w.close();
 		} );
+
+		if ( socket.websocket && socket.websocket.socketServer ) {
+			socket.websocket.socketServer.pendingRequests = [];
+		}
+
 		host.stop();
 	};
 
