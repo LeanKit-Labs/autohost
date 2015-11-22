@@ -1,6 +1,6 @@
 {
   "name": "autohost",
-  "version": "0.5.3",
+  "version": "0.5.4",
   "description": "Resource driven, transport agnostic host",
   "main": "src/index.js",
   "dependencies": {

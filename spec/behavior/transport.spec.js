@@ -88,12 +88,31 @@ describe( 'Transport', function() {
 							f: { method: undefined, url: undefined }
 						}
 					},
+					somethingImportant: {
+						routes: {
+							self: { method: undefined, url: undefined }
+						}
+					},
 					ah: {
 						routes: {
 							metrics: { method: 'get', url: undefined }
 						}
 					}
 				} );
+		} );
+
+		it( 'should attach paths to all loaded modules', function() {
+			var paths = _.map( transport.resources, function( resource ) {
+				return resource._path;
+			} );
+			paths.should.eql( [
+				path.resolve( './', 'spec/resource/one' ),
+				path.resolve( './', 'spec/resource/three' ),
+				path.resolve( './', 'spec/resource/two' ),
+				path.resolve( './', 'spec/misc' ),
+				path.resolve( './', 'spec/misc' ),
+				'.'
+			] );
 		} );
 
 		it( 'should produce correctly formatted action list', function() {
@@ -103,6 +122,7 @@ describe( 'Transport', function() {
 					two: [ 'two.hello', 'two.goodbye' ],
 					three: [ 'three.c', 'three.d' ],
 					four: [ 'four.e', 'four.f' ],
+					somethingImportant: [ 'somethingImportant.self' ],
 					ah: [ 'ah.metrics' ]
 				} );
 		} );
