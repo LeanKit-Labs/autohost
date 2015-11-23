@@ -1,11 +1,14 @@
 ## 0.5.x
 
+### 0.5.4
+ * Fixed an issue where resource modules that return a promise for a resource were not having their relative path set
+
 ### 0.5.3
- * Fixed issue where cors config was not properly accessed in middleware.
+ * Fixed issue where cors config was not properly accessed in middleware
 
 ### 0.5.2
- * Added ability to configure Access-Allow headers via top level config.
- * Added JSCS configuration file.
+ * Added ability to configure Access-Allow headers via top level config
+ * Added JSCS configuration file
  * Skipped auth on options calls
 
 ### 0.5.1

@@ -14,10 +14,16 @@ function attachPath( state, target, filePath ) {
 	var dir = path.dirname( filePath );
 	if ( _.isArray( target ) ) {
 		_.each( target, function( item ) {
-			item._path = dir;
+			attachPath( state, item, filePath );
 		} );
 	} else {
-		target._path = dir;
+		if( target.then ) {
+			target.then( function( x ) {
+				x._path = dir;
+			} );
+		} else {
+			target._path = dir;
+		}
 	}
 }
 
