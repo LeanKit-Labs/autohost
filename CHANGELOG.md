@@ -1,6 +1,6 @@
 ## 0.5.x
 
-### Next
+### 0.5.5
  * Allow auth errors to bubble up to the default error handler (or custom error handlers)
 
 ### 0.5.4
