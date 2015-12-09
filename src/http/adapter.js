@@ -60,10 +60,7 @@ function checkPermissionFor( state, permissionCheck, meta, action, envelope, nex
 		log.error( 'Error during check permissions: %s', err.stack );
 		state.metrics.authorizationErrors.record( 1, { name: 'HTTP_AUTHORIZATION_ERRORS' });
 		timer.record( { name: 'HTTP_AUTHORIZATION_DURATION' } );
-		return {
-			status: 500,
-			data: { message: 'Server error at ' + envelope.path }
-		};
+		throw err;
 	}
 
 	function onPermission( granted ) {

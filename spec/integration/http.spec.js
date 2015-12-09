@@ -221,6 +221,7 @@ describe( 'HTTP', function() {
 				},
 				cantneverhaz: {
 					url: '/busted',
+					method: "GET",
 					authorize: function() {
 						throw new Error( 'This is why you can\'t have nice things ...' );
 					},
@@ -405,7 +406,7 @@ describe( 'HTTP', function() {
 				.then( transformResponse( 'body', 'statusCode' ), onError )
 				.should.eventually.deep.equal(
 				{
-					body: { message: 'Server error at ALL /api/actionAuth/busted' },
+					body: { message: 'Server error' },
 					statusCode: 500
 				} );
 		} );
@@ -483,7 +484,7 @@ describe( 'HTTP', function() {
 					body: { four: 'delta' },
 					headers: { 'Authorization': 'Bearer four' }
 				} )
-				.should.eventually.have.deep.property( '[0].body' ).to.eql( { message: 'Server error at /api/test/args/alpha/bravo/charlie?three=echo&four=foxtrot' } );
+				.should.eventually.have.deep.property( '[0].body' ).to.eql( { message: 'Server error' } );
 		} );
 	} );
 
