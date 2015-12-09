@@ -1,5 +1,8 @@
 ## 0.5.x
 
+### Next
+ * Allow auth errors to bubble up to the default error handler (or custom error handlers)
+
 ### 0.5.4
  * Fixed an issue where resource modules that return a promise for a resource were not having their relative path set
 
