@@ -103,7 +103,9 @@ function authSocketIO( state, auth, req, allow ) {
 }
 
 function configureSocketIO( state, http ) {
-	var io = state.io = socketio( http.server, { destroyUpgrade: false } );
+	var config = _.get( state, 'config.socketio', {} );
+	var options = typeof config === 'boolean' ? {} : config;
+	var io = state.io = socketio( http.server, _.defaults( options, { destroyUpgrade: false } ) );
 	var authStack = http.getAuthMiddleware()
 		.use( '/', function( hreq, hres, next ) {
 			log.debug( 'Setting socket.io connection user to %j', hreq.user );

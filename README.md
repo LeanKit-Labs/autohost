@@ -58,7 +58,7 @@ The object literal follows the format:
 
 	authProvider: undefined, // a promise for or instance of an authentication provider
 	allowedOrigin: , 		// used to filter incoming web socket connections based on origin
-	socketIO: false, 		// enables socket.io,
+	socketIO: false, 		// enables socket.io - can be false, true (using default options) or an options object
 	websocket: false, 		// enables websockets
 
 	noBody: false, 			// disables body parsing
@@ -85,6 +85,9 @@ The object literal follows the format:
 	urlStrategy: undefined 		// a function that generates the URL per resource action
 }
 ```
+
+#### Socket.io
+The configuration options (above) value for `socketIO` can be `false` (disabled), `true` (enabled with basic socket.io defaults) or an `object` specifying any [option supported by socket.io](http://socket.io/docs/server-api/#server(opts:object)).
 
 #### Session Configuration
 By default [express session](https://github.com/expressjs/session) is the session provider. To change any settings for how the session is configured, provide a hash with values for any of the properties shown below.
