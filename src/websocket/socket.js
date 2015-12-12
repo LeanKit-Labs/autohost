@@ -92,7 +92,8 @@ function sendToClient( state, id, message, data ) {
 }
 
 function start( state ) {
-	if ( state.config.socketio || state.config.socketIO || state.config.socketIo ) {
+	state.config.socketio = ( state.config.socketio || state.config.socketIO || state.config.socketIo )
+	if ( state.config.socketio ) {
 		state.socketIO = require( './socketio.js' )( state.config, state, state.http.passport );
 		state.socketIO.configure( state.http );
 	}
