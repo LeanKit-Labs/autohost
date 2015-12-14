@@ -28,7 +28,7 @@ function applyMiddleware( state, attach, hasAuth ) {
 		attach( '/', bodyParser.json( { type: 'application/vnd.api+json' } ) );
 		attach( '/', multer( {
 			dest: state.config.tmp
-		} ), 'multer' );
+		} ).any(), 'multer' );
 	}
 
 	if ( !hasAuth ) {

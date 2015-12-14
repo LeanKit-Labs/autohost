@@ -1,7 +1,7 @@
 var path = require( 'path' );
 var _ = require( 'lodash' );
 var parseUrl = require( 'parseurl' );
-var qs = require( 'qs' );
+var qs = require( 'query-string' );
 var queryparse = qs.parse;
 var express = require( 'express' );
 var http = require( 'http' );

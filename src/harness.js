@@ -9,7 +9,7 @@ var defaults = {
 
 module.exports = function setup( config ) {
 	config = _.defaults( config, defaults );
-	require( './log' )( config.log || {} );
+	require( './log' )( config.log );
 
 	var authProvider;
 	var hasAuth = !config.noAuth;

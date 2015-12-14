@@ -1,5 +1,11 @@
 ## 0.5.x
 
+### 0.5.6
+ * Provide a means to customize socket.io configuration
+ * Update dependencies
+   * change dependency on qs to query-string
+   * update multer usage to adapt to new API
+
 ### 0.5.5
  * Allow auth errors to bubble up to the default error handler (or custom error handlers)
 

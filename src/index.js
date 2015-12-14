@@ -20,7 +20,9 @@ function initialize( config, authProvider, fount ) {
 		}
 	} );
 	authProvider = authProvider || config.authProvider;
-	require( './log' )( config.logging || {} );
+	if( config.logging && !_.isEmpty( config.logging ) ) {
+		require( './log' )( config.logging );
+	}
 	var metrics = require( './metrics' )( config.metrics || {} );
 	var middleware = middlewareLib( sessionLib );
 	var http = httpFn( request, middleware );
