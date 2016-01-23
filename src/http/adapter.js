@@ -295,10 +295,7 @@ function wireupAction( state, resource, actionName, action, metadata, resources 
 		req._metricKey = meta.metricKey;
 		req._resource = resource.name;
 		req._action = actionName;
-		var timer = meta.getTimer();
-		res.once( 'finish', function() {
-			timer.record( { name: 'HTTP_API_DURATION' } );
-		} );
+		req._timer = meta.getTimer();
 		action.handle = getHandler( action.handle );
 		respond( state, meta, req, res, resource, action );
 	} );
