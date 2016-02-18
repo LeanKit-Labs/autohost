@@ -24,7 +24,7 @@
     "whistlepunk": "^0.3.2"
   },
   "devDependencies": {
-    "biggulp": "^0.2.2",
+    "biggulp": "^0.3.0",
     "chai": "^3.4.1",
     "chai-as-promised": "^5.1.0",
     "connect-redis": "^3.0.1",

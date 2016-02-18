@@ -664,6 +664,37 @@ describe( 'HTTP Envelope', function() {
 				} );
 			} );
 		} );
+
+		describe( 'with body without hasOwnProperty', function() {
+			// The multer library, which is used for handling multipart form posts,
+			// sets the request body to Object.create( null ), which yields an object
+			// without the almost ubiquitous hasOwnProperty function.
+			// HttpEnvelope was using this function on the request body, which was
+			// blowing up on multipart forms. This example is just to recreate that case.
+			var envelope, req, res, request;
+			before( function() {
+				res = createResponse();
+				req = createRequest();
+				req.body = Object.create( null );
+				req.one = 'one';
+				req.two = 'two';
+				req.params = {
+					one: 1,
+					two: 2
+				};
+				req.query = {
+					one: 3,
+					two: 4
+				};
+				request = stubRequest();
+			} );
+
+			it( 'should not throw TypeError: undefined is not a function', function() {
+				expect( function() {
+					envelope = new ( envelopeFn( request ))( req, res, 'test' );
+				} ).to.not.throw( TypeError );
+			} );
+		} );
 	} );
 } );
 

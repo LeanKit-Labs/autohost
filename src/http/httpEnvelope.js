@@ -31,10 +31,10 @@ function HttpEnvelope( req, res, metricKey ) {
 	[ req.params, req.query ].forEach( function( source ) {
 		Object.keys( source ).forEach( function( key ) {
 			var val = source[ key ];
-			if ( !this.data.hasOwnProperty( key ) ) {
+			if ( !_.has( this.data, key ) ) {
 				this.data[ key ] = val;
 			}
-			if ( !this.params.hasOwnProperty( key ) ) {
+			if ( !_.has( this.params, key ) ) {
 				this.params[ key ] = val;
 			}
 		}.bind( this ) );
@@ -131,7 +131,7 @@ HttpEnvelope.prototype.renderError = function( host, resource, action, error ) {
 		actionError
 	);
 
-	if( strategy.status >= 500 ) {
+	if ( strategy.status >= 500 ) {
 		this.exceptions.record( 1, { name: 'HTTP_API_EXCEPTIONS' } );
 	} else {
 		this.errors.record( 1, { name: 'HTTP_API_ERRORS' } );

@@ -1,5 +1,7 @@
 ## 0.5.x
 
+* Fixed issue with data objects having no hasOwnProperty function
+
 ### 0.5.6
  * Provide a means to customize socket.io configuration
  * Update dependencies
