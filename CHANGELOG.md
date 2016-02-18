@@ -1,5 +1,7 @@
 ## 0.5.x
 
+### 0.5.7
+
 * Fixed issue with data objects having no hasOwnProperty function
 
 ### 0.5.6
