@@ -1,5 +1,8 @@
 ## 0.5.x
 
+### 0.5.8
+ * Add differentiated handle feature (to support adding versioned handlers in hyped)
+
 ### 0.5.7
 
 * Fixed issue with data objects having no hasOwnProperty function

@@ -426,6 +426,38 @@ The handle is a callback that will be invoked if the caller has adequate permiss
 
 > Don't include application logic in a resource file. The resource is there as a means to 'plug' application logic into HTTP and websocket transports. Keeping behavior in a separate module will make it easy to test application behavior apart from autohost.
 
+#### differentiated handlers
+In rare cases, you may need the ability to have multiple handler behaviors that change based on some aspect of the request. Autohost allows a hash to specify multiple handlers and conditions for when each should be applied. The list is evaluated in order, keep this in mind when putting conditions in place. If no condition is met, a 400 will be returned - the assumption being that you, the developer intentionally excluded some condition and the caller submitted a malformed request.
+
+> Note: this feature exists primarily so our upstream hypermedia library, `hyped` can plug in handlers based on version.
+
+```javascript
+{
+	handle: [
+		{
+			when: { version: 1 }, // providing a set of properties and values to filter requests for the handler
+			then: function( envelope ) {
+				...
+			}
+		},
+		{
+			when: function( envelope ) { // provide a predicate to test the envelope
+				return envelope.version === 2;
+			},
+			then: function( envelope ) {
+				...
+			}
+		},
+		{
+			when: true, // use at the end as a catch-all if desired
+			then: function( envelope ) {
+				...
+			}
+		}
+	]
+}
+```
+
 ### Controlling Error Responses
 Responses sent to the client based on an error returned from an action's handle can be controlled at the config, resource or action level. How to handle a specific error type is determined by first checking the action, then resource, then config (host) levels.
 
@@ -472,6 +504,7 @@ Envelopes are an abstraction around the incoming message or request. They are in
 	session: // session hash
 	responseStream: // a write stream for streaming a response back to the client
 	transport: // 'http' or 'websocket'
+	version: // will check `req.context.version` - provide middleware to set this
 	user: // the user attached to the request or socket
 	reply: function( envelope ) // responds to client
 	replyWithFile: function( contentType, fileName, fileStream ) // streams a file back to the client

@@ -10,7 +10,7 @@ function HttpEnvelope( req, res, metricKey ) {
 	this.cookies = req.cookies;
 	this.data = req.body || {};
 	this.files = req.files;
-	this.headers = req.headers;
+	this.headers = req.headers || {};
 	this.logout = function() {
 		req.logout();
 	};
@@ -27,6 +27,7 @@ function HttpEnvelope( req, res, metricKey ) {
 	};
 	this.exceptions = metrics.meter( this.metricKey.concat( 'exceptions' ) );
 	this.errors = metrics.meter( this.metricKey.concat( 'errors' ) );
+	this.version = req.context ? ( req.context.version || 1 ) : 1;
 
 	[ req.params, req.query ].forEach( function( source ) {
 		Object.keys( source ).forEach( function( key ) {
