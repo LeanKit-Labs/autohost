@@ -43,7 +43,7 @@
     "socket.io-client": "~1.3.5"
   },
   "scripts": {
-    "test": "gulp test-and-exit"
+    "test": "gulp test"
   },
   "repository": {
     "type": "git",

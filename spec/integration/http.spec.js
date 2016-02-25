@@ -80,6 +80,33 @@ describe( 'HTTP', function() {
 			env.reply( { data: 'custom apiPrefix route matched' } );
 		};
 
+		var versionedCall = [
+			{
+				when: { version: 1 },
+				then: function() {
+					return 'version 1!';
+				}
+			},
+			{
+				when: { version: 2 },
+				then: function() {
+					return 'version 2!';
+				}
+			},
+			{
+				when: 'fiftyhundred',
+				then: function() {
+					return 'this will never make it';
+				}
+			},
+			{
+				when: true,
+				then: function() {
+					return 'version lol';
+				}
+			}
+		];
+
 		harness.addMiddleware( '/', function( req, res, next ) {
 			req.extendHttp = {
 				extension: 'an extension!',
@@ -90,13 +117,28 @@ describe( 'HTTP', function() {
 
 		harness.addResource( {
 			name: 'test',
+			middleware: [
+				function( envelope, next ) {
+					if( envelope.headers.accept ) {
+						var accept = envelope.headers.accept;
+						var match = /[.]v([0-9]*)/.exec( accept );
+						if ( match && match.length > 0 ) {
+							envelope.version = parseInt( match[ 1 ] );
+						}
+					} else if( envelope.headers[ 'api-version' ] ) {
+						envelope.version = parseInt( envelope.headers[ 'api-version' ] );
+					}
+					return next();
+				}
+			],
 			actions: {
 				args: { url: '/args/:one/:two/:three', method: 'post', topic: 'args', handle: argsCall },
 				error: { url: '/error', method: 'get', topic: 'error', handle: errorCall },
 				file: { url: '/file', method: 'get', topic: 'file', handle: fileCall },
 				proxy: { url: '/proxy/:one/:two/:three', method: 'post', topic: 'proxy', handle: anonProxy },
 				regex: { url: /test\/regex.*/, method: 'all', handle: regexUrl },
-				thing: { url: '/thing/:id', method: 'get', topic: 'thing', handle: redirectCall }
+				thing: { url: '/thing/:id', method: 'get', topic: 'thing', handle: redirectCall },
+				differentiated: { url: '/diff', method: 'get', topic: 'differentiated', handle: versionedCall }
 			}
 		} );
 
@@ -221,7 +263,7 @@ describe( 'HTTP', function() {
 				},
 				cantneverhaz: {
 					url: '/busted',
-					method: "GET",
+					method: 'GET',
 					authorize: function() {
 						throw new Error( 'This is why you can\'t have nice things ...' );
 					},
@@ -664,6 +706,79 @@ describe( 'HTTP', function() {
 				.should.eventually.deep.equal(
 				{
 					body: 'custom apiPrefix route matched',
+					statusCode: 200
+				}
+			);
+		} );
+	} );
+
+	describe( 'Calling a differentiated action', function() {
+		it( 'should run version 1 with no version specifier', function() {
+			return get(
+				{
+					url: 'http://localhost:8988/api/test/diff',
+					headers: { 
+						'Authorization': 'Bearer one'
+					}
+				} )
+				.then( transformResponse( 'body', 'statusCode' ), onError )
+				.should.eventually.deep.equal(
+				{
+					body: 'version 1!',
+					statusCode: 200
+				}
+			);
+		} );
+
+		it( 'should run version lol with nonsense version specifier', function() {
+			return get(
+				{
+					url: 'http://localhost:8988/api/test/diff',
+					headers: { 
+						'Authorization': 'Bearer one',
+						'api-version': 'blubber'
+					}
+				} )
+				.then( transformResponse( 'body', 'statusCode' ), onError )
+				.should.eventually.deep.equal(
+				{
+					body: 'version lol',
+					statusCode: 200
+				}
+			);
+		} );
+
+		it( 'should run version 2 with correct HTTP header', function() {
+			return get(
+				{
+					url: 'http://localhost:8988/api/test/diff',
+					headers: { 
+						'Authorization': 'Bearer one',
+						'api-version': 2 
+					}
+				} )
+				.then( transformResponse( 'body', 'statusCode' ), onError )
+				.should.eventually.deep.equal(
+				{
+					body: 'version 2!',
+					statusCode: 200
+				}
+			);
+		} );
+
+		it( 'should run version 2 with accept HTTP header', function() {
+			return get(
+				{
+					url: 'http://localhost:8988/api/test/diff',
+					headers: { 
+						'Authorization': 'Bearer one',
+						'accept': 'application/vnd.made-up.v2-json' 
+					}
+				} )
+				.then( transformResponse( 'body', 'statusCode' ), onError )
+				.should.eventually.deep.equal(
+				{
+					body: 'version 2!',
 					statusCode: 200
 				}
 			);

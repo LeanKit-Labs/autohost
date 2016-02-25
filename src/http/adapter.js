@@ -5,6 +5,7 @@ var regex = require( './regex.js' );
 var log = require( '../log' )( 'autohost.http.adapter' );
 var passportFn = require( './passport.js' );
 var metronic = require( '../metrics' );
+var format = require( 'util' ).format;
 
 function buildActionUrl( state, resourceName, actionName, action, resource, resources ) {
 	var prefix;
@@ -132,21 +133,60 @@ function getActionMetadata( state, resource, actionName, action, meta, resources
 	};
 }
 
-function getPermissionCheck( state, meta, resource, action, envelope ) {
-		var check;
-		if( action.authorize ) {
-			check = function() {
-				var can = action.authorize.bind( resource )( envelope, envelope.context );
-				return can && can.then ? can : when.resolve( can );
-			};
-			return checkPermissionFor.bind( undefined, state, check, meta, action );
-		} else if( state.auth && state.auth.checkPermission ) {
-			check = state.auth.checkPermission.bind( state.auth, envelope.user, meta.alias, envelope.context );
-			return checkPermissionFor.bind( undefined, state, check, meta, action );
-		} else {
-			return function( envelope, next ) { return next(); };
-		}
+function getHandler( handle ) {
+	if( _.isFunction( handle ) ) {
+		return handle;
+	} else {
+		var list = _.filter( _.map( handle, function( option ) {
+			if( _.isFunction( option.when ) ) {
+				return option;
+			} else if( option.when === true ) {
+				return {
+					when: function() { return true; },
+					then: option.then
+				};
+			} else if( _.isObject( option.when ) ) {
+				return {
+					when: _.matches( option.when ),
+					then: option.then
+				};
+			} else {
+				console.error(
+					format(
+						'Differentiated handle\'s \'when\' property must be a function or an object instead of \'%s\'. Option will not be included in potential outcomes.'
+					), 
+					option.when
+				);
+			}
+		} ) );
+		return function( envelope ) {
+			var option = _.find( list, function( option ) {
+				return option.when( envelope );
+			} );
+			if( option ) {
+				return option.then( envelope );	
+			} else {
+				return { status: 400, data: 'The request failed to meet any of the supported conditions' };
+			}
+		};
 	}
+}
+
+function getPermissionCheck( state, meta, resource, action, envelope ) {
+	var check;
+	if( action.authorize ) {
+		check = function() {
+			var can = action.authorize.bind( resource )( envelope, envelope.context );
+			return can && can.then ? can : when.resolve( can );
+		};
+		return checkPermissionFor.bind( undefined, state, check, meta, action );
+	} else if( state.auth && state.auth.checkPermission ) {
+		check = state.auth.checkPermission.bind( state.auth, envelope.user, meta.alias, envelope.context );
+		return checkPermissionFor.bind( undefined, state, check, meta, action );
+	} else {
+		return function( envelope, next ) { return next(); };
+	}
+}
 
 function hasPrefix( state, url ) {
 	var prefix = state.http.buildUrl(
@@ -259,7 +299,7 @@ function wireupAction( state, resource, actionName, action, metadata, resources 
 		res.once( 'finish', function() {
 			timer.record( { name: 'HTTP_API_DURATION' } );
 		} );
-
+		action.handle = getHandler( action.handle );
 		respond( state, meta, req, res, resource, action );
 	} );
 }
