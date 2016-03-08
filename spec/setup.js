@@ -12,6 +12,9 @@ global.sinon = require( 'sinon' );
 global.proxyquire = require( 'proxyquire' ).noPreserveCache();
 var sinonChai = require( 'sinon-chai' );
 chai.use( sinonChai );
+var logLib = require( "../src/log" );
+var adapterPath = require.resolve( "./mockLogger.js" );
+var mockAdapter = require( "./mockLogger.js" );
 process.title = 'ahspec';
 
 function transformResponse() {
@@ -44,6 +47,16 @@ function transformResponse() {
 function onError() {
 	return {};
 }
+
+global.setupLog = function setupLog( ns, level ) {
+	global.logAdapter = mockAdapter( ns );
+	var adapters = {};
+	adapters[ adapterPath ] = { level: level || 5 };
+	var logFn = global.Log = logLib( {
+		adapters: adapters
+	} );
+	return logFn( ns );
+};
 
 global.transformResponse = transformResponse;
 global.onError = onError;
