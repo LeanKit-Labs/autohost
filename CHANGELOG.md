@@ -1,6 +1,7 @@
 ## 0.5.x
 
-### Next
+### 0.5.9
+ * Better default error logging for 5xx errors
  * Minor tweak to prevent posting two timing metrics for resource actions called via HTTP
 
 ### 0.5.8
