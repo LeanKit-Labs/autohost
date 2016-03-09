@@ -1,19 +1,20 @@
 require( '../setup' );
+var path = require( 'path' );
 var envelopeFn = require( '../../src/http/httpEnvelope.js' );
 var util = require( 'util' );
 var lastRequest;
 
+setupLog( "autohost.http.envelope", 1 );
+
 describe( 'HTTP Envelope', function() {
-
-	describe( 'when handling return', function() {
-
+	describe( 'when handling errors', function() {
 		describe( 'with host defined custom error', function() {
 			var envelope, req, res, request, host, renderSpy;
 			before( function() {
 				res = createResponse();
 				req = createRequest();
 				request = stubRequest();
-				envelope = new ( envelopeFn( request ))( req, res, 'test' );
+				envelope = new ( envelopeFn( request ) )( req, res, 'test' );
 				renderSpy = sinon.spy( envelope, 'render' );
 				host = {
 					errors: {
@@ -49,7 +50,7 @@ describe( 'HTTP Envelope', function() {
 				res = createResponse();
 				req = createRequest();
 				request = stubRequest();
-				envelope = new ( envelopeFn( request ))( req, res, 'test' );
+				envelope = new ( envelopeFn( request ) )( req, res, 'test' );
 				host = {
 					errors: {
 						'Error': {
@@ -84,7 +85,7 @@ describe( 'HTTP Envelope', function() {
 				res = createResponse();
 				req = createRequest();
 				request = stubRequest();
-				envelope = new ( envelopeFn( request ))( req, res, 'test' );
+				envelope = new ( envelopeFn( request ) )( req, res, 'test' );
 				host = {
 					static: './spec/public',
 					errors: {
@@ -120,7 +121,7 @@ describe( 'HTTP Envelope', function() {
 				res = createResponse();
 				req = createRequest();
 				request = stubRequest();
-				envelope = new ( envelopeFn( request ))( req, res, 'test' );
+				envelope = new ( envelopeFn( request ) )( req, res, 'test' );
 				host = {
 					static: './spec/public',
 					errors: {
@@ -147,7 +148,7 @@ describe( 'HTTP Envelope', function() {
 				res = createResponse();
 				req = createRequest();
 				request = stubRequest();
-				envelope = new ( envelopeFn( request ))( req, res, 'test' );
+				envelope = new ( envelopeFn( request ) )( req, res, 'test' );
 				resource = {
 					errors: {
 						'MyCustom': {
@@ -173,7 +174,7 @@ describe( 'HTTP Envelope', function() {
 				res = createResponse();
 				req = createRequest();
 				request = stubRequest();
-				envelope = new ( envelopeFn( request ))( req, res, 'test' );
+				envelope = new ( envelopeFn( request ) )( req, res, 'test' );
 				action = {
 					errors: {
 						'MyCustom': {
@@ -198,7 +199,7 @@ describe( 'HTTP Envelope', function() {
 				res = createResponse();
 				req = createRequest();
 				request = stubRequest();
-				envelope = new ( envelopeFn( request ))( req, res, 'test' );
+				envelope = new ( envelopeFn( request ) )( req, res, 'test' );
 				envelope.handleReturn( {}, {}, {}, new MyCustomError( 'no support' ) );
 			} );
 
@@ -210,13 +211,91 @@ describe( 'HTTP Envelope', function() {
 			} );
 		} );
 
+		describe( 'with status less than 500', function() {
+			var envelope, req, res, request;
+			before( function() {
+				res = createResponse();
+				req = createRequest();
+				request = stubRequest();
+				envelope = new ( envelopeFn( request ) )( req, res, 'test' );
+				host = {
+					errors: {
+						'MyCustom': {
+							status: 404,
+							reply: function( error ) {
+								return util.format( '%s: %s', error.name, error.message );
+							}
+						}
+					}
+				};
+				logAdapter.reset();
+				envelope.handleReturn( host, {}, {}, new MyCustomError( 'test' ) );
+			} );
+
+			it( 'should not log', function() {
+				logAdapter.recent().should.eql( {} );
+			} );
+		} );
+
+		describe( 'with status of 500', function() {
+			var envelope, req, res, request;
+			before( function() {
+				res = createResponse();
+				req = createRequest();
+				request = stubRequest();
+				envelope = new ( envelopeFn( request ) )( req, res, 'test' );
+				host = {
+					errors: {
+						'MyCustom': {
+							reply: function( error ) {
+								return util.format( '%s: %s', error.name, error.message );
+							}
+						}
+					}
+				};
+				logAdapter.reset();
+				envelope.handleReturn( host, {}, {}, new MyCustomError( 'test' ) );
+			} );
+
+			it( 'should log the exception as an error', function() {
+				logAdapter.recent( 'error' )[0].should.equal( 'ahspec [anonymous] \nMyCustom: test' );
+			} );
+		} );
+
+		describe( 'with status greater than 500', function() {
+			var envelope, req, res, request;
+			before( function() {
+				res = createResponse();
+				req = createRequest();
+				request = stubRequest();
+				envelope = new ( envelopeFn( request ) )( req, res, 'test' );
+				host = {
+					errors: {
+						'MyCustom': {
+							status: 503,
+							reply: function( error ) {
+								return util.format( '%s: %s', error.name, error.message );
+							}
+						}
+					}
+				};
+				logAdapter.reset();
+				envelope.handleReturn( host, {}, {}, new MyCustomError( 'test' ) );
+			} );
+
+			it( 'should log the exception as an error', function() {
+				logAdapter.recent( 'error' )[0].should.equal( 'ahspec [anonymous] \nMyCustom: test' );
+			} );
+		} );
+	} );
+	describe( 'when handling return', function() {
 		describe( 'with string result', function() {
 			var envelope, req, res, request;
 			before( function() {
 				res = createResponse();
 				req = createRequest();
 				request = stubRequest();
-				envelope = new ( envelopeFn( request ))( req, res, 'test' );
+				envelope = new ( envelopeFn( request ) )( req, res, 'test' );
 				envelope.handleReturn( {}, {}, {}, 'just a simple string' );
 			} );
 
@@ -234,7 +313,7 @@ describe( 'HTTP Envelope', function() {
 				res = createResponse();
 				req = createRequest();
 				request = stubRequest();
-				envelope = new ( envelopeFn( request ))( req, res, 'test' );
+				envelope = new ( envelopeFn( request ) )( req, res, 'test' );
 				envelope.handleReturn( {}, {}, {}, { status: 202, data: 'For me? Well I accept you!' } );
 			} );
 
@@ -252,7 +331,7 @@ describe( 'HTTP Envelope', function() {
 				res = createResponse();
 				req = createRequest();
 				request = stubRequest();
-				envelope = new ( envelopeFn( request ))( req, res, 'test' );
+				envelope = new ( envelopeFn( request ) )( req, res, 'test' );
 				envelope.handleReturn( {}, {}, {}, { a: 1, b: 2, c: 3 } );
 			} );
 
@@ -270,7 +349,7 @@ describe( 'HTTP Envelope', function() {
 				res = createResponse();
 				req = createRequest();
 				request = stubRequest();
-				envelope = new ( envelopeFn( request ))( req, res, 'test' );
+				envelope = new ( envelopeFn( request ) )( req, res, 'test' );
 				envelope.handleReturn( {}, {}, {}, { data: { a: 1, b: 2, c: 3 } } );
 			} );
 
@@ -288,7 +367,7 @@ describe( 'HTTP Envelope', function() {
 				res = createResponse();
 				req = createRequest();
 				request = stubRequest();
-				envelope = new ( envelopeFn( request ))( req, res, 'test' );
+				envelope = new ( envelopeFn( request ) )( req, res, 'test' );
 				envelope.handleReturn( {}, {}, {}, {
 					cookies: { 'one': {
 							value: 'test',
@@ -338,7 +417,7 @@ describe( 'HTTP Envelope', function() {
 				req.method = 'GET';
 				req.headers = [];
 				request = stubRequest();
-				envelope = new ( envelopeFn( request ))( req, res, 'test' );
+				envelope = new ( envelopeFn( request ) )( req, res, 'test' );
 				envelope.handleReturn( {}, {}, {}, {
 					forward: {
 						url: 'http://testing.com/forwarded'
@@ -366,7 +445,7 @@ describe( 'HTTP Envelope', function() {
 				req.headers = [];
 				req.body = { something: 'important' };
 				request = stubRequest();
-				envelope = new ( envelopeFn( request ))( req, res, 'test' );
+				envelope = new ( envelopeFn( request ) )( req, res, 'test' );
 				envelope.handleReturn( {}, {}, {}, {
 					forward: {
 						method: 'POST',
@@ -396,7 +475,7 @@ describe( 'HTTP Envelope', function() {
 				req.method = 'PUT';
 				req.headers = [];
 				request = stubRequest();
-				envelope = new ( envelopeFn( request ))( req, res, 'test' );
+				envelope = new ( envelopeFn( request ) )( req, res, 'test' );
 				envelope.handleReturn( {}, {}, {}, {
 					forward: {
 						headers: {
@@ -430,7 +509,7 @@ describe( 'HTTP Envelope', function() {
 				req.headers = [];
 				req.body = { something: 'important' };
 				request = stubRequest();
-				envelope = new ( envelopeFn( request ))( req, res, 'test' );
+				envelope = new ( envelopeFn( request ) )( req, res, 'test' );
 				envelope.handleReturn( {}, {}, {}, {
 					forward: {
 						method: 'POST',
@@ -459,7 +538,7 @@ describe( 'HTTP Envelope', function() {
 				res = createResponse();
 				req = createRequest();
 				request = stubRequest();
-				envelope = new ( envelopeFn( request ))( req, res, 'test' );
+				envelope = new ( envelopeFn( request ) )( req, res, 'test' );
 				envelope.handleReturn( {}, {}, {}, {
 					redirect: {
 						url: 'http://testing.com/redirect'
@@ -481,7 +560,7 @@ describe( 'HTTP Envelope', function() {
 				res = createResponse();
 				req = createRequest();
 				request = stubRequest();
-				envelope = new ( envelopeFn( request ))( req, res, 'test' );
+				envelope = new ( envelopeFn( request ) )( req, res, 'test' );
 				envelope.handleReturn( {}, {}, {}, {
 					redirect: {
 						status: 301,
@@ -510,7 +589,7 @@ describe( 'HTTP Envelope', function() {
 						this.stream = stream;
 					}
 				};
-				envelope = new ( envelopeFn( request ))( req, res, 'test' );
+				envelope = new ( envelopeFn( request ) )( req, res, 'test' );
 				envelope.handleReturn( {}, {}, {}, {
 					file: {
 						type: 'text/plain',
@@ -543,7 +622,7 @@ describe( 'HTTP Envelope', function() {
 					}
 				};
 				request = stubRequest();
-				envelope = new ( envelopeFn( request ))( req, res, 'test' );
+				envelope = new ( envelopeFn( request ) )( req, res, 'test' );
 				envelope.handleReturn( {}, {}, {}, 'just a simple string' );
 			} );
 
@@ -567,7 +646,7 @@ describe( 'HTTP Envelope', function() {
 					two: 2
 				};
 				request = stubRequest();
-				envelope = new ( envelopeFn( request ))( req, res, 'test' );
+				envelope = new ( envelopeFn( request ) )( req, res, 'test' );
 			} );
 
 			it( 'should place query parameters on envelope data', function() {
@@ -587,7 +666,7 @@ describe( 'HTTP Envelope', function() {
 					two: 2
 				};
 				request = stubRequest();
-				envelope = new ( envelopeFn( request ))( req, res, 'test' );
+				envelope = new ( envelopeFn( request ) )( req, res, 'test' );
 			} );
 
 			it( 'should place query parameters on envelope data', function() {
@@ -611,7 +690,7 @@ describe( 'HTTP Envelope', function() {
 					two: 4
 				};
 				request = stubRequest();
-				envelope = new ( envelopeFn( request ))( req, res, 'test' );
+				envelope = new ( envelopeFn( request ) )( req, res, 'test' );
 			} );
 
 			it( 'should not override path variables with query parameters on data', function() {
@@ -647,7 +726,7 @@ describe( 'HTTP Envelope', function() {
 					two: 4
 				};
 				request = stubRequest();
-				envelope = new ( envelopeFn( request ))( req, res, 'test' );
+				envelope = new ( envelopeFn( request ) )( req, res, 'test' );
 			} );
 
 			it( 'should not override body properties', function() {
@@ -691,7 +770,7 @@ describe( 'HTTP Envelope', function() {
 
 			it( 'should not throw TypeError: undefined is not a function', function() {
 				expect( function() {
-					envelope = new ( envelopeFn( request ))( req, res, 'test' );
+					envelope = new ( envelopeFn( request ) )( req, res, 'test' );
 				} ).to.not.throw( TypeError );
 			} );
 		} );
@@ -780,6 +859,7 @@ function createResponse() {
 function MyCustomError( message ) {
 	this.message = message || ':(';
 	this.name = 'MyCustom';
+	this.stack = this.name + ": " + this.message;
 }
 
 MyCustomError.prototype = Object.create( Error.prototype );

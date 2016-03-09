@@ -1,4 +1,5 @@
 var namespaces = {};
+var recent = {};
 var adapter = {
 	namespaces: namespaces,
 	init: function( ns ) {
@@ -11,6 +12,7 @@ var adapter = {
 			warn: [],
 			error: []
 		};
+		recent = {};
 		return namespaces[ ns ];
 	},
 	reset: function( ns ) {
@@ -22,6 +24,16 @@ var adapter = {
 			ns = this.init( data.namespace );
 		}
 		ns.entries[ data.type ].push( data.msg );
+		if ( !recent[data.type] ) {
+			recent[data.type] = [];
+		}
+		recent[data.type].push( data.msg );
+	},
+	recent: function( type ) {
+		if ( type ) {
+			return recent[type];
+		}
+		return recent;
 	}
 };
 
