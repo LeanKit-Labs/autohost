@@ -107,8 +107,8 @@ function requestMetrics( state, req, res, next ) {
 		var sent = req.connection._bytesDispatched;
 		var sentKB = sent ? sent / 1024 : 0;
 		var url = req.url;
-		var elapsed = timer.record( { name: 'HTTP_REQUEST_DURATION' } );
-
+		var elapsed;
+		
 		var metricKey = req._metricKey;
 		if ( metricKey ) {
 			var resourceRequests = state.metrics.meter( 'requests', 'count', metricKey );
@@ -117,6 +117,7 @@ function requestMetrics( state, req, res, next ) {
 			resourceRequests.record( 1, { name: 'HTTP_API_REQUESTS' } );
 			resourceIngress.record( read, { name: 'HTTP_API_INGRESS' } );
 			resourceEgress.record( sent, { name: 'HTTP_API_EGRESS' } );
+			elapsed = req._timer.record( { name: 'HTTP_API_DURATION' } );
 		} else {
 			var httpRequests = state.metrics.meter( [ urlKey, 'requests' ] );
 			var httpIngress = state.metrics.meter( [ urlKey, 'ingress' ], 'bytes' );
@@ -124,6 +125,7 @@ function requestMetrics( state, req, res, next ) {
 			httpRequests.record( 1, { name: 'HTTP_REQUESTS' } );
 			httpIngress.record( read, { name: 'HTTP_INGRESS' } );
 			httpEgress.record( sent, { name: 'HTTP_EGRESS' } );
+			elapsed = timer.record( { name: 'HTTP_REQUEST_DURATION' } );
 		}
 
 		log.info( '%s@%s %s (%d ms) [%s] %s %s (%d bytes) %s %s (%d bytes)',

@@ -1,11 +1,14 @@
 ## 0.5.x
 
+### Next
+ * Minor tweak to prevent posting two timing metrics for resource actions called via HTTP
+
 ### 0.5.8
  * Add differentiated handle feature (to support adding versioned handlers in hyped)
 
 ### 0.5.7
 
-* Fixed issue with data objects having no hasOwnProperty function
+ * Fixed issue with data objects having no hasOwnProperty function 
 
 ### 0.5.6
  * Provide a means to customize socket.io configuration
