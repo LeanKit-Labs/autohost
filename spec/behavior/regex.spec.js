@@ -140,11 +140,11 @@ describe( 'URL Regex', function() {
 	} );
 
 	describe( 'when pattern is already prefixed', function() {
-		var prefix = '/prefixed';
-		var url1 = '/prefixed/test/user/this/is/dumb';
+		var prefix = '/pre/fixed';
+		var url1 = '/pre/fixed/test/user/this/is/dumb';
 		var url2 = '/board/10/user';
-		var url3 = '/prefixed/user';
-		var match = /\/prefixed\/user[\/]?/;
+		var url3 = '/pre/fixed/user';
+		var match = /\/pre\/fixed\/user[\/]?/;
 		var url1Match, url2Match, url3Match;
 
 		before( function() {
@@ -153,7 +153,6 @@ describe( 'URL Regex', function() {
 			url2Match = pattern.test( url2 );
 			url3Match = pattern.test( url3 );
 		} );
-
 
 		it( 'it should match URLs beginning with the correct prefix', function() {
 			url3Match.should.be.true;

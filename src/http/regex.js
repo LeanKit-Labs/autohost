@@ -9,7 +9,7 @@ function getRegex( pattern ) {
 
 function applyPrefix( prefix, pattern ) {
 	var original = parseRegex( pattern );
-	var prefixed = getRegex( '[^]?' + prefix.replace( '\/', '[\\\/]' ) );
+	var prefixed = getRegex( '\\^?' + prefix.replace( /\//g, '\\\\?/' ) );
 	if ( !prefix || prefixed.test( original ) ) {
 		return pattern;
 	} else {
