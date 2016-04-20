@@ -7,10 +7,17 @@ var uuid = require( 'node-uuid' );
 function addClient( state, socket ) {
 	socket.connectionId = uuid.v4();
 	state.clients.push( socket );
-	if ( socket.user !== 'anonymous' ) {
-		socketIdentified( state, socket.user, socket );
+
+	var userId = getUserId( socket );
+	if ( userId && userId !== 'anonymous' ) {
+		socketIdentified( state, userId, socket );
 	}
+
 	eventChannel.publish( 'socket.client.connected', { socket: socket } );
+}
+
+function getUserId( socket ) {
+	return socket.user && socket.user.id || socket.user.name;
 }
 
 function socketIdentified( state, id, socket ) {
@@ -58,11 +65,17 @@ function removeClient( state, socket ) {
 	if ( index >= 0 ) {
 		state.clients.splice( index, 1 );
 	}
-	if ( socket.id && state.clients.lookup[ socket.id ] ) {
-		var list = state.clients.lookup[ socket.id ];
+
+	var lookupKey = getUserId( socket ) || socket.id;
+	if ( lookupKey && state.clients.lookup[ lookupKey ] ) {
+		var list = state.clients.lookup[ lookupKey ];
 		index = list.indexOf( socket );
 		if ( index >= 0 ) {
 			list.splice( index, 1 );
+
+			if( list.length === 0 ) {
+				delete state.clients.lookup[ lookupKey ];
+			}
 		}
 	}
 	eventChannel.publish( 'socket.client.closed', { id: socket.id, socket: socket } );
@@ -78,7 +91,7 @@ function sendToClient( state, id, message, data ) {
 	log.debug( 'Sending to clients %s: %s %j', id, message, data );
 	var sockets = state.clients.lookup[ id ];
 	if ( !sockets ) {
-		sockets = _.where( state.clients, function( client ) {
+		sockets = _.filter( state.clients, function( client ) {
 			return client.user.id === id || client.user.name === id;
 		} );
 	}
