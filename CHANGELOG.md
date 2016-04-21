@@ -1,8 +1,12 @@
 ## 0.5.x
 
+### 0.5.11
+
+ * Fixes around socket connection bookkeeping
+
 ### 0.5.10
 
-* Regex fix for newer version of node
+ * Regex fix for newer version of node
 
 ### 0.5.9
  * Better default error logging for 5xx errors
