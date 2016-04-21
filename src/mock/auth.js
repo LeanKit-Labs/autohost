@@ -24,7 +24,7 @@ function authenticate( req, res, next ) {
 }
 
 function authenticateCredentials( userName, password, done ) {
-	var user = _.where( wrapper.users, function( o, u ) {
+	var user = _.filter( wrapper.users, function( o, u ) {
 		return u === userName && o.password === password;
 	} );
 	log.debug( 'credentials %s:%s resulted in', userName, password, user, 'amongst', _.keys( wrapper.users ) );

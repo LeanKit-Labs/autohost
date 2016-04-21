@@ -23,7 +23,8 @@ describe( 'Socket Management', function() {
 	describe( 'with multiple socket clients', function() {
 		var io, ws, ioC, wsC;
 		var clients = [];
-		var eventSubscription;
+		var connectionSubscription;
+		var closedSubscription;
 		before( function( done ) {
 			function check() {
 				if ( ioC && wsC ) {
@@ -31,8 +32,12 @@ describe( 'Socket Management', function() {
 				}
 			}
 
-			eventSubscription = eventChannel.subscribe( 'socket.client.connected', function( client ) {
+			connectionSubscription = eventChannel.subscribe( 'socket.client.connected', function( client ) {
 				clients.push( client );
+			} );
+
+			closedSubscription = eventChannel.subscribe( 'socket.client.closed', function( data ) {
+				_.remove( clients, { socket: data.socket } );
 			} );
 
 			io = harness.getIOClient( 'http://localhost:8988', { query: 'token=one', reconnection: false } );
@@ -100,7 +105,7 @@ describe( 'Socket Management', function() {
 
 			before( function( done ) {
 				function check() {
-					if ( ioMessages.length && wsMessages.length === 2 ) {
+					if ( ioMessages.length && wsMessages.length ) {
 						done();
 					}
 				}
@@ -127,14 +132,33 @@ describe( 'Socket Management', function() {
 			it( 'should send messages to all connected clients', function() {
 				ioMessages.should.eql( [ { message: 'sent to userone' } ] );
 				wsMessages.should.eql( [
-					{ message: 'sent to userone' },
 					{ message: 'sent to usertwo' }
 				] );
 			} );
 		} );
 
+		describe( 'when closing a specific client', function() {
+			var firstSocket, secondSocket;
+
+			before( function() {
+				firstSocket = clients[ 0 ].socket;
+				secondSocket = clients[ 1 ].socket;
+
+				secondSocket.close();
+			} );
+
+			it( 'should remove just the given client', function() {
+				clients.should.eql( [ { socket: firstSocket } ] );
+			} );
+
+			it( 'should remove the closed client from its lookup', function() {
+				Object.keys( harness.socket.clients.lookup ).should.eql( [ firstSocket.user.name ] );
+			} );
+		} );
+
 		after( function() {
-			eventSubscription.unsubscribe();
+			connectionSubscription.unsubscribe();
+			closedSubscription.unsubscribe();
 		} );
 	} );
 
