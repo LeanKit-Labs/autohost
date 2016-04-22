@@ -1,5 +1,9 @@
 ## 0.5.x
 
+### 0.5.12
+
+* Updated socket.io to 1.4.5 and websocket to 1.0.22
+
 ### 0.5.11
 
  * Fixes around socket connection bookkeeping
@@ -17,7 +21,7 @@
 
 ### 0.5.7
 
- * Fixed issue with data objects having no hasOwnProperty function 
+ * Fixed issue with data objects having no hasOwnProperty function
 
 ### 0.5.6
  * Provide a means to customize socket.io configuration
