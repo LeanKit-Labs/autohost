@@ -1,5 +1,9 @@
 ## 0.5.x
 
+### 0.6.0
+
+* Removed Express.js warning when not using sessions
+
 ### 0.5.12
 
 * Updated socket.io to 1.4.5 and websocket to 1.0.22
