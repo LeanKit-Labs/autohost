@@ -7,3 +7,4 @@ tmp
 .grapplehound.json
 .nonstop.json
 coverage/
+.vscode/

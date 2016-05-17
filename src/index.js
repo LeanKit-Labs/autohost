@@ -20,7 +20,7 @@ function initialize( config, authProvider, fount ) {
 		}
 	} );
 	authProvider = authProvider || config.authProvider;
-	if( config.logging && !_.isEmpty( config.logging ) ) {
+	if ( config.logging && !_.isEmpty( config.logging ) ) {
 		require( './log' )( config.logging );
 	}
 	var metrics = require( './metrics' )( config.metrics || {} );

@@ -79,7 +79,9 @@ function configure( state, config ) {
 	var sessionConfig = _.defaults( state.config.session || {}, sessionDefaults );
 	state.config.cors = _.defaults( state.config.cors || {}, corsDefaults );
 	sessionConfig.cookie = cookieConfig;
-	state.session = state.sessionLib( sessionConfig );
+	if ( !state.config.noSession ) {
+		state.session = state.sessionLib( sessionConfig );
+	}
 }
 
 function requestMetrics( state, req, res, next ) {
