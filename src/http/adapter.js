@@ -7,7 +7,7 @@ var passportFn = require( './passport.js' );
 var metronic = require( '../metrics' );
 var format = require( 'util' ).format;
 
-function buildActionUrl( state, resourceName, actionName, action, resource, resources ) {
+function buildActionUrls( state, resourceName, actionName, action, resource, resources ) {
 	var prefix;
 	if ( resource.apiPrefix !== undefined ) {
 		// Use the resource specific override
@@ -16,23 +16,30 @@ function buildActionUrl( state, resourceName, actionName, action, resource, reso
 		// If the resource doesn't have an override, use the config or default
 		prefix = state.config.apiPrefix === undefined ? 'api' : state.config.apiPrefix;
 	}
-
-	if ( _.isRegExp( action.url ) ) {
-		return regex.prefix(
-			state.http.buildUrl( state.config.urlPrefix || '', prefix ),
-			action.url
-		);
-	} else if ( state.config.urlStrategy ) {
-		var url = state.config.urlStrategy( resourceName, actionName, action, resources );
-		prefix = hasPrefix( state, url ) ? '' : prefix;
-		return state.http.buildUrl( prefix, url );
+	var source;
+	if( _.isString( action.url ) || _.isRegExp( action.url ) ) {
+		source = [ action.url ];
 	} else {
-		var resourceIndex = action.url ? action.url.indexOf( resourceName ) : -1;
-		var resourcePrefix = resourceIndex === 0 || resourceIndex === 1 ? '' : resourceName;
-		return state.http.buildUrl(
-			prefix, resource.urlPrefix || '', resourcePrefix, ( action.url || '' )
-		);
+		source = action.url || [ "" ];
 	}
+	return _.map( source, function( actionUrl ) {
+		if ( _.isRegExp( actionUrl ) ) {
+			return regex.prefix(
+				state.http.buildUrl( state.config.urlPrefix || '', prefix ),
+				actionUrl
+			);
+		} else if ( state.config.urlStrategy ) {
+			var url = state.config.urlStrategy( resourceName, actionName, action, resources );
+			prefix = hasPrefix( state, url ) ? '' : prefix;
+			return state.http.buildUrl( prefix, url );
+		} else {
+			var resourceIndex = actionUrl ? actionUrl.indexOf( resourceName ) : -1;
+			var resourcePrefix = resourceIndex === 0 || resourceIndex === 1 ? '' : resourceName;
+			return state.http.buildUrl(
+				prefix, resource.urlPrefix || '', resourcePrefix, ( actionUrl || '' )
+			);
+		}
+	} );
 }
 
 function buildActionAlias( resourceName, actionName ) {
@@ -101,11 +108,11 @@ function executeStack( resource, action, envelope, stack ) {
 }
 
 function getActionMetadata( state, resource, actionName, action, meta, resources ) {
-	var url = buildActionUrl( state, resource.name, actionName, action, resource, resources );
+	var urls = buildActionUrls( state, resource.name, actionName, action, resource, resources );
 	var alias = buildActionAlias( resource.name, actionName );
 	var resourceKey = [ [ resource.name, actionName ].join( '-' ), 'http' ];
 	var metricKey = [ state.metrics.prefix ].concat( resourceKey );
-	meta.routes[ actionName ] = { method: action.method, url: url };
+	meta.routes[ actionName ] = { method: action.method, urls: urls };
 	return {
 		alias: alias,
 		envelope: undefined,
@@ -129,7 +136,7 @@ function getActionMetadata( state, resource, actionName, action, meta, resources
 		handleErrors: state.config && state.config.handleRouteErrors,
 		metricKey: metricKey,
 		resourceKey: resourceKey,
-		url: url
+		urls: urls
 	};
 }
 
@@ -196,7 +203,7 @@ function hasPrefix( state, url ) {
 	return url.indexOf( prefix ) === 0;
 }
 
-function respond( state, meta, req, res, resource, action ) {
+function respond( state, meta, url, req, res, resource, action ) {
 	var envelope = meta.getEnvelope( req, res );
 	var result;
 	var stack = [];
@@ -231,7 +238,7 @@ function respond( state, meta, req, res, resource, action ) {
 			result = executeStack( resource, action, envelope, stack );
 		} catch ( err ) {
 			log.error( 'API EXCEPTION! route: %s %s failed with %s',
-				action.method.toUpperCase(), action.url, err.stack );
+				action.method.toUpperCase(), url, err.stack );
 			result = err;
 		}
 	} else {
@@ -244,7 +251,7 @@ function respond( state, meta, req, res, resource, action ) {
 					envelope.handleReturn( state.config, resource, action, x );
 				} else {
 					log.warn( 'Handle at route: %s %s returned undefined',
-						action.method.toUpperCase(), action.url );
+						action.method.toUpperCase(), url );
 				}
 			};
 			result.then( onResult, onResult );
@@ -289,15 +296,17 @@ function wireupAction( state, resource, actionName, action, metadata, resources 
 	log.debug( 'Mapping resource \'%s\' action \'%s\' to %s %s',
 		resource.name, actionName, action.method, meta.url );
 
-	state.http.route( meta.url, action.method, function( req, res ) {
-		meta.getEnvelope( req, res );
-
-		req._metricKey = meta.metricKey;
-		req._resource = resource.name;
-		req._action = actionName;
-		req._timer = meta.getTimer();
-		action.handle = getHandler( action.handle );
-		respond( state, meta, req, res, resource, action );
+	console.log( "	META", meta.urls );
+	_.each( meta.urls, function( url ) {
+		state.http.route( url, action.method, function( req, res ) {
+			meta.getEnvelope( req, res );
+			req._metricKey = meta.metricKey;
+			req._resource = resource.name;
+			req._action = actionName;
+			req._timer = meta.getTimer();
+			action.handle = getHandler( action.handle );
+			respond( state, meta, url, req, res, resource, action );
+		} );
 	} );
 }
 

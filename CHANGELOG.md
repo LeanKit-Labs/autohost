@@ -1,5 +1,9 @@
 ## 0.5.x
 
+### 0.6.1
+
+ * Add ability to define multiple URL patterns per action
+
 ### 0.6.0
 
 * Removed Express.js warning when not using sessions
