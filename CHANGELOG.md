@@ -3,6 +3,7 @@
 ### 0.6.1
 
  * Add ability to define multiple URL patterns per action
+ * Add support for differentiated authorization (support versioned authorization in hyped)
 
 ### 0.6.0
 
