@@ -34,7 +34,7 @@ describe( 'AH Resource', function() {
 		harness.addResource( {
 			name: 'test',
 			actions: {
-				call: { url: '/call', method: 'get', topic: 'call', handle: testCall },
+				call: { url: [ '/call', '/hollah' ], method: 'get', topic: 'call', handle: testCall },
 				error: { url: '/err', method: 'get', topic: 'err', handle: errorCall },
 				logout: { url: '/logout', method: 'all', topic: 'logout', handle: logout }
 			}
@@ -59,7 +59,7 @@ describe( 'AH Resource', function() {
 				url: 'http://localhost:8988/api/test/call',
 			},
 			{
-				url: 'http://localhost:8988/api/test/call',
+				url: 'http://localhost:8988/api/test/hollah',
 			},
 			{
 				url: 'http://localhost:8988/api/test/err'

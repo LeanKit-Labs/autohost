@@ -80,6 +80,24 @@ describe( 'HTTP', function() {
 			env.reply( { data: 'custom apiPrefix route matched' } );
 		};
 
+		var versionedAuth = [
+			{
+				when: function( envelope ) {
+					return envelope.version > 1; 
+				},
+				then: function( envelope ) {
+					var x = _.indexOf( envelope.user.roles, "kettlebeller" ) < 0;
+					return x;
+				}
+			},
+			{
+				when: true,
+				then: function() {
+					return true;
+				}
+			}
+		];
+
 		var versionedCall = [
 			{
 				when: { version: 1 },
@@ -138,7 +156,7 @@ describe( 'HTTP', function() {
 				proxy: { url: '/proxy/:one/:two/:three', method: 'post', topic: 'proxy', handle: anonProxy },
 				regex: { url: /test\/regex.*/, method: 'all', handle: regexUrl },
 				thing: { url: '/thing/:id', method: 'get', topic: 'thing', handle: redirectCall },
-				differentiated: { url: '/diff', method: 'get', topic: 'differentiated', handle: versionedCall }
+				differentiated: { url: '/diff', method: 'get', topic: 'differentiated', authorize: versionedAuth, handle: versionedCall }
 			}
 		} );
 
@@ -281,6 +299,7 @@ describe( 'HTTP', function() {
 		harness.addUser( 'usertwo', 'two', 'two', [] );
 		harness.addUser( 'usererror', 'three', 'three', [] );
 		harness.addUser( 'usernoperm', 'four', 'four', [] );
+		harness.addUser( 'userbro', 'bro', 'tetrabrogrammaton', [ 'kettlebeller' ] );
 		harness.start();
 
 		get = function( req ) {
@@ -779,6 +798,44 @@ describe( 'HTTP', function() {
 				.should.eventually.deep.equal(
 				{
 					body: 'version 2!',
+					statusCode: 200
+				}
+			);
+		} );
+
+		it( 'should run version 2 with correct HTTP header but get rejected as a brogrammer', function() {
+			return get(
+				{
+					url: 'http://localhost:8988/api/test/diff',
+					headers: { 
+						'Authorization': 'Bearer tetrabrogrammaton',
+						'Accept': 'application/json.v2'
+					},
+					json: true
+				} )
+				.then( transformResponse( 'body', 'statusCode' ), onError )
+				.should.eventually.deep.equal(
+				{
+					body: { 'message': 'User lacks sufficient permissions' },
+					statusCode: 403
+				}
+			);
+		} );
+
+		it( 'should run version 1 HTTP header when kettlebellers could slip by undetected', function() {
+			return get(
+				{
+					url: 'http://localhost:8988/api/test/diff',
+					headers: { 
+						'Authorization': 'Bearer tetrabrogrammaton',
+						'Accept': 'application/json; version=1'
+					},
+					json: true
+				} )
+				.then( transformResponse( 'body', 'statusCode' ), onError )
+				.should.eventually.deep.equal(
+				{
+					body: "version 1!",
 					statusCode: 200
 				}
 			);
