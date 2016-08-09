@@ -9,14 +9,23 @@ function HttpEnvelope( req, res, metricKey ) {
 	this.transport = 'http';
 	this.context = req.context;
 	this.cookies = req.cookies;
-	this.data = req.body || {};
+	this.data;
+	if( req.data ) {
+		this.data = req.data;
+	} else {
+		this.data = req.body ? _.cloneDeep( req.body ) : {};
+	}
+	this.body = req.body || {};
+	this.query = req.query || {};
+	this.params = req.params || {};
+
 	this.files = req.files;
 	this.headers = req.headers || {};
 	this.logout = function() {
 		req.logout();
 	};
 	this.metricKey = metricKey;
-	this.params = {};
+	
 	this.path = this.url = req.url;
 	this.method = req.method.toLowerCase();
 	this.responseStream = res;
@@ -30,16 +39,15 @@ function HttpEnvelope( req, res, metricKey ) {
 	this.errors = metrics.meter( this.metricKey.concat( 'errors' ) );
 	this.version = req.context ? ( req.context.version || 1 ) : 1;
 
-	[ req.params, req.query ].forEach( function( source ) {
-		Object.keys( source ).forEach( function( key ) {
-			var val = source[ key ];
-			if ( !_.has( this.data, key ) ) {
-				this.data[ key ] = val;
-			}
-			if ( !_.has( this.params, key ) ) {
-				this.params[ key ] = val;
-			}
-		}.bind( this ) );
+	_.extend( this.data, req.params );
+	Object.keys( req.query ).forEach( function( key ) {
+		var val = req.query[ key ];
+		if ( !this.data.hasOwnProperty( key ) ) {
+			this.data[ key ] = val;
+		}
+		if ( !this.params.hasOwnProperty( key ) ) {
+			this.params[ key ] = val;
+		}
 	}.bind( this ) );
 
 	if ( req.extendHttp ) {
