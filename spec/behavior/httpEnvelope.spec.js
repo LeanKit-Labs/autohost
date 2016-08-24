@@ -731,8 +731,8 @@ describe( 'HTTP Envelope', function() {
 
 			it( 'should not override body properties', function() {
 				envelope.data.should.eql( {
-					one: 'one',
-					two: 'two'
+					one: 1,
+					two: 2
 				} );
 			} );
 

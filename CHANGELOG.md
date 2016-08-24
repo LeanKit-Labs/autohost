@@ -1,4 +1,9 @@
-## 0.5.x
+## 0.6.x
+
+### 0.6.2
+ * Bug fix - change order of merge operations into `data` to prefer url parameter, then request body, then query parameter.
+ * Bug fix - clone request body to data property on envelope; do not copy reference and allow mutation
+ * Improvement - add query, parameter and body properties to envelope
 
 ### 0.6.1
 
@@ -8,6 +13,8 @@
 ### 0.6.0
 
 * Removed Express.js warning when not using sessions
+
+## 0.5.x
 
 ### 0.5.12
 
