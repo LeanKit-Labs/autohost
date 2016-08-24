@@ -1,6 +1,10 @@
 ## 0.6.x
 
 ### 0.6.2
+
+* Fixes several bugs related to how query properties are merged to envelope data. Ensures query, paramters and body are all available on envelope directly.
+
+### 0.6.2
  * Bug fix - change order of merge operations into `data` to prefer url parameter, then request body, then query parameter.
  * Bug fix - clone request body to data property on envelope; do not copy reference and allow mutation
  * Improvement - add query, parameter and body properties to envelope
