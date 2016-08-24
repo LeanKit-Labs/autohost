@@ -1,3 +1,11 @@
+## 1.x
+
+### 1.0.0
+
+* change order of operations of merge operations into `data` to prefer url parameter, then request body, then parameter
+* request body is deep cloned to the data propert on HttpEnvelope to avoid
+* add query, parameter, and body properties to envelope
+
 ## 0.6.x
 
 ### 0.6.2
