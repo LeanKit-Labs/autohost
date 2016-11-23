@@ -780,7 +780,7 @@ autohost would not exist without the following libraries:
  * lodash 			3.7.0
  * metronic 		0.2.1
  * multer 			0.1.8
- * node-uuid 		1.4.3
+ * uuid 		    3.0.0
  * parseurl 		1.3.0
  * passport 		0.2.1
  * postal 			1.0.2

@@ -2,7 +2,7 @@ var _ = require( 'lodash' );
 var postal = require( 'postal' );
 var eventChannel = postal.channel( 'events' );
 var log = require( '../log' )( 'autohost.ws.transport' );
-var uuid = require( 'node-uuid' );
+var uuid = require( 'uuid' );
 
 function addClient( state, socket ) {
 	socket.connectionId = uuid.v4();
