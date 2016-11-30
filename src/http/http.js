@@ -203,7 +203,7 @@ function registerRoute( state, url, method, callback ) {
 	var fn = function() {
 		url = prefix( state, url );
 		log.debug( 'ROUTE: %s %s -> %s', method, url, ( callback.name || 'anonymous' ) );
-		state.app[ method ]( url, function( req, res ) {
+		state.app[ method ]( url, function autohostRouteHandler( req, res ) {
 			if ( state.config && state.config.handleRouteErrors ) {
 				try {
 					callback( req, res );
