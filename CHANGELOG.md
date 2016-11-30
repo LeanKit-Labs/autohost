@@ -1,5 +1,9 @@
 ## 1.x
 
+### 1.1.0
+
+* Named the main route handler function for better reporting in New Relic and similar tools
+
 ### 1.0.0
 
 * change order of operations of merge operations into `data` to prefer url parameter, then request body, then parameter
