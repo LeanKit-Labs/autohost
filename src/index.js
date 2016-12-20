@@ -19,7 +19,7 @@ function initialize( config, authProvider, fount ) {
 			return user && ( user.name || user.username || user.id || JSON.stringify( user ) );
 		}
 	} );
-	if( config.enableAccessLogs == undefined) {
+	if( typeof config.enableAccessLogs === "undefined") {
 		config.enableAccessLogs = true;
 	}
 	authProvider = authProvider || config.authProvider;
