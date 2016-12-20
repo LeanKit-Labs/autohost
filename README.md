@@ -72,7 +72,7 @@ The object literal follows the format:
 	cookie: 				// session cookie configuration
 	getUserString:			// method to return a string id for a user
 
-	noAccessLogs: false,			// disables access logs
+	enableAccessLogs: true,// enables access logs
 	logging: {}, 			// configuration passed to autohost's whistlepunk instance
 	fount: undefined, 		// pass the app's fount instance to autohost
 	metrics: { 				// configuration for or instance of metronic

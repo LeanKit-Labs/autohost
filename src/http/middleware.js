@@ -130,7 +130,7 @@ function requestMetrics( state, req, res, next ) {
 			elapsed = timer.record( { name: 'HTTP_REQUEST_DURATION' } );
 		}
 
-		if( !state.config.noAccessLogs ) {
+		if( state.config.enableAccessLogs ) {
 			log.info( '%s@%s %s (%d ms) [%s] %s %s (%d bytes) %s %s (%d bytes)',
 				process.title,
 				hostName,
