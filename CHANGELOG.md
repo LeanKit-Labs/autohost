@@ -1,5 +1,11 @@
 ## 1.x
 
+### 1.2.0
+
+* Fixed tests for new enable value.
+* Changed to an enable flag, enableAccessLogs, that defaults to true when undefined.
+* Add option to disable access logs
+
 ### 1.1.0
 
 * Named the main route handler function for better reporting in New Relic and similar tools
