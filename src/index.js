@@ -19,6 +19,9 @@ function initialize( config, authProvider, fount ) {
 			return user && ( user.name || user.username || user.id || JSON.stringify( user ) );
 		}
 	} );
+	if( typeof config.enableAccessLogs === "undefined") {
+		config.enableAccessLogs = true;
+	}
 	authProvider = authProvider || config.authProvider;
 	if ( config.logging && !_.isEmpty( config.logging ) ) {
 		require( './log' )( config.logging );

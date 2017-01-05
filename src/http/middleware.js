@@ -110,7 +110,7 @@ function requestMetrics( state, req, res, next ) {
 		var sentKB = sent ? sent / 1024 : 0;
 		var url = req.url;
 		var elapsed;
-		
+
 		var metricKey = req._metricKey;
 		if ( metricKey ) {
 			var resourceRequests = state.metrics.meter( 'requests', 'count', metricKey );
@@ -130,19 +130,21 @@ function requestMetrics( state, req, res, next ) {
 			elapsed = timer.record( { name: 'HTTP_REQUEST_DURATION' } );
 		}
 
-		log.info( '%s@%s %s (%d ms) [%s] %s %s (%d bytes) %s %s (%d bytes)',
-			process.title,
-			hostName,
-			ip,
-			elapsed,
-			user || 'anonymous',
-			method,
-			url,
-			read,
-			code,
-			message || '',
-			sent
-		);
+		if( state.config.enableAccessLogs ) {
+			log.info( '%s@%s %s (%d ms) [%s] %s %s (%d bytes) %s %s (%d bytes)',
+				process.title,
+				hostName,
+				ip,
+				elapsed,
+				user || 'anonymous',
+				method,
+				url,
+				read,
+				code,
+				message || '',
+				sent
+			);
+		}
 	} );
 	next();
 }
