@@ -1,3 +1,5 @@
+"use strict";
+
 module.exports = function() {
 	return {
 		name: "hello",
@@ -5,7 +7,7 @@ module.exports = function() {
 			default: {
 				url: "/",
 				method: "GET",
-				handle: function() {
+				handle() {
 					return "hello world";
 				}
 			}

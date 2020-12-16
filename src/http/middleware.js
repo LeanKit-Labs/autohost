@@ -2,7 +2,6 @@ var _ = require( 'lodash' );
 var bodyParser = require( 'body-parser' );
 var cookies = require( 'cookie-parser' );
 var multer = require( 'multer' );
-var metronic = require( '../metrics' );
 var os = require( 'os' );
 var hostName = os.hostname();
 var log = require( '../log' )( 'autohost.access' );
@@ -97,38 +96,16 @@ function requestMetrics( state, req, res, next ) {
 	req.context = {};
 	res.setMaxListeners( 0 );
 	var urlKey = req.url.slice( 1 ).replace( /[\/]/g, '-' ) + '-' + req.method.toLowerCase();
-	var timer = state.metrics.timer( [ urlKey, 'http', 'duration' ] );
 
 	res.once( 'finish', function() {
 		var user = _.isObject( req.user ) ? ( req.user.name || req.user.username || req.user.id ) : 'anonymous';
 		var method = req.method.toUpperCase();
 		var read = req.connection.bytesRead;
-		var readKB = read / 1024;
 		var code = res.statusCode;
 		var message = res.statusMessage;
 		var sent = req.connection._bytesDispatched;
-		var sentKB = sent ? sent / 1024 : 0;
 		var url = req.url;
 		var elapsed;
-
-		var metricKey = req._metricKey;
-		if ( metricKey ) {
-			var resourceRequests = state.metrics.meter( 'requests', 'count', metricKey );
-			var resourceIngress = state.metrics.meter( 'ingress', 'bytes', metricKey );
-			var resourceEgress = state.metrics.meter( 'egress', 'bytes', metricKey );
-			resourceRequests.record( 1, { name: 'HTTP_API_REQUESTS' } );
-			resourceIngress.record( read, { name: 'HTTP_API_INGRESS' } );
-			resourceEgress.record( sent, { name: 'HTTP_API_EGRESS' } );
-			elapsed = req._timer.record( { name: 'HTTP_API_DURATION' } );
-		} else {
-			var httpRequests = state.metrics.meter( [ urlKey, 'requests' ] );
-			var httpIngress = state.metrics.meter( [ urlKey, 'ingress' ], 'bytes' );
-			var httpEgress = state.metrics.meter( [ urlKey, 'egress' ], 'bytes' );
-			httpRequests.record( 1, { name: 'HTTP_REQUESTS' } );
-			httpIngress.record( read, { name: 'HTTP_INGRESS' } );
-			httpEgress.record( sent, { name: 'HTTP_EGRESS' } );
-			elapsed = timer.record( { name: 'HTTP_REQUEST_DURATION' } );
-		}
 
 		if( state.config.enableAccessLogs ) {
 			log.info( '%s@%s %s (%d ms) [%s] %s %s (%d bytes) %s %s (%d bytes)',
@@ -153,7 +130,6 @@ module.exports = function( sessionLib ) {
 	var state = {
 		config: undefined,
 		cookieParser: cookies(),
-		metrics: metronic(),
 		session: undefined,
 		sessionLib: sessionLib
 	};

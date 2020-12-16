@@ -26,7 +26,7 @@ function initialize( config, authProvider, fount ) {
 	if ( config.logging && !_.isEmpty( config.logging ) ) {
 		require( './log' )( config.logging );
 	}
-	var metrics = require( './metrics' )( config.metrics || {} );
+
 	var middleware = middlewareLib( sessionLib );
 	var http = httpFn( request, middleware );
 	var socket = socketFn( config, http );
@@ -37,7 +37,6 @@ function initialize( config, authProvider, fount ) {
 		fount: fount || config.fount || internalFount,
 		http: http,
 		meta: undefined,
-		metrics: metrics,
 		middleware: middleware,
 		request: request,
 		resources: {},

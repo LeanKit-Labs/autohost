@@ -6,13 +6,6 @@ describe( 'Socket Envelope', function() {
 
 	describe( 'when handling return', function() {
 		var topic = 'test.topic';
-		var metricKey = 'metric.key';
-		var timer;
-		before( function() {
-			timer = {
-				record: _.noop
-			};
-		} );
 
 		describe( 'with host defined custom error', function() {
 			var host, envelope, message, socket;
@@ -21,7 +14,7 @@ describe( 'Socket Envelope', function() {
 					data: {}
 				};
 				socket = createSocket();
-				envelope = new Envelope( topic, message, socket, metricKey, timer );
+				envelope = new Envelope( topic, message, socket);
 				host = {
 					errors: {
 						'MyCustom': {
@@ -52,7 +45,7 @@ describe( 'Socket Envelope', function() {
 					data: {}
 				};
 				socket = createSocket();
-				envelope = new Envelope( topic, message, socket, metricKey, timer );
+				envelope = new Envelope( topic, message, socket );
 				resource = {
 					errors: {
 						'MyCustom': {
@@ -82,7 +75,7 @@ describe( 'Socket Envelope', function() {
 					data: {}
 				};
 				socket = createSocket();
-				envelope = new Envelope( topic, message, socket, metricKey, timer );
+				envelope = new Envelope( topic, message, socket );
 				action = {
 					errors: {
 						'MyCustom': {
@@ -111,7 +104,7 @@ describe( 'Socket Envelope', function() {
 					data: {}
 				};
 				socket = createSocket();
-				envelope = new Envelope( topic, message, socket, metricKey, timer );
+				envelope = new Envelope( topic, message, socket );
 				envelope.handleReturn( {}, {}, {}, new MyCustomError( 'no support' ) );
 			} );
 
@@ -133,7 +126,7 @@ describe( 'Socket Envelope', function() {
 					data: {}
 				};
 				socket = createSocket();
-				envelope = new Envelope( topic, message, socket, metricKey, timer );
+				envelope = new Envelope( topic, message, socket );
 				envelope.handleReturn( {}, {}, {}, 'just a simple string' );
 			} );
 
@@ -155,7 +148,7 @@ describe( 'Socket Envelope', function() {
 					data: {}
 				};
 				socket = createSocket();
-				envelope = new Envelope( topic, message, socket, metricKey, timer );
+				envelope = new Envelope( topic, message, socket );
 				envelope.handleReturn( {}, {}, {}, { status: 202, data: 'For me? Well I accept you!' } );
 			} );
 
@@ -177,7 +170,7 @@ describe( 'Socket Envelope', function() {
 					data: {}
 				};
 				socket = createSocket();
-				envelope = new Envelope( topic, message, socket, metricKey, timer );
+				envelope = new Envelope( topic, message, socket );
 				envelope.handleReturn( {}, {}, {}, { a: 1, b: 2, c: 3 } );
 			} );
 
@@ -199,7 +192,7 @@ describe( 'Socket Envelope', function() {
 					data: {}
 				};
 				socket = createSocket();
-				envelope = new Envelope( topic, message, socket, metricKey, timer );
+				envelope = new Envelope( topic, message, socket );
 				envelope.handleReturn( {}, {}, {}, { data: { a: 1, b: 2, c: 3 } } );
 			} );
 
@@ -221,7 +214,7 @@ describe( 'Socket Envelope', function() {
 					data: {}
 				};
 				socket = createSocket();
-				envelope = new Envelope( topic, message, socket, metricKey, timer );
+				envelope = new Envelope( topic, message, socket );
 				envelope.handleReturn( {}, {}, {}, {
 					cookies: { 'one': {
 							value: 'test',
@@ -257,7 +250,7 @@ describe( 'Socket Envelope', function() {
 					data: {}
 				};
 				socket = createSocket();
-				envelope = new Envelope( 'test.forward', message, socket, metricKey, timer );
+				envelope = new Envelope( 'test.forward', message, socket );
 				envelope.handleReturn( {}, {}, {}, {
 					forward: {
 						url: 'http://testing.com/forwarded'
@@ -283,7 +276,7 @@ describe( 'Socket Envelope', function() {
 					data: {}
 				};
 				socket = createSocket();
-				envelope = new Envelope( 'test.forward', message, socket, metricKey, timer );
+				envelope = new Envelope( 'test.forward', message, socket );
 			} );
 
 			it( 'should throw an error', function() {
@@ -320,7 +313,7 @@ describe( 'Socket Envelope', function() {
 					}
 				};
 				socket = createSocket();
-				envelope = new Envelope( 'test.forward', message, socket, metricKey, timer );
+				envelope = new Envelope( 'test.forward', message, socket );
 				envelope.handleReturn( {}, {}, {}, {
 					file: {
 						type: 'text/plain',

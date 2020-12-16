@@ -10,7 +10,7 @@ function parseCookies( socket ) {
 	}, {} );
 }
 
-function SocketEnvelope( topic, message, socket, metricKey, timer ) {
+function SocketEnvelope( topic, message, socket ) {
 	this.transport = 'websocket';
 	this.context = socket.context;
 	this.data = message.data || message || {};
@@ -19,12 +19,10 @@ function SocketEnvelope( topic, message, socket, metricKey, timer ) {
 	this.logout = function() {
 		socket.logout();
 	};
-	this.metricKey = metricKey;
 	this.params = {};
 	this.replyTo = this.data.replyTo || topic;
 	this.responseStream = new SocketStream( this.replyTo || topic, socket );
 	this.session = socket.session;
-	this.timer = timer;
 	this.topic = topic;
 	this.user = socket.user;
 	this._original = {
@@ -51,7 +49,6 @@ SocketEnvelope.prototype.handleReturn = function( host, resource, action, result
 
 
 SocketEnvelope.prototype.forwardTo = function( /* options */ ) {
-	this.recordTime();
 	this.reply( {
 		success: false,
 		status: 400,
@@ -59,12 +56,7 @@ SocketEnvelope.prototype.forwardTo = function( /* options */ ) {
 	} );
 };
 
-SocketEnvelope.prototype.recordTime = function() {
-	this.timer.record( { name: 'WS_ACTION_DURATION' } );
-};
-
 SocketEnvelope.prototype.redirect = function( /* options */ ) {
-	this.recordTime();
 	this.reply( {
 		success: false,
 		status: 400,
@@ -133,13 +125,11 @@ SocketEnvelope.prototype.reply = function( envelope ) {
 	}
 	delete publish.cookies;
 	this._original.socket.publish( this.replyTo, publish );
-	this.recordTime();
 };
 
 SocketEnvelope.prototype.replyWithFile = function( contentType, fileName, fileStream ) {
 	this._original.socket.publish( this.replyTo, { start: true, fileName: fileName, contentType: contentType } );
 	fileStream.pipe( this.responseStream );
-	this.recordTime();
 };
 
 module.exports = SocketEnvelope;

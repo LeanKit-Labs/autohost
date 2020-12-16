@@ -52,10 +52,9 @@ describe( 'Configuration', function() {
 							'Authorization': 'Bearer one'
 						}
 					} )
-					.then( transformResponse( 'body', 'statusCode' ), onError )
+					.then( transformResponse( 'statusCode' ), onError )
 					.should.eventually.deep.equal(
 					{
-						body: 'Cannot GET /txt/hello.txt\n',
 						statusCode: 404
 					}
 				);

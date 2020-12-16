@@ -1,1 +1,3 @@
-module.exports = require( './src/harness.js' );
+"use strict";
+
+module.exports = require( "./src/harness.js" );
