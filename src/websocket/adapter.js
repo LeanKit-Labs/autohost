@@ -1,5 +1,4 @@
 var _ = require( 'lodash' );
-var metronic = require( '../metrics' );
 var log = require( '../log' )( 'autohost.websocket.adapter' );
 
 function buildActionAlias( resourceName, actionName ) {
@@ -41,33 +40,19 @@ function wireupResource( state, resource ) {
 function getMetadata( state, resource, actionName, action ) {
 	var topic = buildActionTopic( resource.name, action );
 	var alias = buildActionAlias( resource.name, actionName );
-	var errors = state.metrics.meter( [ topic, 'error' ] );
-	var metricKey = [ state.metrics.prefix, [ resource.name, actionName ].join( '-' ), 'ws' ];
 	return {
 		alias: alias,
-		authAttempted: function() {
-			state.metrics.authorizationAttempts.record( 1, { name: 'WS_AUTHORIZATION_ATTEMPTS' } );
-		},
-		authGranted: function() {
-			state.metrics.authorizationGrants.record( 1, { name: 'WS_AUTHORIZATION_GRANTS' } );
-		},
-		authRejected: function() {
-			state.metrics.authorizationRejections.record( 1, { name: 'WS_AUTHORIZATION_REJECTIONS' } );
-		},
 		topic: topic,
-		errors: errors,
-		metricKey: metricKey
 	};
 }
 
-function respond( state, meta, resource, action, client, data, message, resourceTimer ) {
-	var envelope = new state.Envelope( meta.topic, message, client, meta.metricKey, resourceTimer );
+function respond( state, meta, resource, action, client, data, message ) {
+	var envelope = new state.Envelope( meta.topic, message, client );
 	var result;
 	if ( state.config && state.config.handleRouteErrors ) {
 		try {
 			result = action.handle.apply( resource, [ envelope ] );
 		} catch ( err ) {
-			meta.errors.record( 1, { name: 'WS_TOPIC_ERRORS' } );
 			client.publish( data.replyTo || meta.topic,
 				'Server error at topic ' + meta.topic );
 		}
@@ -92,17 +77,14 @@ function wireupAction( state, resource, actionName, action, metadata ) {
 	log.debug( 'Mapping resource \'%s\' action \'%s\' to topic %s', resource.name, actionName, meta.alias );
 	state.socket.on( meta.topic, function( message, client ) {
 		var data = message.data || message;
-		var resourceTimer = state.metrics.timer( [ resource.name + '-' + actionName, 'ws', 'duration' ] );
 		if ( state.authProvider ) {
 			checkPermissionFor( state, client.user, {}, meta.alias )
 				.then( function( pass ) {
 					if ( pass ) {
-						meta.authGranted();
 						log.debug( 'WS activation of action %s for %s granted',
 							meta.alias, state.config.getUserString( client.user ) );
-						respond( state, meta, resource, action, client, data, message, resourceTimer );
+						respond( state, meta, resource, action, client, data, message );
 					} else {
-						meta.authRejected();
 						log.debug( 'User %s was denied WS activation of action %s',
 							state.config.getUserString( client.user ), meta.alias );
 						client.publish( data.replyTo || meta.topic,
@@ -110,7 +92,7 @@ function wireupAction( state, resource, actionName, action, metadata ) {
 					}
 				} );
 		} else {
-			respond( state, meta, resource, action, client, data, message, resourceTimer );
+			respond( state, meta, resource, action, client, data, message );
 		}
 	} );
 }
@@ -119,7 +101,6 @@ module.exports = function( config, authProvider, socket ) {
 	var state = {
 		authProvider: authProvider,
 		config: config,
-		metrics: metronic(),
 		name: 'http',
 		socket: socket
 	};

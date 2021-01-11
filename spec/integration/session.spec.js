@@ -88,6 +88,7 @@ describe( 'Session Management', function() {
 				}
 				originalAuthenticate( req, res, next );
 			};
+
 		} );
 
 		it( 'should have completed all requests successfully', function() {
@@ -113,6 +114,7 @@ describe( 'Session Management', function() {
 		var disconnected;
 
 		before( function( done ) {
+
 			var io = harness.getIOClient( 'http://localhost:8988?token=one', { query: 'token=one' } );
 			io.once( 'test.call', function( msg ) {
 				responses.push( msg );

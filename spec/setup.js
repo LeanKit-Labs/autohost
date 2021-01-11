@@ -22,22 +22,22 @@ function transformResponse() {
 	return function( resp ) {
 		resp = _.isArray( resp ) ? resp[ 0 ] : resp;
 		var obj = {};
-		if ( _.contains( props, 'body' ) ) {
+		if ( _.includes( props, 'body' ) ) {
 			obj.body = resp.body;
 		}
-		if ( _.contains( props, 'type' ) ) {
+		if ( _.includes( props, 'type' ) ) {
 			obj.type = resp.headers[ 'content-type' ];
 		}
-		if ( _.contains( props, 'cache' ) ) {
+		if ( _.includes( props, 'cache' ) ) {
 			obj.cache = resp.headers[ 'cache-control' ];
 		}
-		if ( _.contains( props, 'testHeader' ) ) {
+		if ( _.includes( props, 'testHeader' ) ) {
 			obj.header = resp.headers[ 'test-header' ];
 		}
-		if ( _.contains( props, 'setCookie' ) ) {
+		if ( _.includes( props, 'setCookie' ) ) {
 			obj.cookie = resp.headers[ 'set-cookie' ][ 0 ];
 		}
-		if ( _.contains( props, 'statusCode' ) ) {
+		if ( _.includes( props, 'statusCode' ) ) {
 			obj.statusCode = resp.statusCode;
 		}
 		return obj;
