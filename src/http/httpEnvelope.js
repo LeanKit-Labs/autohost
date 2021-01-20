@@ -2,10 +2,9 @@ var request;
 var _ = require( 'lodash' );
 var fs = require( 'fs' );
 var path = require( 'path' );
-var metrics = require( '../metrics' )();
 var log = require( '../log' )( 'autohost.http.envelope' );
 
-function HttpEnvelope( req, res, metricKey ) {
+function HttpEnvelope( req, res ) {
 	this.transport = 'http';
 	this.context = req.context;
 	this.cookies = req.cookies;
@@ -24,8 +23,7 @@ function HttpEnvelope( req, res, metricKey ) {
 	this.logout = function() {
 		req.logout();
 	};
-	this.metricKey = metricKey;
-	
+
 	this.path = this.url = req.url;
 	this.method = req.method.toLowerCase();
 	this.responseStream = res;
@@ -35,8 +33,6 @@ function HttpEnvelope( req, res, metricKey ) {
 		req: req,
 		res: res
 	};
-	this.exceptions = metrics.meter( this.metricKey.concat( 'exceptions' ) );
-	this.errors = metrics.meter( this.metricKey.concat( 'errors' ) );
 	this.version = req.context ? ( req.context.version || 1 ) : 1;
 
 	_.extend( this.data, req.params );
@@ -142,11 +138,8 @@ HttpEnvelope.prototype.renderError = function( host, resource, action, error ) {
 	);
 
 	if ( strategy.status >= 500 ) {
-		this.exceptions.record( 1, { name: 'HTTP_API_EXCEPTIONS' } );
 		var user = _.isObject( this.user ) ? ( this.user.name || this.user.username || this.user.id ) : 'anonymous';
 		log.error( '%s [%s] %s\n%s', process.title, user, this.url || '', error.stack || error.name || '' );
-	} else {
-		this.errors.record( 1, { name: 'HTTP_API_ERRORS' } );
 	}
 
 	var filePath = strategy.file ? path.resolve( host.static, strategy.file ) : '';

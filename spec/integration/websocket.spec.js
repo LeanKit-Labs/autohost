@@ -346,7 +346,7 @@ describe( 'Websocket', function() {
 				if ( msg.start ) {
 					response.metadata = msg;
 				} else if ( msg.data ) {
-					var buffer = new Buffer( msg.data );
+					var buffer = Buffer.from( msg.data );
 					response.buffers.push( buffer );
 					response.total += buffer.length;
 				}

@@ -138,32 +138,6 @@ describe( 'Index', function() {
 		} );
 	} );
 
-	describe( 'with custom metronic instance', function() {
-		var host;
-		before( function() {
-			host = getHost()( {
-				metrics: { fake: true, instrument: true, meter: _.noop }
-			} );
-		} );
-
-		it( 'should use provided metronic instance', function() {
-			host.metrics.fake.should.equal( true );
-		} );
-	} );
-
-	describe( 'with metronic configuration', function() {
-		var host;
-		before( function() {
-			host = getHost()( {
-				metrics: { fake: true }
-			} );
-		} );
-
-		it( 'should use provided metronic instance', function() {
-			expect( host.metrics.fake ).to.be.undefined;
-		} );
-	} );
-
 	describe( 'with log configuration', function() {
 		var host;
 		before( function() {

@@ -2,7 +2,6 @@ var _ = require( 'lodash' );
 var when = require( 'when' );
 var passport = require( 'passport' );
 var log = require( '../log' )( 'autohost.passport' );
-var metronic = require( '../metrics' );
 var noOp = function() {
 	return when( true );
 };
@@ -14,13 +13,9 @@ function authConditionally( state, req, res, next ) {
 	var isOptions = req.method.toLowerCase() === "options";
 	var skipAuth = req.skipAuth || ( isOptions && !state.config.authOptions );
 	if ( skipAuth || req.user ) {
-		state.metrics.authenticationSkips.record( 1, { name: 'HTTP_AUTHENTICATION_SKIPPED' } );
 		skipAuthentication( req, res, next );
 	} else {
-		state.metrics.authenticationAttempts.record( 1, { name: 'HTTP_AUTHENTICATION_ATTEMPTS' } );
-		var timer = state.metrics.authenticationTimer();
 		state.authProvider.authenticate( req, res, next );
-		timer.record( { name: 'HTTP_AUTHENTICATION_DURATION' } );
 	}
 }
 
@@ -42,9 +37,7 @@ function getRoles( state, req, res, next ) {
 	var userName = _.isObject( req.user ) ? req.user.name : undefined;
 
 	function onError( err ) {
-		state.metrics.authorizationErrors.record( 1, { name: 'HTTP_AUTHORIZATION_ERRORS' } );
 		req.user.roles = [];
-		timer.record( { name: 'HTTP_AUTHORIZATION_DURATION' } );
 		log.debug( 'Failed to get roles for %s with %s', state.config.getUserString( req.user ), err.stack );
 		// during a socket connection, express is not fully initialized and this call fails ... hard
 		if( state.config.socketio && /socket.io/.test( req.url ) ) {
@@ -63,7 +56,6 @@ function getRoles( state, req, res, next ) {
 	function onRoles( roles ) {
 		log.debug( 'Got roles [ %s ] for %s', roles, req.user );
 		req.user.roles = roles;
-		timer.record( { name: 'HTTP_AUTHORIZATION_DURATION' } );
 		next();
 	}
 
@@ -71,7 +63,6 @@ function getRoles( state, req, res, next ) {
 		req.user.roles = [ 'anonymous' ];
 		next();
 	} else {
-		var timer = state.metrics.authorizationTimer();
 		state.authProvider.getUserRoles( req.user, req.context )
 			.then( onRoles, onError );
 	}
@@ -79,22 +70,18 @@ function getRoles( state, req, res, next ) {
 
 function getSocketRoles( state, user ) {
 	function onError( err ) {
-		state.metrics.authorizationErrors.record( 1, { name: 'WS_AUTHORIZATION_ERRORS' } );
-		timer.record( { name: 'WS_AUTHORIZATION_DURATION' } );
 		log.debug( 'Failed to get roles for %s with %s', state.config.getUserString( user ), err.stack );
 		return [];
 	}
 
 	function onRoles( roles ) {
 		log.debug( 'Got roles [ %s ] for %s', roles, state.config.getUserString( user ) );
-		timer.record( { name: 'WS_AUTHORIZATION_DURATION' } );
 		return roles;
 	}
 
 	if ( user.name === 'anonymous' ) {
 		return when( [ 'anonymous' ] );
 	} else {
-		var timer = state.metrics.authorizationTimer();
 		return state.authProvider.getUserRoles( user, {} )
 			.then( onRoles, onError );
 	}
@@ -143,7 +130,6 @@ module.exports = function( config, authProvider ) {
 	var state = {
 		config: config,
 		authProvider: authProvider,
-		metrics: metronic(),
 		passportInitialize: passport.initialize(),
 		passportSession: passport.session()
 	};

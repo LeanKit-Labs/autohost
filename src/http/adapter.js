@@ -4,7 +4,7 @@ var when = require( 'when' );
 var regex = require( './regex.js' );
 var log = require( '../log' )( 'autohost.http.adapter' );
 var passportFn = require( './passport.js' );
-var metronic = require( '../metrics' );
+
 var format = require( 'util' ).format;
 
 function buildActionUrls( state, resourceName, actionName, action, resource, resources ) {
@@ -67,26 +67,19 @@ function checkPermissionFor( state, permissionCheck, meta, action, envelope, nex
 	log.debug( 'Checking %s\'s permissions for %s',
 		state.config.getUserString( envelope.user ), meta.alias
 	);
-	meta.authAttempted();
-	var timer = state.metrics.authorizationTimer();
 
 	function onError( err ) {
 		log.error( 'Error during check permissions: %s', err.stack );
-		state.metrics.authorizationErrors.record( 1, { name: 'HTTP_AUTHORIZATION_ERRORS' });
-		timer.record( { name: 'HTTP_AUTHORIZATION_DURATION' } );
 		throw err;
 	}
 
 	function onPermission( granted ) {
-		timer.record( { name: 'HTTP_AUTHORIZATION_DURATION' } );
 		if( granted ) {
-			meta.authGranted();
 			log.debug( 'HTTP activation of action %s (%s %s) for %j granted',
 				meta.alias, action.method, meta.url, state.config.getUserString( envelope.user )
 			);
 			return next();
 		} else {
-			meta.authRejected();
 			log.debug( 'User %s was denied HTTP activation of action %s (%s %s)',
 				state.config.getUserString( envelope.user ), meta.alias, action.method, meta.url
 			);
@@ -117,30 +110,17 @@ function getActionMetadata( state, resource, actionName, action, meta, resources
 	var urls = buildActionUrls( state, resource.name, actionName, action, resource, resources );
 	var alias = buildActionAlias( resource.name, actionName );
 	var resourceKey = [ [ resource.name, actionName ].join( '-' ), 'http' ];
-	var metricKey = [ state.metrics.prefix ].concat( resourceKey );
+
 	meta.routes[ actionName ] = { method: action.method, urls: urls };
 	return {
 		alias: alias,
 		envelope: undefined,
-		authAttempted: function() {
-			state.metrics.authorizationAttempts.record( 1, { name: 'HTTP_AUTHORIZATION_ATTEMPTS' } );
-		},
-		authGranted: function() {
-			state.metrics.authorizationGrants.record( 1, { name: 'HTTP_AUTHORIZATION_GRANTED' }  );
-		},
-		authRejected: function() {
-			state.metrics.authorizationRejections.record( 1, { name: 'HTTP_AUTHORIZATION_REJECTED' } );
-		},
 		getEnvelope: function( req, res ) {
-			var envelope = new state.Envelope( req, res, metricKey );
+			var envelope = new state.Envelope( req, res );
 			this.envelope = envelope;
 			return this.envelope;
 		},
-		getTimer: function() {
-			return state.metrics.timer( resourceKey.concat( 'duration' ) );
-		},
 		handleErrors: state.config && state.config.handleRouteErrors,
-		metricKey: metricKey,
 		resourceKey: resourceKey,
 		urls: urls
 	};
@@ -167,7 +147,7 @@ function getHandler( handle ) {
 				console.error(
 					format(
 						'Differentiated handle\'s \'when\' property must be a function or an object instead of \'%s\'. Option will not be included in potential outcomes.'
-					), 
+					),
 					option.when
 				);
 			}
@@ -177,7 +157,7 @@ function getHandler( handle ) {
 				return option.when( envelope );
 			} );
 			if( option ) {
-				return option.then( envelope );	
+				return option.then( envelope );
 			} else {
 				return { status: 400, data: 'The request failed to meet any of the supported conditions' };
 			}
@@ -207,7 +187,7 @@ function getAuthorize( resource, action, envelope ) {
 				console.error(
 					format(
 						'Differentiated authorize\'s \'when\' property must be a function or an object instead of \'%s\'. Option will not be included in potential outcomes.'
-					), 
+					),
 					option.when
 				);
 			}
@@ -217,7 +197,7 @@ function getAuthorize( resource, action, envelope ) {
 				return option.when( envelope );
 			} );
 			if( option ) {
-				return option.then( envelope );	
+				return option.then( envelope );
 			} else {
 				return { status: 403, data: { message: 'User lacks sufficient permissions' } };
 			}
@@ -346,10 +326,8 @@ function wireupAction( state, resource, actionName, action, metadata, resources 
 	_.each( meta.urls, function( url ) {
 		state.http.route( url, action.method, function( req, res ) {
 			meta.getEnvelope( req, res );
-			req._metricKey = meta.metricKey;
 			req._resource = resource.name;
 			req._action = actionName;
-			req._timer = meta.getTimer();
 			action.handle = getHandler( action.handle );
 			respond( state, meta, url, req, res, resource, action );
 		} );
@@ -362,7 +340,6 @@ module.exports = function( config, auth, http, req ) {
 		config: config,
 		http: http,
 		name: 'http',
-		metrics: metronic()
 	};
 	_.merge( state, {
 		Envelope: require( './httpEnvelope.js' )( req ),

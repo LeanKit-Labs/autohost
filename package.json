@@ -6,44 +6,52 @@
   "dependencies": {
     "body-parser": "^1.14.1",
     "cookie-parser": "^1.4.0",
-    "express": "^4.13.3",
+    "express": "~4.17.0",
     "express-session": "^1.12.1",
-    "fount": "~0.1.0",
-    "lodash": "^3.10.1",
-    "metronic": "~0.2.2",
+    "fount": "1.0.1",
+    "lodash": "^4.17.20",
     "multer": "^1.1.0",
     "node-uuid": "~1.4.3",
     "parseurl": "~1.3.0",
     "passport": "^0.3.2",
     "postal": "~1.0.2",
     "query-string": "^3.0.0",
-    "request": "^2.67.0",
-    "socket.io": "~1.4.5",
+    "request": "^2.88.2",
+    "socket.io": "^2.3.0",
     "websocket": "~1.0.22",
     "when": "~3.7.2",
-    "whistlepunk": "^0.3.2"
+    "whistlepunk": "^1.0.0"
   },
   "devDependencies": {
-    "biggulp": "^0.3.0",
     "chai": "^3.4.1",
     "chai-as-promised": "^5.1.0",
     "connect-redis": "^3.0.1",
     "debug": "^2.1.3",
-    "gulp": "^3.8.6",
-    "hyped": "^0.5.1",
-    "open": "0.0.5",
+    "eslint": "^4.2.0",
+    "eslint-config-leankit": "^4.0.0",
+    "mocha": "^8.2.1",
+    "nodemon": "^1.11.0",
+    "nyc": "^15.1.0",
     "passport-http": "^0.3.0",
     "passport-http-bearer": "^1.0.1",
     "passport-strategy": "^1.0.0",
-    "proxyquire": "^1.4.0",
+    "proxyquire": "^1.8.0",
     "redis": "^2.4.2",
-    "sinon": "^1.14.1",
+    "sinon": "^4.2.2",
     "sinon-as-promised": "^4.0.0",
-    "sinon-chai": "^2.7.0",
-    "socket.io-client": "~1.3.5"
+    "sinon-chai": "^2.12.0",
+    "socket.io-client": "^2.3.1"
   },
   "scripts": {
-    "test": "gulp test"
+    "lint": "eslint --fix ./",
+    "test:only": "NODE_ENV=test mocha --exit -R spec 'spec/**/*.spec.js'",
+    "test:int": "NODE_ENV=test mocha --exit -R spec 'spec/integration/**/*.spec.js'",
+    "test:ci": "NODE_ENV=test mocha --exit -R spec 'spec/behavior/**/*.spec.js'",
+    "test:watch": "nodemon --exec \"NODE_ENV=test mocha --exit -R spec 'spec/**/*.spec.js' || true\" -e js,json,sql",
+    "test": "npm run cover",
+    "cover": "nyc -r text-summary -r html -- npm run test:only",
+    "cover:ci": "nyc -r text-summary -r html -- npm run test:ci",
+    "cover:show": "open \"file://$PWD/coverage/index.html\""
   },
   "repository": {
     "type": "git",
@@ -83,5 +91,16 @@
   "bugs": {
     "url": "https://github.com/LeanKit-Labs/autohost/issues"
   },
-  "homepage": "https://github.com/LeanKit-Labs/autohost"
+  "homepage": "https://github.com/LeanKit-Labs/autohost",
+  "nyc": {
+    "exclude": [
+      "config.local.*",
+      "coverage",
+      "configs",
+      "spec"
+    ],
+    "sourceMap": false,
+    "instrument": true,
+    "all": true
+  }
 }

@@ -35,7 +35,7 @@ describe( 'Transport', function() {
 		it( 'should only show the default API endpoint', function() {
 			return transport.init( './spec/durp' )
 				.should.eventually.deep.equal( {
-				ah: { routes: { metrics: { method: 'get', url: undefined } } }
+				ah: { routes: { } }
 			} );
 		} );
 
@@ -94,9 +94,7 @@ describe( 'Transport', function() {
 						}
 					},
 					ah: {
-						routes: {
-							metrics: { method: 'get', url: undefined }
-						}
+						routes: {	}
 					}
 				} );
 		} );
@@ -123,7 +121,7 @@ describe( 'Transport', function() {
 					three: [ 'three.c', 'three.d' ],
 					four: [ 'four.e', 'four.f' ],
 					somethingImportant: [ 'somethingImportant.self' ],
-					ah: [ 'ah.metrics' ]
+					ah: [ ]
 				} );
 		} );
 

@@ -75,11 +75,6 @@ The object literal follows the format:
 	enableAccessLogs: true,// enables access logs
 	logging: {}, 			// configuration passed to autohost's whistlepunk instance
 	fount: undefined, 		// pass the app's fount instance to autohost
-	metrics: { 				// configuration for or instance of metronic
-		delimiter: '.',
-		prefix: undefined,
-		units: 'ms',
-	}
 
 	parseAhead: false, 			// parses path parameters before application middleware
 	handleRouteErrors: false, 	// wrap routes in try/catch
@@ -500,7 +495,6 @@ Envelopes are an abstraction around the incoming message or request. They are in
 	data: // the request/message body
 	headers: // request or message headers
 	logout: // a method to end the current session
-	metricKey: // a key containing the resource-action namespace
 	path: // url of the request (minus protocol/domain/port) OR message topic
 	session: // session hash
 	responseStream: // a write stream for streaming a response back to the client
@@ -664,79 +658,6 @@ A lot of visibility can be gained into what's happening in autohost in real-time
 ```bash
 	DEBUG=autohost* node index.js
 ```
-
-## Metrics
-Metrics are collected for routes, resource actions, authentication, authorization and errors. The metrics also include memory utlization as well as system memory and process load.
-
-The [metronics](https://github.com/LeanKit-Labs/metronics) API is available via `host.metrics`. The `metrics` property will no be initialized until after the init call.
-
-Metrics are not captured locally by default, but this can be opted into with the `useLocalAdapter` call.
-
-```javascript
-// turns on local metrics capture
-host.metrics.useLocalAdapter();
-
-// gets a report object
-most.metrics.getReport();
-```
-
-### Metrics collected
-Being aware of the metric keys used is important.
-
-__System Level Metrics__
-
-| Key | Name |
-|-----|------|
-| {prefix}.{hostName}.memory-total | SYSTEM_MEMORY_TOTAL |
-| {prefix}.{hostName}.memory-allocated | SYSTEM_MEMORY_USED |
-| {prefix}.{hostName}.memory-free | SYSTEM_MEMORY_FREE |
-
-__Process Level Metrics__
-
-| Key | Name |
-|-----|------|
-| {prefix}.{hostName}.{processTitle}.memory-physical | PROCESS_MEMORY_ALLOCATED |
-| {prefix}.{hostName}.{processTitle}.memory-allocated | PROCESS_MEMORY_AVAILABLE |
-| {prefix}.{hostName}.{processTitle}.memory-used | PROCESS_MEMORY_USED |
-| {prefix}.{hostName}.{processTitle}.core-#-load | PROCESS_CORE_#_LOAD |
-
-__Authentication & Authorization__
-
-| Key | Name |
-|-----|------|
-| {prefix}.{hostName}.{processTitle}.authenticating | HTTP_AUTHENTICATION_DURATION |
-| {prefix}.{hostName}.{processTitle}.authentication-attempted | HTTP_AUTHENTICATION_ATTEMPTS |
-| {prefix}.{hostName}.{processTitle}.authentication-failed | HTTP_AUTHENTICATION_ERRORS |
-| {prefix}.{hostName}.{processTitle}.authentication-granted | HTTP_AUTHENTICATION_GRANTED |
-| {prefix}.{hostName}.{processTitle}.authentication-rejected | HTTP_AUTHENTICATION_REJECTED |
-| {prefix}.{hostName}.{processTitle}.authentication-skipped | HTTP_AUTHENTICATION_SKIPPED |
-| {prefix}.{hostName}.{processTitle}.authorizing | HTTP_AUTHORIZATION_DURATION |
-| {prefix}.{hostName}.{processTitle}.authorization-attempted | HTTP_AUTHORIZATION_ATTEMPTS |
-| {prefix}.{hostName}.{processTitle}.authorization-failed | HTTP_AUTHORIZATION_ERRORS |
-| {prefix}.{hostName}.{processTitle}.authorization-granted | HTTP_AUTHORIZATION_GRANTED |
-| {prefix}.{hostName}.{processTitle}.authorization-rejected | HTTP_AUTHORIZATION_REJECTED |
-
-__Static Resources & Custom Routes__
-
-| Key | Name |
-|-----|------|
-| {prefix}.{hostName}.{processTitle}.{url-verb}.ingress | HTTP_INGRESS |
-| {prefix}.{hostName}.{processTitle}.{url-verb}.egress | HTTP_EGRESS |
-| {prefix}.{hostName}.{processTitle}.{url-verb}.duration | HTTP_ROUTE_DURATION |
-| {prefix}.{hostName}.{processTitle}.{url-verb}.exceptions | HTTP_ROUTE_EXCEPTIONS |
-| {prefix}.{hostName}.{processTitle}.{url-verb}.errors | HTTP_ROUTE_ERRORS |
-| {prefix}.{hostName}.{processTitle}.{url-verb}.requests | HTTP_REQUESTS |
-
-__Resource Actions__
-
-| Key | Name |
-|-----|------|
-| {prefix}.{hostName}.{processTitle}.{resource-action}.{transport}.ingress | HTTP_API_INGRESS |
-| {prefix}.{hostName}.{processTitle}.{resource-action}.{transport}.egress | HTTP_API_EGRESS |
-| {prefix}.{hostName}.{processTitle}.{resource-action}.{transport}.duration | HTTP_API_DURATION |
-| {prefix}.{hostName}.{processTitle}.{resource-action}.{transport}.exceptions | HTTP_API_EXCEPTIONS |
-| {prefix}.{hostName}.{processTitle}.{resource-action}.{transport}.errors | HTTP_API_ERRORS |
-| {prefix}.{hostName}.{processTitle}.{resource-action}.{transport}.requests | HTTP_REQUESTS |
 
 ## Metadata
 Metadata describing the routes and topic are available via an OPTIONS to api:
