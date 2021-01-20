@@ -1,3 +1,9 @@
+## 2.x
+
+### 2.0.0
+
+* Updated project dependencies and security issues
+
 ## 1.x
 
 ### 1.2.0
