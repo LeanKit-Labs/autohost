@@ -54,7 +54,7 @@ function acceptSocket(state, socket) {
 
 	// add a way to end session
 	socket.logout = function () {
-		request.logout();
+		request.logout(() => { });
 		socket.close();
 	};
 

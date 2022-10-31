@@ -20,17 +20,20 @@ function authConditionally( state, req, res, next ) {
 }
 
 function getAuthMiddleware( state, uri ) {
-	var list = [
-		{ path: uri, fn: state.passportInitialize, alias: 'passport' },
-		{ path: uri, fn: state.passportSession, alias: 'passportSession' }
-	]
-		.concat( _.map( state.anonPaths, function( pattern ) {
-			return { path: pattern, fn: skipAuthentication, alias: 'skipAuth' };
-		} ) )
+	const list = [
+		{ path: uri, fn: state.passportInitialize, alias: "passport" }
+	];
+
+	if ( !state.config.noSession ) {
+		list.push( { path: uri, fn: state.passportSession, alias: "passportSession" } );
+	}
+
+	return list.concat( _.map( state.anonPaths, function ( pattern ) {
+		return { path: pattern, fn: skipAuthentication, alias: "skipAuth" };
+	} ) )
 		.concat( [ { path: uri, fn: whenNoUsers },
-			{ path: uri, fn: authConditionally.bind( undefined, state ), alias: 'conditionalAuth' },
-		{ path: uri, fn: getRoles.bind( undefined, state ), alias: 'userRoles' } ] );
-	return list;
+			{ path: uri, fn: authConditionally.bind( undefined, state ), alias: "conditionalAuth" },
+			{ path: uri, fn: getRoles.bind( undefined, state ), alias: "userRoles" } ] );
 }
 
 function getRoles( state, req, res, next ) {
