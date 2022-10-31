@@ -15,7 +15,7 @@
     "parseurl": "~1.3.0",
     "passport": "^0.3.2",
     "postal": "^2.0.6",
-    "query-string": "^3.0.3",
+    "query-string": "^7.1.1",
     "request": "^2.88.2",
     "socket.io": "^2.5.0",
     "websocket": "~1.0.22",
