@@ -1,3 +1,22 @@
+## 3.x
+
+### 3.0.0
+
+* Removed unused dependencies
+* Updated multer
+* Updated whistlepunk
+* Updated passport and conditionally add passport session middleware based on changes to passport
+* Updated socket.io
+* Updated passport to 0.5.3
+* Updated query-string dep
+* Updated sinon/chai related deps
+* Updated more dev deps
+* Updated some dev deps
+* Added a few updated dependencies
+* Updated to latest semver versions
+* Removed a couple of unneeded dependencies
+* Updated node version
+
 ## 2.x
 
 ### 2.0.0
