@@ -1,5 +1,9 @@
 ## 3.x
 
+### 3.0.1
+
+* Removed node-uuid in favor of uuid
+
 ### 3.0.0
 
 * Removed unused dependencies
