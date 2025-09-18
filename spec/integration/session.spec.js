@@ -1,5 +1,5 @@
 require( '../setup' );
-var requestor = require( 'request' ).defaults( { jar: true } );
+var requestor = require( '../test-request-wrapper' ).defaults( { jar: true } );
 var postal = require( 'postal' );
 var events = postal.channel( 'events' );
 var port = 8988;

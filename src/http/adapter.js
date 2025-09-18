@@ -342,7 +342,7 @@ module.exports = function( config, auth, http, req ) {
 		name: 'http',
 	};
 	_.merge( state, {
-		Envelope: require( './httpEnvelope.js' )( req ),
+		Envelope: require( './envelope-factory.js' )( req ),
 		action: wireupAction.bind( undefined, state ),
 		passport: setupPassport( config, auth ),
 		resource: wireupResource.bind( undefined, state ),

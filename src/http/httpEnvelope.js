@@ -67,7 +67,29 @@ HttpEnvelope.prototype.forwardTo = function (options) {
 			}
 		}
 		var forwarded = _.defaults(options, original);
-		return request(forwarded).pipe(this._original.res);
+		var requestStream = request(forwarded);
+		
+		// Listen for response event to set headers and status code (if the stream supports events)
+		if (typeof requestStream.on === 'function') {
+			requestStream.on('response', (response) => {
+				this._original.res.status(response.statusCode);
+				
+				// Set response headers from the proxied response
+				if (response.headers) {
+					Object.keys(response.headers).forEach(key => {
+						const value = response.headers[key];
+						if (Array.isArray(value)) {
+							// Handle multiple values (like set-cookie)
+							value.forEach(val => this._original.res.append(key, val));
+						} else {
+							this._original.res.set(key, value);
+						}
+					});
+				}
+			});
+		}
+		
+		return requestStream.pipe(this._original.res);
 	} else {
 		return this._original.req.pipe(request(options)).pipe(this._original.res);
 	}

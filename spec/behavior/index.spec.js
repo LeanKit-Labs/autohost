@@ -1,6 +1,15 @@
 require( '../setup' );
 var fount = require( 'fount' );
-var request = require( 'request' );
+// Mock for request, mimics the minimal API needed for adapter tests
+function stubRequest() {
+	return function request(opts) {
+		return {
+			opts: opts,
+			pipe: function() { return this; }
+		};
+	};
+}
+var request = stubRequest();
 
 var middleware, http, httpAdapter, socket, socketAdapter, transport, log;
 var noop = function (){};
@@ -68,6 +77,7 @@ function getHost() {
 		{
 			'./http/http': httpFn,
 			'./http/adapter': httpAdapterFn,
+			'./http/request-wrapper': request,
 			'./websocket/socket': socketFn,
 			'./websocket/adapter': socketAdapterFn,
 			'./http/middleware': middlewareFn,

@@ -1,5 +1,7 @@
 require('../setup');
-var requestor = require('request').defaults({ jar: false });
+var when = require( 'when' );
+var requestor = require('../test-request-wrapper').defaults({ jar: false });
+var host;
 var port = 8988;
 var config = {
 	port: port,
@@ -139,13 +141,16 @@ describe('HTTP', function () {
 			name: 'test',
 			middleware: [
 				function (envelope, next) {
+					var versionSet = false;
 					if (envelope.headers.accept) {
 						var accept = envelope.headers.accept;
 						var match = /[.]v([0-9]*)/.exec(accept);
 						if (match && match.length > 0) {
 							envelope.version = parseInt(match[1]);
+							versionSet = true;
 						}
-					} else if (envelope.headers['api-version']) {
+					}
+					if (!versionSet && envelope.headers['api-version']) {
 						envelope.version = parseInt(envelope.headers['api-version']);
 					}
 					return next();
