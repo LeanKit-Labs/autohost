@@ -1,6 +1,6 @@
 var _ = require( 'lodash' );
 var path = require( 'path' );
-var request = require( 'request' );
+var request = require( './http/request-wrapper' );
 var when = require( 'when' );
 var httpFn = require( './http/http' );
 var httpAdapterFn = require( './http/adapter' );

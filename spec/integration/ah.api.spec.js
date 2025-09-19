@@ -1,5 +1,7 @@
 require( '../setup' );
-var requestor = require( 'request' ).defaults( { jar: true } );
+var when = require( 'when' );
+var requestor = require( '../test-request-wrapper' ).defaults( { jar: true } );
+var host;
 var port = 8988;
 var config = {
 	port: port,
